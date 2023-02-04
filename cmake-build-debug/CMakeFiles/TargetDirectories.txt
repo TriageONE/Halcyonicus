@@ -1,3 +1,0 @@
-/Users/Aron.Mantyla/CLionProjects/Halcyonicus/cmake-build-debug/CMakeFiles/Halcyonicus.dir
-/Users/Aron.Mantyla/CLionProjects/Halcyonicus/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/Aron.Mantyla/CLionProjects/Halcyonicus/cmake-build-debug/CMakeFiles/rebuild_cache.dir
