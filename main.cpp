@@ -2,10 +2,22 @@
 #include "lib/world/world.h"
 #include "lib/noise/perlin.h"
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#include <Windows.h>
+#include <cstdio>
+#endif
+
 using namespace std;
 
 int main() {
-    HEIGHTMAP map = *new HEIGHTMAP;
+
+    #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+        SetConsoleOutputCP(CP_UTF8);
+        // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
+        setvbuf(stdout, nullptr, _IOFBF, 2000);
+    #endif
+
+    WORLD world = *new WORLD;
 
     const siv::PerlinNoise::seed_type seed = 141249u;
     const siv::PerlinNoise perlin{ seed };
@@ -15,40 +27,43 @@ int main() {
         for (int x = 0; x < 64; ++x)
         {
             const int noise = (int) (perlin.octave2D_01((x * 0.04), (y * 0.04), 2) * 4);
-            map.set((HEIGHT) noise, x, y);
+            world.heightmap.set((char8_t) noise, x, y);
         }
 
     }
-    map.out();
+    world.heightmap.out();
     cout << endl;
 
-    std::array<unsigned char, 1024> pMap = map.copy_map();
+    std::array<char8_t, 1024> pMap = world.heightmap.copy_map();
 
-    std::array<HEIGHT, 4> h = HEIGHTMAP::uncompress(pMap[0]);
+    std::array<char8_t, 4> h = MAP::uncompress(pMap[0]);
     cout << "INITIAL: ";
     for (int i = 0; i <4; i++){
-        cout << h[i];
+        char t = (char)h[1];
+        cout << t;
     }
     cout << endl;
 
-    h[0] = HEIGHT::OCEAN;
-    h[1] = HEIGHT::WATER;
-    h[2] = HEIGHT::LAND;
-    h[3] = HEIGHT::MOUNTAIN;
+    h[0] = 0;
+    h[1] = 1;
+    h[2] = 2;
+    h[3] = 3;
     cout << "AFTER: ";
     for (int i = 0; i <4; i++){
-        cout << h[i];
+        cout << (char)h[i];
     }
     cout << endl;
-    pMap[0] = HEIGHTMAP::compress(h);
+    pMap[0] = MAP::compress(h);
 
     cout << "SANITY: ";
-    array<HEIGHT, 4> arr = HEIGHTMAP::uncompress(pMap[0]);
+    array<char8_t, 4> arr = MAP::uncompress(pMap[0]);
     for (int i = 0; i <4; i++){
-        cout << arr[i];
+        cout << (char)arr[i];
     }
-    map.set_map(pMap);
+    world.heightmap.set_heightmap(pMap);
 
-    map.dump_map();
+    world.heightmap.dump_map();
+    system("Pause");
     return 0;
+
 }
