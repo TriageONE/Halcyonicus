@@ -3,9 +3,11 @@
 //
 
 #include "map.h"
+#include "../noise/perlin.h"
 #include <iostream>
 #include <bitset>
 #include <array>
+#include <utility>
 
 //////////////////////////
 //CLASSIFICATION BASIC RW
@@ -212,9 +214,7 @@ void MAP::pack(int place, char8_t value) {
  * Used to print each individual int value as an integer to the console delimited by semicolons.
  */
 void MAP::dump_map(){
-
     std::cout << "DUMPING MAP SIZE (" << size << ") : ";
-
     for (int i = 0; i < size; i++){
         if (i % 32 == 0) std::cout << std::endl << "#: ";
         std::cout << std::bitset<8> (map[i]) << "; ";
@@ -255,6 +255,90 @@ void MAP::out(){
 
     }
 }
+
+void MAP::set_seed(std::string val) {
+    this->seed = std::move(val);
+}
+
+void MAP::set_vBias(float val) {
+    const float t = val < -4.0f ? -4.0f : val;
+    this->vBias =  t > 4.0f ? 4.0f : t;
+}
+
+void MAP::set_scalar(float val) {
+    const float t = val < 0.00001f ? 0.00001f : val;
+    this->scalar = t > 4.0f ? 4.0f : t;
+}
+
+void MAP::set_roughness(float val) {
+    this->roughness = val;
+}
+
+void MAP::set_w0(float val) {
+    this->w0 = val;
+}
+
+void MAP::set_w1(float val) {
+    this->w1 = val;
+}
+
+void MAP::set_w2(float val) {
+    this->w2 = val;
+}
+
+void MAP::set_w3(float val) {
+    this->w3 = val;
+}
+
+
+std::string MAP::get_seed() const {
+    return seed;
+}
+
+float MAP::get_vBias() const {
+    return vBias;
+}
+
+float MAP::get_scalar() const{
+    return scalar;
+}
+
+float MAP::get_roughness() const {
+    return roughness;
+}
+
+float MAP::get_w0() const {
+    return w0;
+}
+
+float MAP::get_w1() const {
+    return w1;
+}
+
+float MAP::get_w2() const {
+    return w2;
+}
+
+float MAP::get_w3() const {
+    return w3;
+}
+
+void MAP::generate() {
+    const siv::PerlinNoise::seed_type lseed = *(int*) (seed.c_str());
+    const siv::PerlinNoise perlin{ lseed };
+
+    for (int y = 0; y < 64; ++y)
+    {
+        for (int x = 0; x < 64; ++x)
+        {
+            const double noise = (perlin.octave2D_01((x * scalar), (y * scalar), 2)*4) + vBias;
+            set((char8_t) noise, x, y);
+        }
+    }
+}
+
+
+
 
 
 
