@@ -3,10 +3,15 @@
 //
 #include <array>
 #include "map.h"
+#include "../hash/md5.h"
 #ifndef HALCYONICUS_WORLD_H
 #define HALCYONICUS_WORLD_H
 
 class WORLD {
+protected:
+
+    std::string seed;
+
 public:
     /**
      * 0:2, And so a map of veticality was created, consisting of an array, but how large?
@@ -19,7 +24,7 @@ public:
         /**
          * 0:1, And god said, let there be a way to discern between heights, as the world must know verticality in 4's
          */
-        HEIGHTMAP()= default;
+         using MAP::MAP;
     };
 
     /**
@@ -32,18 +37,41 @@ public:
          * 1:0:1, and with that, god created a way to call each tone of temperature, with no distinct middle ground.
          * There shall be no true center, as perfection in zonal temperate attribution is impossible, even in the world beyond.
          */
-        CLIMATEMAP()= default;
+        using MAP::MAP;
     };
+
+    /**
+     * 1:2, Finally, a way for many maps of all nomenclature to reside under one object, so that when we are handling the art, all things reside in a single place,
+     * free from confusion.
+     */
     CLIMATEMAP climatemap;
     HEIGHTMAP heightmap;
 
-    WORLD(){
-        climatemap = CLIMATEMAP();
-        heightmap = HEIGHTMAP();
+    explicit WORLD(std::string seed){
+        MD5 md5;
+        this->seed = seed;
+        heightmap.set_seed(seed);
+        climatemap.set_seed(md5(&seed, 8));
     }
 
+    /**
+     * 1:3, If one wanted to recieve the world's heart, all they have to do is ask and nothing more. The heart may not be much but it is the basis of all creation and light.
+     * @return The seed of the world in integer format
+     */
+    [[nodiscard]] std::string getSeed() const;
+
+    /**
+     * 2:0, on the second day, god wanted a way to automate the hard work of creating a meticulously perfect world, and accepted its flaws as a feature.
+     * A concept of bundling something called Noise into this world as an intrinsic thing, rather than as an external idea. \\
+     *
+     * A generator should be made, but there should be a way that it can take opinions and options, things that you may want to have affect the world in a unique way
+     * And so a set of functions were built so manipulators of data can be used to affect world generation
+     *
+     * But at last a realization was made that each of these individual maps were rendered unto their own vices, with each having their own valuation of modifiers.
+     * the granularity of setting was initially meant for the entire world, but the world is not that simple and should be subject to any numbers the users throw their way,
+     * discriminating on basis of what map rather than *the* map
+     */
+    void generate();
 };
-
-
 
 #endif //HALCYONICUS_WORLD_H
