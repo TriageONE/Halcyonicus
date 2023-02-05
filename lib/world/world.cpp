@@ -3,15 +3,12 @@
 //
 
 #include "world.h"
-#include "../noise/perlin.h"
-#include <iostream>
-#include <bitset>
-#include <array>
 
+std::string WORLD::getSeed() const {
+    return seed;
+}
 
-
-
-
-
-
-
+void WORLD::generate(){
+    this->heightmap.generate();
+    this->climatemap.generate();
+}
