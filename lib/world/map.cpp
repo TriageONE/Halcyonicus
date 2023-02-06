@@ -271,23 +271,28 @@ void MAP::set_scalar(float val) {
 }
 
 void MAP::set_roughness(float val) {
-    this->roughness = val;
+    const float t = val < 0.0f ? 0.0f : val;
+    this->roughness = t > 2.0f ? 2.0f : t;
 }
 
 void MAP::set_w0(float val) {
-    this->w0 = val;
+    const float t = val < 1.0f ? 1.0f : val;
+    this->w0 = t > 64.0f ? 64.0f : t;
 }
 
 void MAP::set_w1(float val) {
-    this->w1 = val;
+    const float t = val < 1.0f ? 1.0f : val;
+    this->w1 = t > 64.0f ? 64.0f : t;
 }
 
 void MAP::set_w2(float val) {
-    this->w2 = val;
+    const float t = val < 1.0f ? 1.0f : val;
+    this->w2 = t > 64.0f ? 64.0f : t;
 }
 
 void MAP::set_w3(float val) {
-    this->w3 = val;
+    const float t = val < 1.0f ? 1.0f : val;
+    this->w3 = t > 64.0f ? 64.0f : t;
 }
 
 
