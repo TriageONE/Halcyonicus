@@ -18,7 +18,7 @@ private:
     std::array<char8_t, 1024> map {0};
     int size = sizeof(map) / sizeof(map[0]);
     float vBias=0, scalar=0, roughness=0;
-    float w0=0, w1=0, w2=0, w3=0;
+    float w0=1, w1=1, w2=1, w3=1;
     std::string seed;
 public:
     explicit MAP() = default;;
