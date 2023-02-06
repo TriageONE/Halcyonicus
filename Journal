@@ -1,0 +1,44 @@
+9:47PM 2-4-23
+Do people leave journals within the code they make? I really dont know but im just gonna do it anyways because i feel like it.
+Its been about 3 days and i feel like im not making enough progress. Do people really do more? When i see what drendran is doing, i feel like im working slow.
+I dont want to be slow, that would make me feel stupid, i want to get a lot done and push out a game fast, like all the other people on youtube who can make a
+coherent game in a day or so.
+Am i being lied to then? do people really not get more done? is this normal?
+I am still learning though. my theory is that my tools are still obfuscated in the ways i see them, understand them.
+Maybe i need more exposure to these tools, a more familiar experience. The only way im getting that is by doing this more, and knowing what these symbols mean
+and working off of that.
+
+I got a pretty big thing out of the way, the mapping and data compaction. It seemed simple at first, then became quite a bit more complicated. I also practiced with
+refrencing and pointers, and found a way to "Interpret raw data as type of choice" which aids in ambiguous output, and data manipulation. refrence the code snip below:
+
+    string s = "test";
+    int i = *(int*) (s.c_str());
+    cout << s << endl;
+    cout << i << endl;
+
+The result of the first cout is
+
+    test
+
+The second output in console resolves to and always resolves to:
+
+    1953719668
+
+This similar method is seen in the fast inverse square root code used for normalizing a vector quickly without a LUT. For me, its used for an imprecise, ambiguous output
+of data, meant to feed the world generator seed input. The seed input can only be an int, therefore cast the string as an int right? Cant do that, you have to reinterpret
+the data as an int regardless. A pointer-pointer cast is required.
+
+///////////////////////
+
+7:47PM 2-5-23
+Ok so i have the heightmap generator down solid and i have 3 layers of noise that all contribute on different levels. A metamap, where theres a general trend of a certain
+structure, and roughness, where there is a general noisyness to the map. Finally, you have the idea of the general heightmap, where it describes the height of the world and thats really it.
+
+i also have a climate map which is a fixed map of temperature, eventually correlating into something of an aliased mapping of temperatures, but does it really need to? what if we dont anti alias it? conservation of data?
+
+what else could i put, humidity? what would that look like when it comes to world generation? Saturation maybe, creating a way to discern if an area is wet or dry
+Very wet, wet, dry and very dry
+
+finally, we should have one more map, as this would complete the world, but what should it be? I really dont know, i think for now i should just leave it be
+also im gonna migrate each map to a generic object instead of making inner classes
+
