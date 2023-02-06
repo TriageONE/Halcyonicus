@@ -18,16 +18,22 @@ int main() {
     #endif
 
     auto world = WORLD("bingus");
+    MAP hmap = world.heightmap;
 
-    world.heightmap.set_scalar(0.01);
-    world.climatemap.set_scalar(0.03);
-    world.generate();
-
-
-    world.heightmap.out();
+    // Larger values make more complexity
+    hmap.set_scalar(0.04);
+    // Larger values make for more variation and random noise
+    hmap.set_roughness(0.1);
+    // The W class decides the weights of each tile selection, and higher values against lower values in general bias those types of tiles to generate
+    hmap.set_w0(3);
+    hmap.set_w1(1);
+    hmap.set_w2(3);
+    hmap.set_w3(1);
+    // Generates the map
+    hmap.generate();
+    // Let me see what it did
+    hmap.out();
     cout << endl;
-    world.climatemap.out();
-    system("Pause");
     return 0;
 
 }
