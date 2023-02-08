@@ -4,12 +4,15 @@
 #include <array>
 #include "map.h"
 #include "../hash/md5.h"
+#include "../entity/entity.h"
+#include "cave.h"
+
 #ifndef HALCYONICUS_WORLD_H
 #define HALCYONICUS_WORLD_H
 
 class WORLD {
 protected:
-
+    bool generated = false;
     std::string seed;
 
 public:
@@ -47,14 +50,18 @@ public:
      */
     MAP saturationmap;
 
+    std::vector<ENTITY> entities {};
+
+    std::array<CAVE, 16> caves { CAVE() };
+
     explicit WORLD(std::string seed){
         MD5 md5;
         this->seed = seed;
-        heightmap.set_seed(seed);
+        heightmap.setSeed(seed);
         std::string s1 = md5(&seed, 8);
-        climatemap.set_seed(s1);
+        climatemap.setSeed(s1);
         std::string s2 = md5(&s1, 8);
-        saturationmap.set_seed(s2);
+        saturationmap.setSeed(s2);
     }
 
     /**
@@ -76,7 +83,9 @@ public:
      */
     void generate();
 
-    void constrain() const;
+    void constrain();
+
+
 };
 
 #endif //HALCYONICUS_WORLD_H
