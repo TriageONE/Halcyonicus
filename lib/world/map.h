@@ -14,14 +14,25 @@
 * It shall describe the universe as we see it, and contain secrets unknown.
 */
 class MAP{
-private:
+    struct REGION{
+        REGION()=default;
+        REGION(int i, int i1);
+        int x{},y{};
+    };
+
+protected:
     std::array<char8_t, 1024> map {0};
     int size = sizeof(map) / sizeof(map[0]);
     float vBias=0, scalar=0, roughness=0;
     float w0=1, w1=1, w2=1, w3=1;
+    MAP::REGION r;
     std::string seed;
 public:
-    explicit MAP() = default;;
+    explicit MAP() = default;
+    void init(REGION region, const std::string& worldSeed){
+        this->r = region;
+        this->seed = worldSeed;
+    }
 
     //God says unto 0:2:5 : "Let there be a way for those who manipulate the map at a granular or programmable level to easily interface, as reinventing the wheel is pointless and wastes your time"
     static char8_t compress(std::array<char8_t, 4>);
@@ -32,12 +43,12 @@ public:
     char8_t get(int x, int y);
 
     //God says unto 0:2:3 : "Let there be a way for those to see, one way in memory, and another in a monofaregraph, so that we may understand the root of our product"
-    void dump_map();
+    void dumpMap();
     void out();
 
     //God says unto 0:2:4 : "And so we shall let the user poke and prod, as they know what is best and why. With only their intelligence required, the power is theirs to have"
     std::array<char8_t, 1024> copy_map();
-    void set_heightmap(std::array<char8_t, 1024> new_map);
+    void setHeightmap(std::array<char8_t, 1024> new_map);
 
     char8_t pick(int place);
     void pack(int place, char8_t value);
@@ -46,29 +57,31 @@ public:
     // Generator info section
 
     // Setters
-    void set_seed(std::string seed);
-    void set_vBias(float vBias);
-    void set_scalar(float scalar);
-    void set_roughness(float roughness);
+    void setSeed(std::string seed);
+    void setRegion(REGION region);
+    void setVBias(float vBias);
+    void setScalar(float scalar) ;
+    void setRoughness(float roughness) ;
 
-    void set_w0(float w0);
-    void set_w1(float w1);
-    void set_w2(float w2);
-    void set_w3(float val);
+    void setW0(float w0) ;
+    void setW1(float w1) ;
+    void setW2(float w2) ;
+    void setW3(float val) ;
 
     //Getters
-    [[nodiscard]] std::string get_seed() const;
-    [[nodiscard]] float get_vBias() const;
-    [[nodiscard]] float get_scalar() const;
-    [[nodiscard]] float get_roughness() const;
+    [[nodiscard]] std::string getSeed() const;
+    [[nodiscard]] REGION getRegion() const;
+    [[nodiscard]] float getVBias() const;
+    [[nodiscard]] float getScalar() const;
+    [[nodiscard]] float getRoughness() const;
 
-    [[nodiscard]] float get_w0() const;
-    [[nodiscard]] float get_w1() const;
-    [[nodiscard]] float get_w2() const;
-    [[nodiscard]] float get_w3() const;
+    [[nodiscard]] float getW0() const;
+    [[nodiscard]] float getW1() const;
+    [[nodiscard]] float getW2() const;
+    [[nodiscard]] float getW3() const;
 
     //Operators
-    void generate();
+    virtual void generate();
 
 };
 
