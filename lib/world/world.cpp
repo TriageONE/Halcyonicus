@@ -41,6 +41,7 @@ void WORLD::generate(){
     LOCATION tLoc = location;
     int i = 0;
     for(CAVE c : caves){
+        std::printf("CAVE %i:\n", i);
         tLoc.setY(i);
         if (!c.isInitialized()){
             c.init(seed, i);

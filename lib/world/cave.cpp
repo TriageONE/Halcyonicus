@@ -16,7 +16,7 @@
 void CAVE::generate() {
     MD5 md5;
     uint32_t s1 = *(int*) (md5(&seed, 8).c_str());
-    s1 = std::rotr(s1, level) + level * 2;
+    s1 = std::rotr(s1, level) + (level * 2);
 
     const siv::PerlinNoise::seed_type pseed = s1;
     const siv::PerlinNoise perlin{ pseed };
