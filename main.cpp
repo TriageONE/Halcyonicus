@@ -17,34 +17,27 @@ int main() {
         setvbuf(stdout, nullptr, _IOFBF, 2000);
     #endif
 
-    auto world = WORLD("kjefiub");
+    LOCATION l = LOCATION(0,0,0);
+    WORLD w = WORLD("lole", l);
+    w.constrain();
+    MAP *h = w.getHeightmap();
+    //today i learned the diff between -> and .
+    //one is for pointers, one is for members
+    //pointers are fun and easy to use, and you should use them more
+    //If you dont use pointers, you will copy data rather than get the data
+    
+    h->setScalar(0.01);
+    h->setRoughness(0.02);
+    w.generate();
+    h->out();
 
     // Larger values make more complexity
-    world.heightmap.setScalar(0.04);
-    // Larger values make for more variation and random noise
-    world.heightmap.setRoughness(0.1);
-    // The W class decides the weights of each tile selection, and higher values against lower values in general bias those types of tiles to generate
-    world.heightmap.setW0(3);
-    world.heightmap.setW1(1);
-    world.heightmap.setW2(3);
-    world.heightmap.setW3(1);
-    // Generates the map
-    world.constrain();
-    world.generate();
-    // Let me see what it did
-    world.heightmap.out();
+    cout << endl;
 
-    cout <<  endl;
-    world.climatemap.out();
-    cout <<  endl;
-    world.saturationmap.out();
-    cout <<  endl;
-
-    for (CAVE c : world.caves){
-        cout << "CAVE LAYER " << c.getLevel() << endl;
-        c.out();
-        cout <<  endl;
-    }
+    cout << "CAVEX" << endl;
+    CAVE c = CAVE("lole2", 13);
+    c.generate();
+    c.out();
 
     return 0;
 

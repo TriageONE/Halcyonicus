@@ -2,13 +2,13 @@
 // Created by Triage on 1/31/2023.
 //
 
+#include <iostream>
 #include "world.h"
-#include "iostream"
+#include "../hash/md5.h"
 
 std::string WORLD::getSeed() const {
     return seed;
 }
-
 void WORLD::constrain() {
 
     // The scalar of the climate should be zoomed in much more than the heightmap
@@ -38,14 +38,52 @@ void WORLD::generate(){
     heightmap.generate();
     climatemap.generate();
     saturationmap.generate();
-    for(int i = 0; i <15; i++){
-        CAVE c = caves[i];
+    LOCATION tLoc = location;
+    int i = 0;
+    for(CAVE c : caves){
+        std::printf("CAVE %i:\n", i);
+        tLoc.setY(i);
         if (!c.isInitialized()){
             c.init(seed, i);
         }
         if (!c.isGenerated()){
             c.generate();
         }
+        c.out();
+        std::cout << std::endl;
+        i++;
     }
     generated = true;
+}
+
+std::array<CAVE, 16>* WORLD::getCaves() {
+    return &caves;
+}
+
+LOCATION WORLD::getLocation() {
+    return this->location;
+}
+
+bool WORLD::isGenerated() const {
+    return generated;
+}
+
+bool WORLD::isInitialized() const {
+    return initialized;
+}
+
+MAP* WORLD::getClimatemap() {
+    return &climatemap;
+}
+
+MAP* WORLD::getHeightmap() {
+    return &heightmap;
+}
+
+MAP* WORLD::getSaturationmap() {
+    return &saturationmap;
+}
+
+std::vector<ENTITY>* WORLD::getEntities() {
+    return &entities;
 }
