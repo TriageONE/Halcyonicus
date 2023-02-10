@@ -2,8 +2,12 @@
 // Created by Triage on 1/31/2023.
 //
 #include <array>
+#include <vector>
 #include "map.h"
 #include "../hash/md5.h"
+#include "../entity/entity.h"
+#include "cave.h"
+
 #ifndef HALCYONICUS_WORLD_H
 #define HALCYONICUS_WORLD_H
 
@@ -11,10 +15,9 @@ class WORLD {
 protected:
 
     std::string seed;
-
-public:
-
-    /**
+    LOCATION location;
+    bool initialized = false, generated = true;
+/**
      * 1:1, Thus a new area of the world internal was to be made, a space dedicated to telling climate data about how warm or cold an area was to be.
      * This was to be represented on a scale the same as height, with little variation in the data alone. 4 states require 2 bits, for a total of 4096 areas, requiring 1024 bytes.
      */
@@ -22,10 +25,10 @@ public:
      * 1:0:1, and with that, god created a way to call each tone of temperature, with no distinct middle ground.
      * There shall be no true center, as perfection in zonal temperate attribution is impossible, even in the world beyond.
      */
-     /**
-     * 1:2, Finally, a way for many maps of all nomenclature to reside under one object, so that when we are handling the art, all things reside in a single place,
-     * free from confusion.
-     */
+    /**
+    * 1:2, Finally, a way for many maps of all nomenclature to reside under one object, so that when we are handling the art, all things reside in a single place,
+    * free from confusion.
+    */
     MAP climatemap;
 
     /**
@@ -47,14 +50,22 @@ public:
      */
     MAP saturationmap;
 
-    explicit WORLD(std::string seed){
+    std::vector<ENTITY> entities {};
+
+    std::array<CAVE, 16> caves { CAVE() };
+
+public:
+
+    WORLD(std::string seed, LOCATION l){
         MD5 md5;
         this->seed = seed;
-        heightmap.set_seed(seed);
+        heightmap.init(seed,l);
         std::string s1 = md5(&seed, 8);
-        climatemap.set_seed(s1);
+        climatemap.init(s1,l);
         std::string s2 = md5(&s1, 8);
-        saturationmap.set_seed(s2);
+        saturationmap.init(s2,l);
+        this->location = l;
+        this->initialized = true;
     }
 
     /**
@@ -75,8 +86,20 @@ public:
      * discriminating on basis of what map rather than *the* map
      */
     void generate();
+    void constrain();
 
-    void constrain() const;
+    //////////////
+    //Getters
+
+    LOCATION getLocation();
+    [[nodiscard]] bool isInitialized() const;
+    [[nodiscard]] bool isGenerated() const;
+    std::array<CAVE, 16>* getCaves();
+    MAP* getClimatemap();
+    MAP* getHeightmap();
+    MAP* getSaturationmap();
+    std::vector<ENTITY>* getEntities();
+
 };
 
 #endif //HALCYONICUS_WORLD_H
