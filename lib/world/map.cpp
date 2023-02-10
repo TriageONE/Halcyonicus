@@ -257,75 +257,75 @@ void MAP::out(){
     }
 }
 
-void MAP::set_seed(std::string val) {
-    this->seed = std::move(val);
+void MAP::setSeed(std::string s) {
+    this->seed = std::move(s);
 }
 
-void MAP::set_vBias(float val) {
+void MAP::setVBias(float val) {
     const float t = val < -4.0f ? -4.0f : val;
     this->vBias =  t > 4.0f ? 4.0f : t;
 }
 
-void MAP::set_scalar(float val) {
+void MAP::setScalar(float val) {
     const float t = val < 0.00001f ? 0.00001f : val;
     this->scalar = t > 4.0f ? 4.0f : t;
 }
 
-void MAP::set_roughness(float val) {
+void MAP::setRoughness(float val) {
     const float t = val < 0.0f ? 0.0f : val;
     this->roughness = t > 2.0f ? 2.0f : t;
 }
 
-void MAP::set_w0(float val) {
+void MAP::setW0(float val) {
     const float t = val < 1.0f ? 1.0f : val;
     this->w0 = t > 64.0f ? 64.0f : t;
 }
 
-void MAP::set_w1(float val) {
+void MAP::setW1(float val) {
     const float t = val < 1.0f ? 1.0f : val;
     this->w1 = t > 64.0f ? 64.0f : t;
 }
 
-void MAP::set_w2(float val) {
+void MAP::setW2(float val) {
     const float t = val < 1.0f ? 1.0f : val;
     this->w2 = t > 64.0f ? 64.0f : t;
 }
 
-void MAP::set_w3(float val) {
+void MAP::setW3(float val) {
     const float t = val < 1.0f ? 1.0f : val;
     this->w3 = t > 64.0f ? 64.0f : t;
 }
 
 
-std::string MAP::get_seed() const {
+std::string MAP::getSeed() const {
     return seed;
 }
 
-float MAP::get_vBias() const {
+float MAP::getVBias() const {
     return vBias;
 }
 
-float MAP::get_scalar() const{
+float MAP::getScalar() const{
     return scalar;
 }
 
-float MAP::get_roughness() const {
+float MAP::getRoughness() const {
     return roughness;
 }
 
-float MAP::get_w0() const {
+float MAP::getW0() const {
     return w0;
 }
 
-float MAP::get_w1() const {
+float MAP::getW1() const {
     return w1;
 }
 
-float MAP::get_w2() const {
+float MAP::getW2() const {
     return w2;
 }
 
-float MAP::get_w3() const {
+float MAP::getW3() const {
     return w3;
 }
 
@@ -359,7 +359,7 @@ void MAP::generate() {
             if (roughness != 0.0f)
                 //The roughness map is an inversely correlated, static scalar, single octave perlin noise mapping that relies on the pattern of the main world.
                 //I'm not sure, but I think if we were to render a map at 0.5 scalar with no vbias and any roughness between 0.25-0.50, we may get a pretty looking 'reflection' across the world axi
-                rnoise = (float)((perlin.octave2D_01(((-1) * x * 0.5), ((-1) * y * 0.5), 1) * 2) - 1 ) * roughness;
+                rnoise = ((perlin.octave2D_01(((-1) * x * 0.5), ((-1) * y * 0.5), 1) * 2) - 1 ) * roughness;
             //VBias is a method if adding a constant height decrement or increment so that the likelihood of generating an ocean for example would increase linearly
             //Scalar is also important and allows for you to kinda "zoom in or out" on the projection
             const double noise = perlin.octave2D_01((x * scalar), (y * scalar), 2) + vBias + rnoise + metamap/4;
@@ -388,6 +388,27 @@ void MAP::generate() {
             set((char8_t) final, x, y);
         }
     }
+}
+
+bool MAP::isInitialized() const {
+    return initialized;
+}
+
+bool MAP::isGenerated() const {
+    return generated;
+}
+
+void MAP::setLocation(LOCATION location) {
+    this->l = location;
+}
+
+LOCATION MAP::getLocation() const{
+    return this->l;
+}
+
+void MAP::init(std::string s, LOCATION location) {
+    setSeed(std::move(s));
+    setLocation(location);
 }
 
 

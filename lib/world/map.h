@@ -7,6 +7,7 @@
 
 #include <array>
 #include <string>
+#include "location.h"
 
 /**
 * 0:0, In the beginning, god said, let there be a platform, nothing more. All is up for interpretation, interpolation, and subjection;
@@ -14,14 +15,17 @@
 * It shall describe the universe as we see it, and contain secrets unknown.
 */
 class MAP{
-private:
+protected:
     std::array<char8_t, 1024> map {0};
     int size = sizeof(map) / sizeof(map[0]);
-    float vBias=0, scalar=0, roughness=0;
+    float vBias=0, scalar=0.02, roughness=0;
     float w0=1, w1=1, w2=1, w3=1;
-    std::string seed;
+    std::string seed{};
+    LOCATION l{};
+    bool generated=false, initialized=false;
+
 public:
-    explicit MAP() = default;;
+    explicit MAP() = default;
 
     //God says unto 0:2:5 : "Let there be a way for those who manipulate the map at a granular or programmable level to easily interface, as reinventing the wheel is pointless and wastes your time"
     static char8_t compress(std::array<char8_t, 4>);
@@ -46,30 +50,34 @@ public:
     // Generator info section
 
     // Setters
-    void set_seed(std::string seed);
-    void set_vBias(float vBias);
-    void set_scalar(float scalar);
-    void set_roughness(float roughness);
+    void setSeed(std::string seed);
+    void setLocation(LOCATION location);
+    void setVBias(float vBias);
+    void setScalar(float scalar);
+    void setRoughness(float roughness);
 
-    void set_w0(float w0);
-    void set_w1(float w1);
-    void set_w2(float w2);
-    void set_w3(float val);
+    void setW0(float w0);
+    void setW1(float w1);
+    void setW2(float w2);
+    void setW3(float val);
 
     //Getters
-    [[nodiscard]] std::string get_seed() const;
-    [[nodiscard]] float get_vBias() const;
-    [[nodiscard]] float get_scalar() const;
-    [[nodiscard]] float get_roughness() const;
+    [[nodiscard]] std::string getSeed() const;
+    [[nodiscard]] LOCATION getLocation() const;
+    [[nodiscard]] float getVBias() const;
+    [[nodiscard]] float getScalar() const;
+    [[nodiscard]] float getRoughness() const;
 
-    [[nodiscard]] float get_w0() const;
-    [[nodiscard]] float get_w1() const;
-    [[nodiscard]] float get_w2() const;
-    [[nodiscard]] float get_w3() const;
+    [[nodiscard]] float getW0() const;
+    [[nodiscard]] float getW1() const;
+    [[nodiscard]] float getW2() const;
+    [[nodiscard]] float getW3() const;
 
-    //Operators
+    virtual //Operators
     void generate();
-
+    [[nodiscard]] bool isInitialized() const;
+    [[nodiscard]] bool isGenerated() const;
+    void init(std::string seed, LOCATION location);
 };
 
 
