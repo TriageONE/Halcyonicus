@@ -3,43 +3,49 @@
 //
 
 #include "world.h"
+#include "iostream"
 
 std::string WORLD::getSeed() const {
     return seed;
 }
 
-void WORLD::constrain() const{
-
-    //Build quick aliases for setting values instead of typing 'this->[map].?'
-    MAP h = this->heightmap;
-    MAP s = this->saturationmap;
-    MAP c = this->climatemap;
+void WORLD::constrain() {
 
     // The scalar of the climate should be zoomed in much more than the heightmap
-    c.set_scalar(h.get_scalar()/6);
+    climatemap.setScalar(heightmap.getScalar() / 6);
     // The world should favor mild climates more than extremes
-    c.set_w0(2);
-    c.set_w1(3);
-    c.set_w2(3);
-    c.set_w3(2);
+    climatemap.setW0(2);
+    climatemap.setW1(3);
+    climatemap.setW2(3);
+    climatemap.setW3(2);
     // The world should have smooth transitions between climates and mildly warm climates should be slightly more prevalent
-    c.set_roughness(0);
-    c.set_vBias(0.15);
+    climatemap.setRoughness(0);
+    climatemap.setVBias(0.15);
 
     // The world should have a saturation map that scales 4 times larger than the normal world map
-    s.set_scalar(h.get_scalar()/4);
+    saturationmap.setScalar(heightmap.getScalar() / 4);
     // The saturation map should favor less extreme amounts of water content
-    s.set_w0(2);
-    s.set_w1(3);
-    s.set_w2(3);
-    s.set_w3(2);
+    saturationmap.setW0(2);
+    saturationmap.setW1(3);
+    saturationmap.setW2(3);
+    saturationmap.setW3(2);
     // The world should have smooth transitions between saturation and mildly wet climates should be slightly more prevalent
-    s.set_roughness(0);
-    s.set_vBias(0.15);
+    saturationmap.setRoughness(0);
+    saturationmap.setVBias(0.15);
 }
 
 void WORLD::generate(){
-    this->heightmap.generate();
-    this->climatemap.generate();
-    this->saturationmap.generate();
+    heightmap.generate();
+    climatemap.generate();
+    saturationmap.generate();
+    for(int i = 0; i <15; i++){
+        CAVE c = caves[i];
+        if (!c.isInitialized()){
+            c.init(seed, i);
+        }
+        if (!c.isGenerated()){
+            c.generate();
+        }
+    }
+    generated = true;
 }

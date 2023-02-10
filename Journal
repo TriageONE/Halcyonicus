@@ -1,15 +1,10 @@
 9:47PM 2-4-23
-Do people leave journals within the code they make? I really dont know but im just gonna do it anyways because i feel like it.
-Its been about 3 days and i feel like im not making enough progress. Do people really do more? When i see what drendran is doing, i feel like im working slow.
-I dont want to be slow, that would make me feel stupid, i want to get a lot done and push out a game fast, like all the other people on youtube who can make a
-coherent game in a day or so.
+Do people leave journals within the code they make? I really dont know but im just gonna do it anyways because i feel like it. Its been about 3 days and i feel like im not making enough progress. Do people really do more? When i see what drendran is doing, i feel like im working slow. I dont want to be slow, that would make me feel stupid, i want to get a lot done and push out a game fast, like all the other people on youtube who can make acoherent game in a day or so.
 Am i being lied to then? do people really not get more done? is this normal?
 I am still learning though. my theory is that my tools are still obfuscated in the ways i see them, understand them.
-Maybe i need more exposure to these tools, a more familiar experience. The only way im getting that is by doing this more, and knowing what these symbols mean
-and working off of that.
+Maybe i need more exposure to these tools, a more familiar experience. The only way im getting that is by doing this more, and knowing what these symbols mean and working off of that.
 
-I got a pretty big thing out of the way, the mapping and data compaction. It seemed simple at first, then became quite a bit more complicated. I also practiced with
-refrencing and pointers, and found a way to "Interpret raw data as type of choice" which aids in ambiguous output, and data manipulation. refrence the code snip below:
+I got a pretty big thing out of the way, the mapping and data compaction. It seemed simple at first, then became quite a bit more complicated. I also practiced with refrencing and pointers, and found a way to "Interpret raw data as type of choice" which aids in ambiguous output, and data manipulation. refrence the code snip below:
 
     string s = "test";
     int i = *(int*) (s.c_str());
@@ -24,21 +19,43 @@ The second output in console resolves to and always resolves to:
 
     1953719668
 
-This similar method is seen in the fast inverse square root code used for normalizing a vector quickly without a LUT. For me, its used for an imprecise, ambiguous output
-of data, meant to feed the world generator seed input. The seed input can only be an int, therefore cast the string as an int right? Cant do that, you have to reinterpret
-the data as an int regardless. A pointer-pointer cast is required.
+This similar method is seen in the fast inverse square root code used for normalizing a vector quickly without a LUT. For me, its used for an imprecise, ambiguous output of data, meant to feed the world generator seed input. The seed input can only be an int, therefore cast the string as an int right? Cant do that, you have to reinterpret the data as an int regardless. A pointer-pointer cast is required.
 
 ///////////////////////
 
 7:47PM 2-5-23
-Ok so i have the heightmap generator down solid and i have 3 layers of noise that all contribute on different levels. A metamap, where theres a general trend of a certain
-structure, and roughness, where there is a general noisyness to the map. Finally, you have the idea of the general heightmap, where it describes the height of the world and thats really it.
+Ok so i have the heightmap generator down solid and i have 3 layers of noise that all contribute on different levels. A metamap, where theres a general trend of a certain structure, and roughness, where there is a general noisyness to the map. Finally, you have the idea of the general heightmap, where it describes the height of the world and thats really it.
 
 i also have a climate map which is a fixed map of temperature, eventually correlating into something of an aliased mapping of temperatures, but does it really need to? what if we dont anti alias it? conservation of data?
 
-what else could i put, humidity? what would that look like when it comes to world generation? Saturation maybe, creating a way to discern if an area is wet or dry
-Very wet, wet, dry and very dry
+what else could i put, humidity? what would that look like when it comes to world generation? Saturation maybe, creating a way to discern if an area is wet or dry. Very wet, wet, dry and very dry
 
-finally, we should have one more map, as this would complete the world, but what should it be? I really dont know, i think for now i should just leave it be
-also im gonna migrate each map to a generic object instead of making inner classes
+finally, we should have one more map, as this would complete the world, but what should it be? I really dont know, i think for now i should just leave it be also im gonna migrate each map to a generic object instead of making inner classes
 
+///////////////////////
+
+6:43PM 2-6-23
+So i have an idea that i thought was pretty cool, the cave layer system. The way i thought of it was like this:
+
+You traverse the overworld and stumble across a marking in the ground. It looks suspicious, and seems to resemble a crack, like a spiderweb. You walk up and click on it, and with your mighty pick, you break a hole in the ground. At first it looks like you could fall a long way, but luckily you find a tree and naturally tie a rope to it to lead into the hole.
+
+The hole is deep, and very dark. It seems to be covered with dirt few rocks scattered along. The cave system you came across is expansive. The entire cave seems to be either dirt or stone for now, so you dig through the dirt and ocassionally find bits of ore.
+The caves are now lit with the power of torches and some other areas that seem to be other cave entrances faintly lighting the areas below. You can see another crack in the floor and immediately go for your pick
+One thing is off however, and you have not noticed quite yet. You have one rope left made of vine, and you believe that should be sufficient. You smash through the weakpoint and reveal another layer, this time with more stone and what looks like a railway.
+
+After smashing through, you jump down the hole. You fall almost 20 feet, and somehow survive the fall, only sustaining a mildly annoying injury. You stand up and brush yourself off. It is dark, so you light another torch, and put it at your feet. Looking up to the dimly lit hole, you find yourself realizing slowly your grave mistake is not easily reversable. You attempt to throw your rope up, hopefully to hook onto something, but alas there was nothing to hold onto so the rope simply falls to the side and back down your dark hole.
+
+The only way to get out would to be make some sort of ladder, able to hold enough weight to support you on your way up and tall enough to facilitate hanging on the hole itself.
+Around are scattered boxes and other things, left from some civilization of the before times. You break some of these crates to get crude wood planks, but as these crates break, it looks like some rusty nails are exposed, so you slam some boards together and they make an unstable but stable enough ladder that looks and feels like it could barely support you. You line the ladder up to the hole and escape, as your ladder breaks into tons of broken splintered wood below you, leaving a meacing hole once more.
+
+---------
+
+This idea capitalizes on the natural fear of dark and heights, both at the same time. This turns into the fear of the unknown, where there isnt a way we would know for sure what is down there. All we know is that there's a hole, and thats about it, nothing else. We may fall into this hole and break our legs or arms, and not have a way to escape afterwards. We might get eaten by large bugs, or starve slowly as our tools break and we are forced to dig with our nails. Its a mildly concerning thought that seems like a good way to provide layers of fear and need to prepare for a cave system.
+
+Thats not to say you cant survive, like think about it- if you want to be a cave hermit, you could hunt cave things and eat them, consume mushrooms and never get light, and be one with the tunnels, and drink rainwater, but thats a task and really sucks in comparison to top end living.
+
+ANTS:
+The idea was positied as a joke at first but then became something i wanted to expand on. The game needs a threat, something that puts the player in a position of fear and uncertainty. Without a force to be rekoned with, the world fades into pointlessness, as survival is tantamount.
+originally, the joke was that i was making an ASCII game about ants and them doing fun things like creating colonies and fighting eachother, foraging and digging. This looked like, to the others, an 'ant simulator' i suppose, so i brushed it off as 'its a work in progress'. The thought came to me after so much bullying that i eventually had a crossing thought about danger, fear, and destruction- what if the world was filled with dog sized ants that could communicate via pheremone and sound only?
+Ants are pretty terrifying- they work together to forage, fight, enslave and farm, and have underground nests that can burrow complex tunnels. Ants have armor and are equipped with razor sharp mandibles, capable of ripping and tearing flesh with ease, and can carry many times their own weight.
+for people now, we have a hard time dealing with them and it poses a serious problem , as some ant colonies have viscious venom that can kill you in minutes.
