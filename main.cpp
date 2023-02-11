@@ -25,19 +25,16 @@ int main() {
     //one is for pointers, one is for members
     //pointers are fun and easy to use, and you should use them more
     //If you dont use pointers, you will copy data rather than get the data
-    
-    h->setScalar(0.01);
+
+
+    //Larger values result in a more zoomed out display
+    h->setScalar(0.1);
     h->setRoughness(0.02);
     w.generate();
     h->out();
 
     // Larger values make more complexity
     cout << endl;
-
-    cout << "CAVEX" << endl;
-    CAVE c = CAVE("lole2", 13);
-    c.generate();
-    c.out();
 
     return 0;
 
