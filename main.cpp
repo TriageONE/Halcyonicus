@@ -28,12 +28,9 @@ int main() {
 
 
     //Larger values result in a more zoomed out display
-    h->setScalar(0.1);
-    h->setRoughness(0.02);
+    h->setScalar(0.01);
+    h->setRoughness(0.04);
     w.generate();
-    h->out();
-
-    // Larger values make more complexity
     cout << endl;
 
     return 0;
