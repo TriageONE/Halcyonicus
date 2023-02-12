@@ -134,6 +134,8 @@ void MAP::set_heightmap(std::array<char8_t, 1024> new_map){
     for (int i = 0; i < size; i++){
         map[i] = new_map[i];
     }
+    initialized = true;
+    generated = true;
 }
 //////////////////////////////////
 //CLASSIFICATION DATA COMPRESSION

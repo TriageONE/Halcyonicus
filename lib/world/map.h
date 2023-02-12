@@ -23,7 +23,6 @@ protected:
     std::string seed{};
     LOCATION l{};
     bool generated=false, initialized=false;
-
 public:
     explicit MAP() = default;
 
@@ -63,7 +62,7 @@ public:
 
     //Getters
     [[nodiscard]] std::string getSeed() const;
-    [[nodiscard]] LOCATION getLocation() const;
+    [[nodiscard]] LOCATION getLocation() const; //This is intrinsic to the region format and may be removed,
     [[nodiscard]] float getVBias() const;
     [[nodiscard]] float getScalar() const;
     [[nodiscard]] float getRoughness() const;
