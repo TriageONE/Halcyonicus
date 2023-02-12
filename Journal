@@ -59,3 +59,22 @@ The idea was positied as a joke at first but then became something i wanted to e
 originally, the joke was that i was making an ASCII game about ants and them doing fun things like creating colonies and fighting eachother, foraging and digging. This looked like, to the others, an 'ant simulator' i suppose, so i brushed it off as 'its a work in progress'. The thought came to me after so much bullying that i eventually had a crossing thought about danger, fear, and destruction- what if the world was filled with dog sized ants that could communicate via pheremone and sound only?
 Ants are pretty terrifying- they work together to forage, fight, enslave and farm, and have underground nests that can burrow complex tunnels. Ants have armor and are equipped with razor sharp mandibles, capable of ripping and tearing flesh with ease, and can carry many times their own weight.
 for people now, we have a hard time dealing with them and it poses a serious problem , as some ant colonies have viscious venom that can kill you in minutes.
+
+///////////////////////
+2/10/23
+
+After smashing my head against a wall for a few hours figuring out git, i managed to fix my stuff and move on
+i added a proper offset for world sections so that everything stays consistent with area, so you can have chunks in other places other than 0,0
+im thinking of a way to store the world bits. I figure i create a region class that operates something like minecrap but is a bit larger. Its easier to store data in single files than many files. lets do some opportunistic math. lets say that an entity can contain, idk, about 250 bytes. Not much. now, we can have 4 entities per tile, not including mobs.
+our world class that holds chunks of the world is 21k bytes, and we can opportunistically store 17 layers of stuff on top of each tile
+each layer is 64 x64, so thats 4096. 17 layers means 4096*17=69,632 tiles, and that times 4 entities is 278k entities. times 250 is almost 70M. this accounts for almost everything, with 70MB being the max you can get to really, unless you have some crazy stuff for entities.
+This mandates the idea of an entity class, that handles static values within each area. ideally, we would also be able to write lua scripts and bind them to these entities, so we can move them, send signals, and all that.
+
+whatever, each entity should really only use json data as needed for basic things like resistances or extra health bars anyways- actually what could it be used for? well i bet...  hmm.. im not sure yet but my gut tells me it will be important soon
+
+////////////////////////
+2-12-23
+
+I spent all of yesterday and part of today thinking about files and how to store data. I think i have it figured out, hopefully this black box of file manipulation is not as bad as i theorize. As long as i can think of my maps as pure data, 8 bits wide in each payload, i believe this will be totally ok. Unless there is a horrendous process for expanding files and im not thinking on my feet well enough, well, im not sure what to think.
+Thinking about how much data ill be able to fit into my files however is alarming. If i abstract the entire world into 6MB areas that could in theory hold entire cities, that would be amazing. The complicated parts come with entities and how many may exist in a level. Luckily we will be able to compress this, which actually, now that i think of it, that 6MB for a region could be much smaller, in the kilobytes. that would be incredible, seeing how easy it would be to have someone run a server on a 100/10 connection, the most common internet speed in the entire country. I think the lists of entities could be exhaustive, and create large areas of the world where entites easily occupy more data than an entire region. For now, mods wont be here- we will have a way to define new objects, but storing them is important and we must make certain that our entity files are not too large. Entities are blocks and mobs, remember.
+We are off to a good start.
