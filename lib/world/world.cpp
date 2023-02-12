@@ -40,7 +40,7 @@ void WORLD::generate(){
     saturationmap.generate();
     LOCATION tLoc = location;
     int i = 0;
-    for(CAVE c : caves){
+    for(CAVE &c : caves){
         std::printf("CAVE %i:\n", i);
         tLoc.setY(i);
         if (!c.isInitialized()){
@@ -49,14 +49,12 @@ void WORLD::generate(){
         if (!c.isGenerated()){
             c.generate();
         }
-        c.out();
-        std::cout << std::endl;
         i++;
     }
     generated = true;
 }
 
-std::array<CAVE, 16>* WORLD::getCaves() {
+std::array<CAVE, 12>* WORLD::getCaves() {
     return &caves;
 }
 
@@ -82,8 +80,4 @@ MAP* WORLD::getHeightmap() {
 
 MAP* WORLD::getSaturationmap() {
     return &saturationmap;
-}
-
-std::vector<ENTITY>* WORLD::getEntities() {
-    return &entities;
 }

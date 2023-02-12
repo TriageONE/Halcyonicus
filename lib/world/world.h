@@ -50,11 +50,20 @@ protected:
      */
     MAP saturationmap;
 
-    std::vector<ENTITY> entities {};
+    //Entities should not be stored within a world file. Entities saved should be stored in their own files present within a separate directory
+    //std::vector<ENTITY> entities {};
 
-    std::array<CAVE, 16> caves { CAVE() };
+    std::array<CAVE, 12> caves { CAVE() };
 
 public:
+
+    struct WORLDCOORD{
+        WORLDCOORD(int x, int y){
+            this->x = x;
+            this->y = y;
+        }
+        int x{}, y{};
+    };
 
     WORLD(std::string seed, LOCATION l){
         MD5 md5;
@@ -94,7 +103,7 @@ public:
     LOCATION getLocation();
     [[nodiscard]] bool isInitialized() const;
     [[nodiscard]] bool isGenerated() const;
-    std::array<CAVE, 16>* getCaves();
+    std::array<CAVE, 12>* getCaves();
     MAP* getClimatemap();
     MAP* getHeightmap();
     MAP* getSaturationmap();

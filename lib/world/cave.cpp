@@ -39,7 +39,7 @@ void CAVE::generate() {
 
             //As you descent deeper, where 0 is the deepest, you find that the cave expands and is larger than normal
             //At
-            float fLevel = (level/32);
+            float fLevel = staticL[level];
             double noise = perlin.octave2D_01((x + xo) * fLevel, (y + yo) * fLevel, 2) + rnoise;
 
 
