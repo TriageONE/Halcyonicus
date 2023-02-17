@@ -56,14 +56,22 @@ class REGION{
      *      if we store all the maps, we make a 6MB file, out of maps alone. This can be compressed of course.
      */
 
-    /**
+    /** DEPRECATED:
      * First 32 bytes dedicated to if a chunk is loaded or not  START 0 END 31
      * next 1024 bytes for timestamps, 4 bytes X 256 shards     START 32 END 1055
      * next 256 bytes dedicated to the hashes for each chunk    START 1056 end 1311
-     * after this, we start with the array of shards.           START 1312 EVERY (19456)..*256
-     *      each shard is 19456 bytes long
+     * after this, we start with the array of shards.           START 1312 EVERY (15360)..*256
+     *      each shard is 15360 bytes long
      *      there will be 256 of these areas
      */
+
+    /** CURRENT:
+     * REVISED DATA PACKING:
+     *  From 0 to 31 bytes reserved for isExists() of chunks,
+     *  From byte 32 to 287 listed as hashes for each chunk
+     *  from byte 288 to 1311 reserved for timestamps of all chunks
+     *  from byte 1312 to onward, for a repeat of 15360 per next iteration, in order list the chunks at starting array place of 0 to final array place of 255
+    */
 
     /**
      * Writes to disk the world at this area, to a region file present on disk. If the region is not present, it will
@@ -115,6 +123,20 @@ class REGION{
     static int findChunkArrayOffset(LOCATION chunkLocation);
 
     static void setChunkExists(int arrayOffset, std::fstream* fstream);
+    static bool chunkExists(int arrayOffset, std::fstream *fstream);
+
+
+    char8_t getHash(int arrayOffset, std::fstream *fstream);
+
+    char8_t setHash(int arrayOffset, std::fstream *fstream, char data);
+
+    int getTimestamp(int arrayOffset, std::fstream *fstream);
+
+    void setTimestamp(int arrayOffset, std::fstream *fstream, int timestamp);
+
+    void getWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
+
+    void setWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
 };
 
 #endif //HALCYONICUS_REGION_H

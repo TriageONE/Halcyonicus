@@ -3,6 +3,7 @@
 //
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include "region.h"
 
 bool REGION::writeChunk(WORLD world) {
@@ -80,6 +81,7 @@ REGION::REGIONCOORD REGION::parseFnameToRegioncoord(const std::string& fname) {
         ss.clear();
     } catch (std::exception &e) {
         std::cerr << "FILEPARSE CONVENTION ERROR: " << e.what() << std::endl;
+        return {0,0};
     }
     return {x, y};
 }
@@ -117,7 +119,7 @@ void REGION::setChunkExists(int arrayOffset, std::fstream *fstream) {
     //define a char to be refrenced later and written to by the reader, then read from by the writer
     char data;
 
-    unsigned int writePoint = 32 + (arrayOffset / 8);
+    unsigned int writePoint = (arrayOffset / 8);
     fstream->seekg( writePoint ); // If we just divide the array position by the length of the data, we can get exactly the offset needed to read, plus 32 for the start of the data
     fstream->seekp( writePoint ); // Same for put position, we will be writing to the same spot
     fstream->read(&data, 1);
@@ -135,10 +137,177 @@ void REGION::setChunkExists(int arrayOffset, std::fstream *fstream) {
 
 }
 
-//Set the existence table with a bit that lets us know that the chunk at this place exists
+bool REGION::chunkExists(int arrayOffset, std::fstream *fstream) {
+    std::streampos lastGetPoint = fstream->tellg();
+
+    //define a char to be refrenced later and written to by the reader, then read from by the writer
+    char data;
+
+    unsigned int readPoint = (arrayOffset / 8);
+
+    fstream->seekg( readPoint ); // If we just divide the array position by the length of the data, we can get exactly the offset needed to read, plus 32 for the start of the data
+    fstream->read(&data, 1);
+    fstream->seekg( lastGetPoint );
+
+    // Should read as:
+    //    If the bit at the position is a 1, then return true. Evaluation to anything other than 0 is true.
+    return (data & (1 << (arrayOffset % 8))) != 0;
+}
+
+char8_t REGION::getHash(int arrayOffset, std::fstream *fstream) {
+    std::streampos lastGetPoint = fstream->tellg();
+
+    //define a char to be refrenced later and written to by the reader, then read from by the writer
+    char data;
+
+    fstream->seekg( arrayOffset + 32 );
+    fstream->read(&data, 1);
+    fstream->seekg( lastGetPoint );
+
+    // Should read as:
+    //    If the bit at the position is a 1, then return true. Evaluation to anything other than 0 is true.
+    return data;
+}
+
+char8_t REGION::setHash(int arrayOffset, std::fstream *fstream, char data) {
+    std::streampos lastPutPoint = fstream->tellp();
+
+    //define a char to be refrenced later and written to by the reader, then read from by the writer
+
+    fstream->seekp( arrayOffset + 32 );
+    fstream->write(&data, 1);
+    fstream->seekp(lastPutPoint );
+
+    // Should read as:
+    //    If the bit at the position is a 1, then return true. Evaluation to anything other than 0 is true.
+    return data;
+}
+
+int REGION::getTimestamp(int arrayOffset, std::fstream *fstream) {
+    char data[4] {};
+
+    std::streampos lastGetPoint = fstream->tellg();
+
+    fstream->seekg( (arrayOffset * 4) + 288 );
+    fstream->read(data, 4);
+    fstream->seekg( lastGetPoint );
+
+    return *(int*) data; //Dangerous typecast to integer. Maybe this wont work? i guess if we do this the exact same way on write then it doesnt matter right
+    // I tested in a scratch file and it seems that this wants to work. Only thing we need to be certain of is the data length.
+
+}
 
 
+void REGION::setTimestamp(int arrayOffset, std::fstream *fstream, int timestamp) {
+    char data[4] {};
+    ::memcpy(data,&timestamp,4);
 
+    std::streampos lastPutPoint = fstream->tellp();
 
+    fstream->seekp( (arrayOffset * 4) + 288 );
+    fstream->write(data, 4);
+    fstream->seekp( lastPutPoint );
+}
 
+// Emplaces world data found from the file stream provided onto the refrence world object.
+void REGION::getWorldData(int arrayOffset, std::fstream *fstream, WORLD *world){
 
+    std::streampos lastGetPoint = fstream->tellg();
+
+    char data[1024] {};
+
+    fstream->seekg( (arrayOffset * 15360) + 1312 );
+    fstream->read(data, 1024);
+
+    //We now have the first map, the climate map
+    MAP* currentMap = world->getClimatemap();
+    int i = 0;
+    for (char d : data){
+        currentMap->setRaw(i,d);
+        i++;
+    }
+
+    // Next the heightmap
+    fstream->read(data, 1024);
+    currentMap = world->getHeightmap();
+    i = 0;
+    for (char d : data){
+        currentMap->setRaw(i,d);
+        i++;
+    }
+
+    // Finally the saturation map
+    fstream->read(data, 1024);
+    currentMap = world->getSaturationmap();
+    i = 0;
+    for (char d : data){
+        currentMap->setRaw(i,d);
+        i++;
+    }
+
+    // Commence reading each cave and emplacing data onto each
+    std::array<CAVE, 12>* caves = world->getCaves();
+
+    for (CAVE cave : *caves){
+        fstream->read(data, 1024);
+        i = 0;
+        for (char d : data){
+            cave.setRaw(i,d);
+            i++;
+        }
+    }
+
+    fstream->seekg( lastGetPoint );
+
+}
+
+void REGION::setWorldData(int arrayOffset, std::fstream *fstream, WORLD *world) {
+    std::streampos lastGetPoint = fstream->tellp();
+
+    char data[1024] {};
+
+    fstream->seekp( (arrayOffset * 15360) + 1312 );
+
+    //We now have the first map, the climate map
+    MAP* currentMap = world->getClimatemap();
+    int i = 0;
+    for (char8_t d : data){
+        d = currentMap->getRaw(i);
+        i++;
+    }
+    fstream->write(data, 1024);
+
+    // Next the heightmap
+    currentMap = world->getHeightmap();
+    i = 0;
+    for (char8_t d : data){
+        d = currentMap->getRaw(i);
+        i++;
+    }
+    fstream->write(data, 1024);
+
+    // Finally the saturation map
+    currentMap = world->getSaturationmap();
+    i = 0;
+    for (char8_t d : data){
+        d = currentMap->getRaw(i);
+        i++;
+    }
+    fstream->write(data, 1024);
+
+    // Commence reading each cave and emplacing data onto each
+    std::array<CAVE, 12>* caves = world->getCaves();
+
+    for (CAVE cave : *caves){
+        i = 0;
+        for (char8_t d : data){
+            d = cave.getRaw(i);
+            i++;
+        }
+
+        fstream->write(data, 1024);
+
+    }
+
+    fstream->seekg( lastGetPoint );
+}
