@@ -78,3 +78,43 @@ whatever, each entity should really only use json data as needed for basic thing
 I spent all of yesterday and part of today thinking about files and how to store data. I think i have it figured out, hopefully this black box of file manipulation is not as bad as i theorize. As long as i can think of my maps as pure data, 8 bits wide in each payload, i believe this will be totally ok. Unless there is a horrendous process for expanding files and im not thinking on my feet well enough, well, im not sure what to think.
 Thinking about how much data ill be able to fit into my files however is alarming. If i abstract the entire world into 6MB areas that could in theory hold entire cities, that would be amazing. The complicated parts come with entities and how many may exist in a level. Luckily we will be able to compress this, which actually, now that i think of it, that 6MB for a region could be much smaller, in the kilobytes. that would be incredible, seeing how easy it would be to have someone run a server on a 100/10 connection, the most common internet speed in the entire country. I think the lists of entities could be exhaustive, and create large areas of the world where entites easily occupy more data than an entire region. For now, mods wont be here- we will have a way to define new objects, but storing them is important and we must make certain that our entity files are not too large. Entities are blocks and mobs, remember.
 We are off to a good start.
+
+////////////////////////
+Morning of 2-13-23
+
+I dont want to do any thinking on the train before i get into work. Seems like a whole lot of thinking.
+I do however want to write, thats relaxing enough as the morning sun shines on my face riding at 80 mph towards chicago.
+
+Have you ever thoguht of thi sproject out of your personal context? From a third person perspective this could be seen as a genesis project, one story of many that may be boring at first and mundane, but after the project concludes and people have nostalgic thoughts and reasons to think fondly upon this creation, they may have a glimpse of the feels that i experience here, right now, riding the train to work writing this.
+I imagine one day ill eventually finish, and what ill make is something truly cutting edge, something that can scale properly and has the best of everything within.
+A great leader truly was part of the community, and does it because he loves his people, not because he loves ruling over them. With hard times comes one that cares, he who is strong of heart and soul. They will listen and learn from the people that they govern, and so for a better life, they will do everything they can to work together. The leader rules out of passion rather than gain, and a project they could throw away at a moments notice is nothing more than a drop in a bucket of a massive project that exceeds the size of the world. Fail once, and feel the consequential nature of nothing, and fail 50 times more only to feel the same. All you need is one, do not let it delay you. Nobody choses their day, and so all you can do is wait.
+
+////////////////////////
+Morning of 2-15-23
+
+Need some help thinking about what i need to do next. Rubber ducky programming
+So far i have a way to get region coordinates to and from convention, and check if a region exists or not
+I then made a way to start writing chunks, but was immediately disrupted because the question arose "How do i know if a chunk already exists or not in our file" followed by the question of "how can i mark a chunk as exists in our database".
+I built 2 functions that when fed a file stream, it immediately tells me if a chunk exists or not, and another when fed an array place, finds if that chunk exists or not.
+Actually scratch that, i did not make a reader only function, i need that next.
+Ok i made it, it was easy since i already had most of the code
+Now we know when chunks exist, when they dont, can set them to exists, and so forth.
+Before we work with the chunks themselves, we must work with the hashes and timestamps.
+
+Setting and getting hashes seems to be fine now, now lets duplicate that for timestamps
+also we need a way to shove integers reliably into chars. We can use the below to figure this out:
+
+    From an int, to a char:
+
+        int i = 9082130;
+        char data[4];
+        ::memcpy(data,&i,4);
+
+        we can shove the char array back into whatever we want, its stored and away.
+
+    From a char[4] to int:
+
+        int x = *(int*) data;
+
+    Outputting i to console and x both should give the exact same value. If they dont the world ends
+
