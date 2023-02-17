@@ -415,6 +415,16 @@ void MAP::init(std::string s, LOCATION location) {
     setLocation(location);
 }
 
+char8_t MAP::getRaw(int place) {
+    std::clamp(place, 0, 1023);
+    return map[place];
+}
+
+void MAP::setRaw(int place, char8_t value) {
+    std::clamp(place, 0, 1023);
+    map[place] = value;
+}
+
 
 
 

@@ -39,11 +39,14 @@ public:
     void out();
 
     //God says unto 0:2:4 : "And so we shall let the user poke and prod, as they know what is best and why. With only their intelligence required, the power is theirs to have"
-    std::array<char8_t, 1024> copy_map();
-    void set_heightmap(std::array<char8_t, 1024> new_map);
+    std::array<char8_t, 1024>  copy_map();
+    void set_heightmap(std::array<char8_t, 1024>  new_map);
 
     char8_t pick(int place);
     void pack(int place, char8_t value);
+
+    char8_t getRaw(int place);
+    void setRaw(int place, char8_t value);
 
     //////////////////////////////
     // Generator info section
