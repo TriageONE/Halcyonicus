@@ -107,7 +107,6 @@ public:
     MAP* getClimatemap();
     MAP* getHeightmap();
     MAP* getSaturationmap();
-    std::vector<ENTITY>* getEntities();
 
 };
 
