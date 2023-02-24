@@ -118,3 +118,9 @@ also we need a way to shove integers reliably into chars. We can use the below t
 
     Outputting i to console and x both should give the exact same value. If they dont the world ends
 
+////////////////////////
+02-17-2023
+
+Ok I have a way to write all the fields within the world file. Good.
+Now we can make the meta functions.
+
