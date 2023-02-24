@@ -402,17 +402,17 @@ bool MAP::isGenerated() const {
     return generated;
 }
 
-void MAP::setLocation(LOCATION location) {
-    this->l = location;
+void MAP::setLocation(WORLDCOORD worldcoord) {
+    this->l = worldcoord;
 }
 
-LOCATION MAP::getLocation() const{
+WORLDCOORD MAP::getWorldCoord() const {
     return this->l;
 }
 
-void MAP::init(std::string s, LOCATION location) {
+void MAP::init(std::string s, WORLDCOORD worldcoord) {
     setSeed(std::move(s));
-    setLocation(location);
+    setLocation(worldcoord);
 }
 
 char8_t MAP::getRaw(int place) {
@@ -425,12 +425,21 @@ void MAP::setRaw(int place, char8_t value) {
     map[place] = value;
 }
 
+int MAP::getHash() {
+    MD5 md5;
+    std::string hash = md5(&map, 1024);
+    char topHash[4];
+    int out;
 
+    for (int i = 0; i < 4; i++ ){
+        topHash[i] = hash[i];
+    }
+    ::memcpy(&out, &topHash, 4);
+    return out;
+}
 
-
-
-
-
-
-
-
+std::string MAP::getRawHash() {
+    MD5 md5;
+    std::string hash = md5(&map, 1024);
+    return hash.substr(0,4);
+}

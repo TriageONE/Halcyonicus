@@ -7,7 +7,7 @@
 
 #include <array>
 #include <string>
-#include "location.h"
+#include "worldcoord.h"
 
 /**
 * 0:0, In the beginning, god said, let there be a platform, nothing more. All is up for interpretation, interpolation, and subjection;
@@ -15,13 +15,14 @@
 * It shall describe the universe as we see it, and contain secrets unknown.
 */
 class MAP{
+
 protected:
     std::array<char8_t, 1024> map {0};
     int size = sizeof(map) / sizeof(map[0]);
     float vBias=0, scalar=0.02, roughness=0;
     float w0=1, w1=1, w2=1, w3=1;
     std::string seed{};
-    LOCATION l{};
+    WORLDCOORD l{};
     bool generated=false, initialized=false;
 public:
     explicit MAP() = default;
@@ -53,7 +54,7 @@ public:
 
     // Setters
     void setSeed(std::string seed);
-    void setLocation(LOCATION location);
+    void setLocation(WORLDCOORD worldcoord);
     void setVBias(float vBias);
     void setScalar(float scalar);
     void setRoughness(float roughness);
@@ -65,7 +66,7 @@ public:
 
     //Getters
     [[nodiscard]] std::string getSeed() const;
-    [[nodiscard]] LOCATION getLocation() const; //This is intrinsic to the region format and may be removed,
+    [[nodiscard]] WORLDCOORD getWorldCoord() const; //This is intrinsic to the region format and may be removed,
     [[nodiscard]] float getVBias() const;
     [[nodiscard]] float getScalar() const;
     [[nodiscard]] float getRoughness() const;
@@ -79,7 +80,10 @@ public:
     void generate();
     [[nodiscard]] bool isInitialized() const;
     [[nodiscard]] bool isGenerated() const;
-    void init(std::string seed, LOCATION location);
+    void init(std::string seed, WORLDCOORD worldcoord);
+    int getHash();
+
+    std::string getRawHash();
 };
 
 
