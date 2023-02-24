@@ -4,45 +4,27 @@
 
 #ifndef HALCYONICUS_LOCATION_H
 #define HALCYONICUS_LOCATION_H
-/**
- * A class dedicated to representing locations across the world, with translations to other locations present to ease finding relative coords
- * and other important bits of data. This is to be used for deciding where certain world tiles exist
- */
-class LOCATION{
 
-    //Canon coordinates are explicity zero based coordinates that respect the actuality of the real world
-    int canonX{}, canonY{}, canonZ{};
-    bool initialized = false;
+#include "coordinate.h"
+#include "worldcoord.h"
+#include "region.h"
+#include "regioncoord.h"
+
+/**
+ * A class dedicated to representing actual single tile locations around the world. They have a height, x, and z. Y levels
+ * correspond to cave layers and skyheight layers in the top layer of the world.
+ * To refer to world shards, that would be the WORLDCOORD class
+ * To refer to collections of world shards, that would be the REGIONCOORD class
+ *
+ * */
+class LOCATION : COORDINATE{
 
 public:
 
-    LOCATION()=default;
-
-    [[maybe_unused]] LOCATION(int x, int y, int z) {
-        this->canonX = x;
-        this->canonY = y;
-        this->canonZ = z;
-        this->initialized = true;
-    }
-
-    //Getters
-    [[nodiscard]] int getX() const { return canonX; }
-    [[nodiscard]] int getY() const { return canonY; }
-    [[nodiscard]] int getZ() const { return canonZ; }
-
-    //Askers
-    [[nodiscard]] bool isInitialized() const { return initialized; }
-
-    //Setters
-    void setX(int x){ this->canonX = x; }
-    void setY(int y){ this->canonY = y; }
-    void setZ(int z){ this->canonZ = z; }
-
-    void set(int x, int y, int z){
-        this->canonX = x;
-        this->canonY = y;
-        this->canonZ = z;
-        this->initialized=true;
+    LOCATION(int x, int y, int z) : COORDINATE(x, y, z)  {
+        this->x = x;
+        this->y = y;
+        this->z = z;
     }
 
     struct RELATIVE{
@@ -53,11 +35,24 @@ public:
         }
     };
 
-    //Transmogrifiers
     [[nodiscard]] RELATIVE getRelativeCoordinates() const{
-        return {this->canonX % 64,this->canonY % 64 };
+        return {this->x & 63,this->y & 63 };
     }
 
+    //We need a way to get what world shard this is in
+    [[nodiscard]] WORLDCOORD getWorldCoord() {
+        int x2 = this->x >> 5;
+        int y2 = this->y >> 5;
+        int z2 = this->z >> 5;
+        return {x2,y2,z2};
+    }
+
+    //We need a way to get what region this is in
+    [[nodiscard]] REGIONCOORD getRegionCoord(){
+        int x2 = this->x >> 7;
+        int z2 = this->z >> 7;
+        return {x2,z2};
+    }
 
 };
 
