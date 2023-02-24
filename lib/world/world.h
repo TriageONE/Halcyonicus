@@ -7,15 +7,17 @@
 #include "../hash/md5.h"
 #include "../entity/entity.h"
 #include "cave.h"
+#include "worldcoord.h"
 
 #ifndef HALCYONICUS_WORLD_H
 #define HALCYONICUS_WORLD_H
+
 
 class WORLD {
 protected:
 
     std::string seed;
-    LOCATION location;
+    WORLDCOORD worldcoord;
     bool initialized = false, generated = true;
 /**
      * 1:1, Thus a new area of the world internal was to be made, a space dedicated to telling climate data about how warm or cold an area was to be.
@@ -57,23 +59,15 @@ protected:
 
 public:
 
-    struct WORLDCOORD{
-        WORLDCOORD(int x, int y){
-            this->x = x;
-            this->y = y;
-        }
-        int x{}, y{};
-    };
-
-    WORLD(std::string seed, LOCATION l){
+    WORLD(std::string seed, WORLDCOORD w){
         MD5 md5;
         this->seed = seed;
-        heightmap.init(seed,l);
+        heightmap.init(seed,w);
         std::string s1 = md5(&seed, 8);
-        climatemap.init(s1,l);
+        climatemap.init(s1,w);
         std::string s2 = md5(&s1, 8);
-        saturationmap.init(s2,l);
-        this->location = l;
+        saturationmap.init(s2,w);
+        this->worldcoord = w;
         this->initialized = true;
     }
 
@@ -100,7 +94,7 @@ public:
     //////////////
     //Getters
 
-    LOCATION getLocation();
+    WORLDCOORD getLocation();
     [[nodiscard]] bool isInitialized() const;
     [[nodiscard]] bool isGenerated() const;
     std::array<CAVE, 12>* getCaves();
@@ -108,6 +102,9 @@ public:
     MAP* getHeightmap();
     MAP* getSaturationmap();
 
+    int getHash();
+
+    std::string getRawHash();
 };
 
 #endif //HALCYONICUS_WORLD_H

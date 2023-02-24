@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <sstream>
 #include "world.h"
 #include "../hash/md5.h"
 
@@ -38,13 +39,11 @@ void WORLD::generate(){
     heightmap.generate();
     climatemap.generate();
     saturationmap.generate();
-    LOCATION tLoc = location;
     int i = 0;
     for(CAVE &c : caves){
         std::printf("CAVE %i:\n", i);
-        tLoc.setY(i);
         if (!c.isInitialized()){
-            c.init(seed, i);
+            c.init(seed, i, worldcoord);
         }
         if (!c.isGenerated()){
             c.generate();
@@ -58,8 +57,8 @@ std::array<CAVE, 12>* WORLD::getCaves() {
     return &caves;
 }
 
-LOCATION WORLD::getLocation() {
-    return this->location;
+WORLDCOORD WORLD::getLocation() {
+    return this->worldcoord;
 }
 
 bool WORLD::isGenerated() const {
@@ -80,4 +79,45 @@ MAP* WORLD::getHeightmap() {
 
 MAP* WORLD::getSaturationmap() {
     return &saturationmap;
+}
+
+int WORLD::getHash() {
+    std::stringstream ss("");
+    ss << heightmap.getRawHash();
+    ss << climatemap.getRawHash();
+    ss << saturationmap.getRawHash();
+
+    std::array<CAVE, 12>* pArray = getCaves();
+    for (CAVE c : *pArray){
+        ss << c.getRawHash();
+    }
+
+    MD5 md5;
+    std::string str = md5(ss.str());
+    int out;
+    char topHash[4];
+
+    for (int i = 0; i < 4; i++ ){
+        topHash[i] = str[i];
+    }
+    ::memcpy(&out, &topHash, 4);
+
+    return out;
+}
+
+std::string WORLD::getRawHash() {
+    std::stringstream ss("");
+    ss << heightmap.getRawHash();
+    ss << climatemap.getRawHash();
+    ss << saturationmap.getRawHash();
+
+    std::array<CAVE, 12>* pArray = getCaves();
+    for (CAVE c : *pArray){
+        ss << c.getRawHash();
+    }
+
+    MD5 md5;
+    std::string str = md5(ss.str());
+
+    return str;
 }
