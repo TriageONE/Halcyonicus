@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] int getLevel() const;
     void generate() override;
-    void init(std::string seed, int l);
+    void init(std::string seed, int l, WORLDCOORD worldcoord);
 };
 
 #endif //HALCYONICUS_CAVE_H

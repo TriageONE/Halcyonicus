@@ -4,7 +4,6 @@
 
 #include "cave.h"
 #include <bit>
-#include <utility>
 #include "../hash/md5.h"
 #include "../noise/perlin.h"
 
@@ -21,7 +20,7 @@ void CAVE::generate() {
     const siv::PerlinNoise::seed_type pseed = s1;
     const siv::PerlinNoise perlin{ pseed };
     int xo, yo;
-    LOCATION l = getLocation();
+    WORLDCOORD l = getWorldCoord();
     xo = (l.getX() * 64);
     yo = (l.getY() * 64);
     char8_t final = 0;
@@ -89,7 +88,8 @@ int CAVE::getLevel() const {
     return this->level;
 }
 
-void CAVE::init(std::string seed, int l) {
-    this->level = l;
+void CAVE::init(std::string seed, int lvl, WORLDCOORD worldcoord) {
+    this->level = lvl;
     this->seed = std::move(seed);
+    this->l = worldcoord;
 }
