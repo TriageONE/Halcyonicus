@@ -6,19 +6,15 @@
 #define HALCYONICUS_REGION_H
 
 #include "world.h"
+#include "regioncoord.h"
 
 /**
  * Responsible for holding many bits of the world and all of their data, so that all of it can be saved on disk and read from freely
  *
  */
 class REGION{
-    struct REGIONCOORD{
-        int x, y;
-        REGIONCOORD(int x, int y){
-            this->x = x;
-            this->y = y;
-        }
-    };
+
+public:
     /**
      * The region object should have the ability to load and unload 16x16 plot of world chunks in a single file.
      * ideally, we have all the chunks loaded but this is not always possible. Almost all of the time, players will only
@@ -68,9 +64,9 @@ class REGION{
     /** CURRENT:
      * REVISED DATA PACKING:
      *  From 0 to 31 bytes reserved for isExists() of chunks,
-     *  From byte 32 to 287 listed as hashes for each chunk
-     *  from byte 288 to 1311 reserved for timestamps of all chunks
-     *  from byte 1312 to onward, for a repeat of 15360 per next iteration, in order list the chunks at starting array place of 0 to final array place of 255
+     *  From byte 32 to 1055 listed as hashes for each chunk
+     *  from byte 1056 to 2079 reserved for timestamps of all chunks
+     *  from byte 2080 to onward, for a repeat of 15360 per next iteration, in order list the chunks at starting array place of 0 to final array place of 255
     */
 
     /**
@@ -89,54 +85,47 @@ class REGION{
      * @param worldcoord The worldcoord to read
      * @return The world if any that occupies that worldcoord
      */
-    static WORLD readChunk(WORLD::WORLDCOORD worldcoord);
+    static void readChunk(WORLDCOORD worldcoord);
 
     /**
      * Checks if a partition of the world is loaded or not on disk
      * @param worldcoord The worldcoord to check
      * @return true if the area exists, false if not
      */
-    static bool worldExists(WORLD::WORLDCOORD worldcoord);
+    static bool worldExists(WORLDCOORD worldcoord);
 
-    /**
-     * Writes to disk the world at this area, to a region file present on disk. If the region is not present, it will
-     * create another region file and write it to that.
-     * Adds all included world shards to a scanner queue to dynamically dispatch workers to handle world saving on an interval async
-     * @param worlds
-     */
-    static void writeChunks(std::vector<WORLD> worlds);
-
-    /**
-     * Reads many chunks at once and returns a vector of them all. Opportunistically reads as fast as possible and blocks
-     * until all chunks are returned.
-     * @param worldcoords
-     * @return
-     */
-    static std::vector<WORLD> readChunks(std::vector<WORLD::WORLDCOORD> worldcoords);
 
     ///////////////////////////
 
     static bool regionExists(REGIONCOORD regioncoord);
-    static std::string parseRegioncoordToFname(REGION::REGIONCOORD regioncoord);
-    static REGION::REGIONCOORD parseFnameToRegioncoord(const std::string& fname);
-    static REGION::REGIONCOORD findRegioncoordFromWorldShard(WORLD *world);
-    static int findChunkArrayOffset(LOCATION chunkLocation);
+    static std::string parseRegioncoordToFname(REGIONCOORD regioncoord);
+    static REGIONCOORD parseFnameToRegioncoord(const std::string& fname);
+    static REGIONCOORD findRegioncoordFromWorldShard(WORLD *world);
+    static int findChunkArrayOffset(WORLDCOORD chunkLocation);
 
     static void setChunkExists(int arrayOffset, std::fstream* fstream);
-    static bool chunkExists(int arrayOffset, std::fstream *fstream);
+
+    //The function returns an int to show if it exists or not, so we can use this as the value returned
+    static char chunkExists(int arrayOffset, std::fstream *fstream);
 
 
-    char8_t getHash(int arrayOffset, std::fstream *fstream);
+    static int getHash(int arrayOffset, std::fstream *fstream);
 
-    char8_t setHash(int arrayOffset, std::fstream *fstream, char data);
+    static void setHash(int arrayOffset, std::fstream *fstream, int data);
 
-    int getTimestamp(int arrayOffset, std::fstream *fstream);
+    static int getTimestamp(int arrayOffset, std::fstream *fstream);
 
-    void setTimestamp(int arrayOffset, std::fstream *fstream, int timestamp);
+    static void setTimestamp(int arrayOffset, std::fstream *fstream, int timestamp);
 
-    void getWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
+    static void readWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
 
-    void setWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
+    static void writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
+
+    void readChunk(WORLDCOORD worldcoord, WORLD *world);
+
+    static bool writeChunk(WORLD *world);
+
+    static bool readChunk(WORLD *world);
 };
 
 #endif //HALCYONICUS_REGION_H
