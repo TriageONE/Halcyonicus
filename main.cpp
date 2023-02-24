@@ -17,8 +17,8 @@ int main() {
         setvbuf(stdout, nullptr, _IOFBF, 2000);
     #endif
 
-    LOCATION l = LOCATION(0,0,0);
-    WORLD w = WORLD("lole", l);
+    WORLDCOORD wc = WORLDCOORD(0,0,0);
+    WORLD w = WORLD("lole", wc);
     w.constrain();
     MAP *h = w.getHeightmap();
     //today i learned the diff between -> and .
