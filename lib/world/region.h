@@ -126,6 +126,12 @@ public:
     static bool writeChunk(WORLD *world);
 
     static bool readChunk(WORLD *world);
+
+    static void createEmptyWorld(const std::string& path);
+
+    static std::string prependWorldDir(const std::string& in);
+
+    static bool createDirectories();
 };
 
 #endif //HALCYONICUS_REGION_H

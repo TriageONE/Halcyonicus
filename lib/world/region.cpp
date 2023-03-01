@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <ctime>
+#include <sys/stat.h>
 #include "region.h"
 #include "regioncoord.h"
 
@@ -16,12 +17,12 @@ bool REGION::writeChunk(WORLD* world) {
     //find the name of the file
     REGIONCOORD regioncoord = findRegioncoordFromWorldShard(world);
     //Parse it to a filename
-    std::stringstream filename;
-    filename << "./world/" << parseRegioncoordToFname(regioncoord);
+
+    std::filesystem::path path = prependWorldDir(parseRegioncoordToFname(regioncoord));
 
     int arrayOffset = findChunkArrayOffset(world->getLocation());
 
-    regionFile.open(filename.str());
+    regionFile.open(path);
     if (!(regionFile)) return false;
 
     //We just attempted to open it. If its open, we can start writing.
@@ -58,12 +59,12 @@ bool REGION::readChunk(WORLD* world) {
     //find the name of the file
     REGIONCOORD regioncoord = findRegioncoordFromWorldShard(world);
     //Parse it to a filename
-    std::stringstream filename;
-    filename << "./world/" << parseRegioncoordToFname(regioncoord);
+    std::filesystem::path path = prependWorldDir(parseRegioncoordToFname(regioncoord));
+
 
     int arrayOffset = findChunkArrayOffset(world->getLocation());
 
-    regionFile.open(filename.str());
+    regionFile.open(path);
     if (!(regionFile)) return false;
     //We just attempted to open it. If its open, we can start writing.
     if(regionFile.is_open()){
@@ -81,22 +82,52 @@ bool REGION::readChunk(WORLD* world) {
 
 }
 
+/////////////////////
+/// File operations
+
+/**
+ * Creates the directories that are used to hold worlds, entities and other things. Will not change current contents but may be appended to in the future. comes with checks
+ */
+bool REGION::createDirectories(){
+    const std::string[4] dirs{"./world/", "./world/entities/", "./world/players/", "./world/data"};
+    struct stat s{};
+    bool completed = true;
+    for (const std::string& str : dirs){
+        stat(str.c_str(), &s);
+        if (!S_ISDIR(s.st_mode)){
+            //Create a directory for the world that is readable and writable for us but not others
+            int dErr = mkdir(str.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            if (dErr == 0) continue;
+            std::cerr << "FILEOPS ERROR, CLASS REGION_INIT; \"" << str << "\" Directory creation failed, mkdir error returned \'" << dErr << "\'";
+            completed = false;
+        }
+    }
+    return completed;
+}
+
+// TODO: Finish after the function to prime the world dir
+void REGION::createEmptyWorld(const std::string& path){
+    //In order to prime the file for storage, we should initially create a new file with the name and nothing in it
+    std::fstream file;
+    file.open(path);
+
+
+}
+
 bool REGION::worldExists(WORLDCOORD worldcoord) {
     //A region coordinate indicates an entire region, however a worldcoord indicates a region within that, and that was represented by an existence table
     //Find the region file first
     std::fstream regionFile;
     REGIONCOORD regioncoord = worldcoord.getRegionCoordinates();
     //Parse it to a filename
-    std::stringstream filename;
-    filename << "./world/" << parseRegioncoordToFname(regioncoord);
+    std::filesystem::path path = prependWorldDir(parseRegioncoordToFname(regioncoord));
 
     int arrayOffset = findChunkArrayOffset(worldcoord);
 
-    regionFile.open(filename.str());
+    regionFile.open(path);
     if (!(regionFile)) return false;
 
     return chunkExists(arrayOffset, &regionFile);
-
 }
 
 
@@ -110,6 +141,12 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
 
 ////////////////////////////////////
 /// File interpretation and parsing
+
+std::string REGION::prependWorldDir(const std::string& in) {
+    std::stringstream ss;
+    ss << "./world/" << in;
+    return ss.str();
+}
 
 std::string REGION::parseRegioncoordToFname(REGIONCOORD regioncoord) {
     std::stringstream name;
