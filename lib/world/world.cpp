@@ -4,57 +4,56 @@
 
 #include <iostream>
 #include <sstream>
+#include <utility>
 #include "world.h"
 #include "../hash/md5.h"
 
 std::string WORLD::getSeed() const {
-    return seed;
+    return this->seed;
 }
 void WORLD::constrain() {
 
     // The scalar of the climate should be zoomed in much more than the heightmap
-    climatemap.setScalar(heightmap.getScalar() / 6);
+    this->climatemap.setScalar(heightmap.getScalar() / 6);
     // The world should favor mild climates more than extremes
-    climatemap.setW0(2);
-    climatemap.setW1(3);
-    climatemap.setW2(3);
-    climatemap.setW3(2);
+    this->climatemap.setW0(2);
+    this->climatemap.setW1(3);
+    this->climatemap.setW2(3);
+    this->climatemap.setW3(2);
     // The world should have smooth transitions between climates and mildly warm climates should be slightly more prevalent
-    climatemap.setRoughness(0);
-    climatemap.setVBias(0.15);
+    this->climatemap.setRoughness(0);
+    this->climatemap.setVBias(0.15);
 
     // The world should have a saturation map that scales 4 times larger than the normal world map
-    saturationmap.setScalar(heightmap.getScalar() / 4);
+    this->saturationmap.setScalar(heightmap.getScalar() / 4);
     // The saturation map should favor less extreme amounts of water content
-    saturationmap.setW0(2);
-    saturationmap.setW1(3);
-    saturationmap.setW2(3);
-    saturationmap.setW3(2);
+    this->saturationmap.setW0(2);
+    this->saturationmap.setW1(3);
+    this->saturationmap.setW2(3);
+    this->saturationmap.setW3(2);
     // The world should have smooth transitions between saturation and mildly wet climates should be slightly more prevalent
-    saturationmap.setRoughness(0);
-    saturationmap.setVBias(0.15);
+    this->saturationmap.setRoughness(0);
+    this->saturationmap.setVBias(0.15);
 }
 
 void WORLD::generate(){
-    heightmap.generate();
-    climatemap.generate();
-    saturationmap.generate();
+    this->heightmap.generate();
+    this->climatemap.generate();
+    this->saturationmap.generate();
     int i = 0;
+
+    //NOTE: I fixed the generator and found that if i dont put an amprasand before the c in CAVE within the FOR, it creates its own objects and doesnt affect the member instance
+    // Im calling this a 'foreaffector' or fO(lre)-fecktor,
     for(CAVE &c : caves){
-        std::printf("CAVE %i:\n", i);
         if (!c.isInitialized()){
-            c.init(seed, i, worldcoord);
+            c.init(this->seed, i, this->worldcoord);
         }
         if (!c.isGenerated()){
             c.generate();
         }
         i++;
     }
-    generated = true;
-}
-
-std::array<CAVE, 12>* WORLD::getCaves() {
-    return &caves;
+    this->generated = true;
 }
 
 WORLDCOORD WORLD::getLocation() {
@@ -62,62 +61,39 @@ WORLDCOORD WORLD::getLocation() {
 }
 
 bool WORLD::isGenerated() const {
-    return generated;
+    return this->generated;
 }
 
 bool WORLD::isInitialized() const {
-    return initialized;
-}
-
-MAP* WORLD::getClimatemap() {
-    return &climatemap;
-}
-
-MAP* WORLD::getHeightmap() {
-    return &heightmap;
-}
-
-MAP* WORLD::getSaturationmap() {
-    return &saturationmap;
+    return this->initialized;
 }
 
 int WORLD::getHash() {
-    std::stringstream ss("");
-    ss << heightmap.getRawHash();
-    ss << climatemap.getRawHash();
-    ss << saturationmap.getRawHash();
+    MD5 md5;
 
-    std::array<CAVE, 12>* pArray = getCaves();
-    for (CAVE c : *pArray){
+    std::stringstream ss("");
+    ss << this->heightmap.getRawHash();
+    ss << this->climatemap.getRawHash();
+    ss << this->saturationmap.getRawHash();
+
+    for (CAVE c : caves){
         ss << c.getRawHash();
     }
 
-    MD5 md5;
-    std::string str = md5(ss.str());
-    int out;
-    char topHash[4];
+    std::string data = md5(ss.str().c_str(), ss.str().size()).substr(0,3);
 
-    for (int i = 0; i < 4; i++ ){
-        topHash[i] = str[i];
-    }
-    ::memcpy(&out, &topHash, 4);
-
-    return out;
+    return *(int*) data.c_str();
 }
 
 std::string WORLD::getRawHash() {
     std::stringstream ss("");
-    ss << heightmap.getRawHash();
-    ss << climatemap.getRawHash();
-    ss << saturationmap.getRawHash();
+    ss << this->heightmap.getRawHash();
+    ss << this->climatemap.getRawHash();
+    ss << this->saturationmap.getRawHash();
 
-    std::array<CAVE, 12>* pArray = getCaves();
-    for (CAVE c : *pArray){
+    for (CAVE c : caves){
         ss << c.getRawHash();
     }
 
-    MD5 md5;
-    std::string str = md5(ss.str());
-
-    return str;
+    return ss.str();
 }

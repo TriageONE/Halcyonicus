@@ -14,11 +14,13 @@
 
 
 class WORLD {
+
 protected:
 
     std::string seed;
     WORLDCOORD worldcoord;
     bool initialized = false, generated = true;
+public:
 /**
      * 1:1, Thus a new area of the world internal was to be made, a space dedicated to telling climate data about how warm or cold an area was to be.
      * This was to be represented on a scale the same as height, with little variation in the data alone. 4 states require 2 bits, for a total of 4096 areas, requiring 1024 bytes.
@@ -55,17 +57,31 @@ protected:
     //Entities should not be stored within a world file. Entities saved should be stored in their own files present within a separate directory
     //std::vector<ENTITY> entities {};
 
-    std::array<CAVE, 12> caves { CAVE() };
+    std::array<CAVE, 12> caves {};
 
-public:
+    WORLD(const std::string& seed, WORLDCOORD w){
 
-    WORLD(std::string seed, WORLDCOORD w){
-        MD5 md5;
         this->seed = seed;
+
+        std::string s1,s2;
+
+        s1 = seed;
+        s2 = seed;
+
+
+        for (int i = 0; i < seed.size(); i++){
+            char s1t = s1[i];
+            char s2t = s2[i];
+
+            s1t++;
+            s2t--;
+
+            s1[i] = s1t;
+            s2[i] = s2t;
+        }
+
         heightmap.init(seed,w);
-        std::string s1 = md5(&seed, 8);
         climatemap.init(s1,w);
-        std::string s2 = md5(&s1, 8);
         saturationmap.init(s2,w);
         this->worldcoord = w;
         this->initialized = true;
@@ -97,14 +113,11 @@ public:
     WORLDCOORD getLocation();
     [[nodiscard]] bool isInitialized() const;
     [[nodiscard]] bool isGenerated() const;
-    std::array<CAVE, 12>* getCaves();
-    MAP* getClimatemap();
-    MAP* getHeightmap();
-    MAP* getSaturationmap();
 
     int getHash();
 
     std::string getRawHash();
+
 };
 
 #endif //HALCYONICUS_WORLD_H
