@@ -17,7 +17,7 @@
 class MAP{
 
 protected:
-    std::array<char8_t, 1024> map {0};
+    std::array<char, 1024> map {0};
     int size = sizeof(map) / sizeof(map[0]);
     float vBias=0, scalar=0.02, roughness=0;
     float w0=1, w1=1, w2=1, w3=1;
@@ -28,26 +28,26 @@ public:
     explicit MAP() = default;
 
     //God says unto 0:2:5 : "Let there be a way for those who manipulate the map at a granular or programmable level to easily interface, as reinventing the wheel is pointless and wastes your time"
-    static char8_t compress(std::array<char8_t, 4>);
-    static std::array<char8_t, 4> uncompress(char8_t c);
+    static char compress(std::array<char, 4>);
+    static std::array<char, 4> uncompress(char c);
 
     //God says unto 0:2:2 : "Let there be a way for those such as yourself and your consort to work upon the map, as if it were a coordinate plane read like a book. We shall find the correct placement for you"
-    void set(char8_t h, int x, int y);
-    char8_t get(int x, int y);
+    void set(char h, int x, int y);
+    char get(int x, int y);
 
     //God says unto 0:2:3 : "Let there be a way for those to see, one way in memory, and another in a monofaregraph, so that we may understand the root of our product"
     void dump_map();
     void out();
 
     //God says unto 0:2:4 : "And so we shall let the user poke and prod, as they know what is best and why. With only their intelligence required, the power is theirs to have"
-    std::array<char8_t, 1024>  copy_map();
-    void set_heightmap(std::array<char8_t, 1024>  new_map);
+    std::array<char, 1024>  copy_map();
+    void set_heightmap(std::array<char, 1024>  new_map);
 
-    char8_t pick(int place);
-    void pack(int place, char8_t value);
+    char pick(int place);
+    void pack(int place, char value);
 
-    char8_t getRaw(int place);
-    void setRaw(int place, char8_t value);
+    char getRaw(int place);
+    void setRaw(int place, char value);
 
     //////////////////////////////
     // Generator info section

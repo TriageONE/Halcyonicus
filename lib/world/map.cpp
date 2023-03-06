@@ -53,7 +53,7 @@
  *  <br> |                       |
  *  <br> 0, 63 ------------ 63, 63 </pre>
  */
-void MAP::set(char8_t h, int x, int y) {
+void MAP::set(char h, int x, int y) {
     //And thus a safeguard was ensured, such that exiles shall not exceed ever the place of the master array
     x = std::clamp(x, 0, 63);
     y = std::clamp(y, 0, 63);
@@ -98,13 +98,13 @@ void MAP::set(char8_t h, int x, int y) {
 
  *
  */
-char8_t MAP::get(int x, int y) {
+char MAP::get(int x, int y) {
     //And thus a safeguard was ensured, such that exiles shall not exceed ever the place of the master array
     x = std::clamp(x, 0, 63);
     y = std::clamp(y, 0, 63);
     //Finally, a shift was used, as multiplication is not needed, as the optimizer is heresy and shall be ignored when possible.
     int place = x + (y << 6);
-    char8_t picked = pick(place);
+    char picked = pick(place);
     return picked;
 }
 
@@ -117,8 +117,8 @@ char8_t MAP::get(int x, int y) {
  * A function built to return a raw operable array of HEIGHTs. This is still encoded into its primal form, compacted, with each char representing 4 tiles at once.
  * @return a char array copied from the instantaneous value present of this object's MAP
  */
-std::array<char8_t, 1024> MAP::copy_map() {
-    std::array<char8_t, 1024> copy = {};
+std::array<char, 1024> MAP::copy_map() {
+    std::array<char, 1024> copy = {};
     for (int i = 0; i < size; i++){
         copy[i] = map[i];
     }
@@ -130,7 +130,7 @@ std::array<char8_t, 1024> MAP::copy_map() {
  * Overwrites the entire heightmap array
  * @param array The new array to write onto this object's heightmap
  */
-void MAP::set_heightmap(std::array<char8_t, 1024> new_map){
+void MAP::set_heightmap(std::array<char, 1024> new_map){
     for (int i = 0; i < size; i++){
         map[i] = new_map[i];
     }
@@ -147,10 +147,10 @@ void MAP::set_heightmap(std::array<char8_t, 1024> new_map){
  * @param c CHAR, The char that should be converted to an uncompressed character array
  * @return an array of uncompressed data containing 4 unique tiles within the heightmap
  */
-std::array<char8_t, 4> MAP::uncompress(char8_t c){
-    std::array<char8_t, 4> out = {};
+std::array<char, 4> MAP::uncompress(char c){
+    std::array<char, 4> out = {};
     for (int i = 0; i < 4; i++){
-        out[i] = (char8_t) (c & 3);
+        out[i] = (char) (c & 3);
         c = c >> 2;
     }
     return out;
@@ -162,7 +162,7 @@ std::array<char8_t, 4> MAP::uncompress(char8_t c){
  * @param in ARRAY<HEIGHT, len 4>, The array that should be converted to a compressed character
  * @return a character of compressed data containing 4 unique tiles within the heightmap
  */
-char8_t MAP::compress(std::array<char8_t, 4> in){
+char MAP::compress(std::array<char, 4> in){
     unsigned char out = 0;
     for (char i = 0; i < 4; i++){
         out = (in[i] << (i * 2)) | out;
@@ -182,11 +182,11 @@ char8_t MAP::compress(std::array<char8_t, 4> in){
  * @param place INTEGER, A value ranging 0...4095, where this denotes the actual location within the master array for what bit pair to extract. This value is clamped so that it may not exceed 4095 or 0.
  * @return HEIGHT, An enumeration that denotes the height of that array element, ranging from 0...3 as enumerable.
  */
-char8_t MAP::pick(int place) {
+char MAP::pick(int place) {
     place = std::clamp(place, 0, 4095);
     unsigned int cSpace = place >> 2;
-    char8_t cBit = map[cSpace];
-    std::array<char8_t, 4> a = uncompress(cBit);
+    char cBit = map[cSpace];
+    std::array<char, 4> a = uncompress(cBit);
     return a[place % 4];
 }
 
@@ -199,11 +199,11 @@ char8_t MAP::pick(int place) {
  * This value is clamped so that it may not exceed 4095 or 0.
  * @param value HEIGHT, An enumeration that denotes the height of that array element, ranging from 0...3 as enumerable.
  */
-void MAP::pack(int place, char8_t value) {
+void MAP::pack(int place, char value) {
     place = std::clamp(place, 0, 4095);
     unsigned int cSpace = place >> 2;
-    char8_t cBit = map[cSpace];
-    std::array<char8_t, 4> a = uncompress(cBit);
+    char cBit = map[cSpace];
+    std::array<char, 4> a = uncompress(cBit);
     a[place % 4] = value;
     map[cSpace] = compress(a);
 }
@@ -239,7 +239,7 @@ void MAP::out(){
         line++;
         for (int x = 0; x < 64; ++x)
         {
-            char8_t h = pick(place);
+            char h = pick(place);
             place++;
             switch(h){
                 case 0b00000000:
@@ -379,7 +379,7 @@ void MAP::generate() {
             // VW2 = w0+w1+w2, therefore vw2+w3 = w0+w1+w2+w3
             double total = noise * ( vw2 + w3 );
 
-            char8_t final = 0;
+            char final = 0;
 
             //Ladder comparator to seek within ranges, could directly cast to char but that defeats the point of weighted averaging
             if(total >= w0 && total < vw1) {
@@ -389,7 +389,7 @@ void MAP::generate() {
             } else if (total >= vw2) {
                 final = 3;
             }
-            set((char8_t) final, x, y);
+            set((char) final, x, y);
         }
     }
 }
@@ -415,12 +415,12 @@ void MAP::init(std::string s, WORLDCOORD worldcoord) {
     setLocation(worldcoord);
 }
 
-char8_t MAP::getRaw(int place) {
+char MAP::getRaw(int place) {
     std::clamp(place, 0, 1023);
     return map[place];
 }
 
-void MAP::setRaw(int place, char8_t value) {
+void MAP::setRaw(int place, char value) {
     std::clamp(place, 0, 1023);
     map[place] = value;
 }
