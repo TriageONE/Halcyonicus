@@ -77,7 +77,7 @@ public:
      * Uses a scanner queue to dynamically dispatch workers to handle world saving on an interval async
      * @param world The world tile to save
      */
-    static bool writeChunk(WORLD world);
+    static bool writeChunk(WORLD *world);
 
     /**
      * Reads a single world shard. uses a best-effort reader method to access disk data as fast as possible. will block
@@ -85,7 +85,7 @@ public:
      * @param worldcoord The worldcoord to read
      * @return The world if any that occupies that worldcoord
      */
-    static void readChunk(WORLDCOORD worldcoord);
+    static bool readChunk(WORLD *world);
 
     /**
      * Checks if a partition of the world is loaded or not on disk
@@ -108,7 +108,6 @@ public:
     //The function returns an int to show if it exists or not, so we can use this as the value returned
     static char chunkExists(int arrayOffset, std::fstream *fstream);
 
-
     static int getHash(int arrayOffset, std::fstream *fstream);
 
     static void setHash(int arrayOffset, std::fstream *fstream, int data);
@@ -121,17 +120,15 @@ public:
 
     static void writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
 
-    void readChunk(WORLDCOORD worldcoord, WORLD *world);
-
-    static bool writeChunk(WORLD *world);
-
-    static bool readChunk(WORLD *world);
-
-    static void createEmptyWorld(const std::string& path);
-
     static std::string prependWorldDir(const std::string& in);
 
     static bool createDirectories();
+
+    static std::filesystem::path parseFullPathFromRegionCoord(REGIONCOORD regioncoord);
+
+    static void createEmptyWorld(const std::filesystem::path& path);
+
+    static bool checkForDirectoryStructure();
 };
 
 #endif //HALCYONICUS_REGION_H
