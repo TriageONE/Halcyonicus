@@ -9,9 +9,9 @@
 
 class REGIONCOORD : public COORDINATE{
 public:
-    REGIONCOORD(int xInt, int zInt){
+    REGIONCOORD(int xInt, int yInt){
         this->x = xInt;
-        this->z = zInt;
+        this->y = yInt;
     }
 
 };

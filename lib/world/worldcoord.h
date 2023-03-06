@@ -15,18 +15,21 @@
 class WORLDCOORD : public COORDINATE {
 public:
     WORLDCOORD(int x1, int y1, int z1) : COORDINATE(x1, y1, z1) {
+        //The vertical component of the map
         this->x = x1;
+        //The horizontal component of the map
         this->y = y1;
+        //The height of the map
         this->z = z1;
     }
     WORLDCOORD()=default;
 
     REGIONCOORD getRegionCoordinates(){
         //The region coordinate is 16 times smaller than a worldcoord, therefore divide by 16, but bit shift instead.
-        int x1, z1;
+        int x1, y1;
         x1 = this->getX() >> 4;
-        z1 = this->getZ() >> 4;
-        return {x1, z1};
+        y1 = this->getY() >> 4;
+        return {x1, y1};
     };
 };
 
