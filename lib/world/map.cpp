@@ -255,14 +255,23 @@ void MAP::out(){
                     std::cout << "██";
             }
         }
-
     }
 }
 
+//Sets the seed of the world to a specific string, that will later be used to generate the world
 void MAP::setSeed(std::string s) {
     this->seed = std::move(s);
 }
 
+/**
+ * Sets the vertical bias, a value that can range from -4 to 4.
+ * This value is used to affect the general depth of the map, where lower values will produce generally lower areas as a result.
+ * The value is clamped to -4 ... +4 as a floating point unit.
+ * <br>
+ * when setting this value to numbers close to or above whole integers beyond 1 and -1, you will create "impossiblities" due to math. For example:
+ * - Setting this to -1 will ensure that mountainous areas will never exist because the outcome will always have 1 subtracted from it, so from values 0 to 3 now become values -1 to 2.
+ * - We know mountains are any number above 3.000000001 up to 4, so if we prevent
+ */
 void MAP::setVBias(float val) {
     const float t = val < -4.0f ? -4.0f : val;
     this->vBias =  t > 4.0f ? 4.0f : t;

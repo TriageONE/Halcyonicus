@@ -35,11 +35,19 @@ public:
         }
     };
 
+    /**
+     * Gets the relative coordinates of the location, in accordance to how the grid of tiles is set up
+     * @return
+     */
     [[nodiscard]] RELATIVE getRelativeCoordinates() const{
         return {this->x & 63,this->y & 63 };
     }
 
     //We need a way to get what world shard this is in
+    /**
+     * Provides a way to determine what region a specific location is in
+     * @return The worldcoord this exists in
+     */
     [[nodiscard]] WORLDCOORD getWorldCoord() {
         int x2 = this->x >> 5;
         int y2 = this->y >> 5;
@@ -48,6 +56,10 @@ public:
     }
 
     //We need a way to get what region this is in
+    /**
+     * Provides a way to determine what region a specific location is in
+     * @return The region this exists in
+     */
     [[nodiscard]] REGIONCOORD getRegionCoord(){
         int x2 = this->x >> 7;
         int z2 = this->z >> 7;

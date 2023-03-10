@@ -22,15 +22,39 @@ class CAVE : public MAP {
     constexpr static int staticw2[12]{22, 22, 22, 22, 23, 23, 24, 24, 25, 25, 26, 41};
     constexpr static int staticw3[12]{22, 23, 25, 26, 28, 29, 31, 34, 36, 39, 43, 57};
 public:
+
+    /**
+     * Creates a new cave with a seed and a level
+     * @param seed the seed of the overworld
+     * @param level The depth of the cave
+     */
     CAVE(std::string seed, int level){
         this->setSeed(std::move(seed));
         this->level = level;
         initialized = true;
     };
+
     CAVE()= default;
 
+    /**
+     * Returns the level of the cave in the ground. Level 0 is the deepest, level 11 is the highest
+     * @return The underground level of the cave, from 0 - 11
+     */
     [[nodiscard]] int getLevel() const;
+
+    /**
+     * AT LAST, the final sweep of faith, as all that exists shall be completed and seen. The underground shall weave intricate tunnels and spanning structures
+     * full of life and story. The underground shall serve as a place to fear and be feared within, and below the ground we shall find great riches and
+     * deadly spells, spanning dungeons and watchful eyes with
+     */
     void generate() override;
+
+    /**
+     * Initializes the object such that it has a proper world coordinate, level and seed.
+     * @param seed The seed of the world. Should be the same as the overworld
+     * @param lvl The deepness of the cave, from 0 - 11
+     * @param worldcoord the world coordinate to denote which shard this is from
+     */
     void init(std::string seed, int l, WORLDCOORD worldcoord);
 };
 

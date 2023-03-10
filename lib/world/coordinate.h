@@ -15,19 +15,28 @@ protected:
     int z{};
 public:
 
+    /**
+     * Creates a simple record capable of holding and X y and Z value
+     * @param x The NORTH/SOUTH component to the coordinate
+     * @param y The EAST/WEST component to the coordinate
+     * @param z The UP/DOWN component to the coordinate
+     */
     COORDINATE(int x, int y, int z){
         this->x = x;
         this->y = y;
         this->z = z;
     }
 
-    COORDINATE() {}
+    COORDINATE() = default;
 
 
     void setX(int intX){ this->x = intX;}
     void setY(int intY){ this->y = intY;}
     void setZ(int intZ){ this->z = intZ;}
 
+    /**
+     * Sets all three coordinates at once
+     */
     void set(int intX, int intY, int intZ){
         this->x = intX;
         this->y = intY;

@@ -84,10 +84,20 @@ void CAVE::generate() {
     generated=true;
 }
 
+/**
+ * Returns the level of the cave in the ground. Level 0 is the deepest, level 11 is the highest
+ * @return The underground level of the cave, from 0 - 11
+ */
 int CAVE::getLevel() const {
     return this->level;
 }
 
+/**
+ * Initializes the object such that it has a proper world coordinate, level and seed.
+ * @param seed The seed of the world. Should be the same as the overworld
+ * @param lvl The deepness of the cave, from 0 - 11
+ * @param worldcoord the world coordinate to denote which shard this is from
+ */
 void CAVE::init(std::string seed, int lvl, WORLDCOORD worldcoord) {
     this->level = lvl;
     this->seed = std::move(seed);

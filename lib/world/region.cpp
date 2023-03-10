@@ -196,9 +196,10 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
     std::ifstream regionFile;
     std::stringstream name;
     name << "rg_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hcr";
-
     regionFile.open(prependWorldDir(name.str()));
-    return regionFile.is_open();
+    bool isOpen = regionFile.is_open();
+    if (isOpen) regionFile.close();
+    return isOpen;
 }
 
 ////////////////////////////////////

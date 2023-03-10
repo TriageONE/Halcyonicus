@@ -97,10 +97,39 @@ public:
 
     ///////////////////////////
 
+    /**
+     * Tests to see if a region exists by parsing the region file name from the coordinate and using isOpen() to discern if it exists
+     * @param regioncoord The coordinate to test for
+     * @return If it exists on disk or not
+     */
     static bool regionExists(REGIONCOORD regioncoord);
+
+    /**
+     * Finds the filename without directory context of a region. Sample output may look like r_0_0.hcr from Region 0,0
+     * @param regioncoord The region to parse
+     * @return The output string as a filename
+     */
     static std::string parseRegioncoordToFname(REGIONCOORD regioncoord);
+
+    /**
+     * Converts a filename to a region coordinate. Automatically throws an error if there are too many places or numbers exceed the max integer.
+     * @param fname the file name in string format
+     * @return the region coordinate extracted
+     */
     static REGIONCOORD parseFnameToRegioncoord(const std::string& fname);
+
+    /**
+     * Derives the region coordinate from a world passed in
+     * @param world The world shard pointer
+     * @return the region the world shard is in
+     */
     static REGIONCOORD findRegioncoordFromWorldShard(WORLD *world);
+
+    /**
+     * A useful tool to figure out where a worldshard is within its region array. The region file is simply an array of world shards.
+     * @param chunkLocation The worldcoord of the chunk that we want to find the offset to
+     * @return The array coordinate that this worldcoord occupies
+     */
     static int findChunkArrayOffset(WORLDCOORD chunkLocation);
 
     static void setChunkExists(int arrayOffset, std::fstream* fstream);
