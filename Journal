@@ -135,3 +135,25 @@ Ill eventually become a master of simplicity and function, able to deploy change
 
 When i think of masters of this, sometimes i might think of someone who works on a huge project for a big company or someone like terry davis, who wrote a full operating system, kernel, etc. fascinating in a morbid way as to how someone like him was hunted and stalked, possibly in real life or simply by the confines of his mind. Maybe you need to be truly schizo in order to do what he does, and with selection of a drawback, you can extract more out of yourself in a transactional return. Perhaps my unwillingness to feel at peace with my knowledge is just that, and it may bring me down a deep dark path that i will never escape. I only hope i meet god at the end of this mind torture path instead of whatever may lurk in the opposite direction, as the worst fear in the world is being betrayed and suddenly realizing that after passing the point of no return, you look behind you and see what was and what could be, and realize there is nothing you can do to ressurect that or turn back. True death starts when this is seen, as you send yourself into hell and eternally experience, not just witness, the hell of your deepest fear and morbid contraption. My prayer is that i either live eternal and keep creating and building, giving and seeing, or die in bliss, knowing that i did something good and interesting, not fearing the downsides. Perhaps, simply creating a game to waste others' time is enough to send me to fire and brimstone, as what ive done was not good enough for the masses.
 
+////////////////////////
+03-10-23
+
+I need to work on storing entities. After all, this server software will be used to handle state changes or statics.
+Entities are things that can hold data and qualities. For example, You are an entity. A block on the wall is an entity. A thing on the ground, an ant, or a part of a machine. all entities.
+Entities need a type, and a bit of other data
+ENTITY:
+- Has
+    - ENTITY_BASIC
+    - Is part of the world and overlays a spot. Display depends on location and heightmap representation. Can only have integer based coordinates and nothing else, must have an XYZ rather than an XY
+
+        -BLOCK
+            -An impassible obstruction that has qualities
+        -TILE
+            -A floor object that can be stepped on but may have qualities that change how things above behave
+
+    - ENTITY_PRECISE
+        - Each living entity has an XYZ+ coordinate, where each coordinate can have a fraction attached as one byte to represent sub-block positions. the datatype for COORDINATE_FRAC is three ints, for xyz respectively and then three chars, for the fractional split.
+
+        -LIVING
+
+.. WIP ...
