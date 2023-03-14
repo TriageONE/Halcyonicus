@@ -4,7 +4,7 @@
 #include "entity.h"
 #include <utility>
 
-ENTITY::LOCATION ENTITY::getLocation() {
+LOCATION ENTITY::getLocation() {
     return this->location;
 }
 
@@ -24,9 +24,7 @@ nlohmann::json ENTITY::getData() {
     return this->jsonData;
 }
 
-
-
-void ENTITY::setLocation(ENTITY::LOCATION l) {
+void ENTITY::setLocation(LOCATION l) {
     this->location = l;
 }
 
@@ -46,13 +44,6 @@ void ENTITY::setData(nlohmann::json json) {
     this->jsonData = std::move(json);
 }
 
-
-void ENTITY::offsetMove(ENTITY::OFFSET offset) {
-    LOCATION l = this->location;
-    l.x = l.x + offset.x;
-    l.y = l.y + offset.y;
-}
-
 void ENTITY::decrementHealth() {
     if(this->currentHealth > 0)
         this->currentHealth--;
@@ -65,6 +56,16 @@ void ENTITY::incrementHealth() {
 
 void ENTITY::changeHealthBy(int hp) {
     this->currentHealth = std::clamp(this->currentHealth + hp, 0, this->maxHealth);
+}
+
+//TODO: GETER DONE.. SOON
+std::string ENTITY::compileToPCAS() {
+    std::stringstream pcas;
+
+    /**
+     * Format
+     */
+    return std::string();
 }
 
 

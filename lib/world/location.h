@@ -15,18 +15,28 @@
  * correspond to cave layers and skyheight layers in the top layer of the world.
  * To refer to world shards, that would be the WORLDCOORD class
  * To refer to collections of world shards, that would be the REGIONCOORD class
- *
  * */
 class LOCATION : COORDINATE{
 
 public:
 
+    /**
+     * Creates a location object with a set XY and Z.
+     * The location is used for storing data for things that occupy space in the world on a tile-by-tile basis.
+     * Things like blocks and machines, aliged to the world grid and unable to be placed halfway inbetween areas should inherit this attribute.
+     * @param x The horizontal coordinate, translating LEFT(-) and RIGHT(+), or WEST(-) and EAST(+) within the world
+     * @param y The vertical component of the coordinate, translating UP(+) and DOWN(-) or NORTH(+) and SOUTH(-)
+     * @param z The depth component of the coordinate, translating UNDERGROUND(-) and ABOVEGROUND(+)
+     */
     LOCATION(int x, int y, int z) : COORDINATE(x, y, z)  {
         this->x = x;
         this->y = y;
         this->z = z;
     }
 
+    /**
+     * A relative coordinate that specifies itself as having a value strictly in-between 0 and 63, denoting the place within the current world shard this object exists at.
+     */
     struct RELATIVE{
         int x, z;
         RELATIVE(int x, int z){

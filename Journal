@@ -157,3 +157,27 @@ ENTITY:
         -LIVING
 
 .. WIP ...
+
+////////////////////////
+03-13-2023
+
+Ive gained some confidence for how i should design entities by investigating the way Minecraft handles the data behind the entities. Since this is basic data storage, we should cover a few things when it comes to what kind of data we should store and what is important. This comes by covering all the things an entity has or could have. Entities can switch between their subtypes easily but never between their parent types (living to tile, simple to player)
+
+An entity needs a disambiguation between something with an AI, or something simple. There are a few classes of entitys therefore, and it starts here
+- SIMPLE
+    Simple entities may be items or things that do simple things. They can hold items or literally be items. These things have a position and a pointer to an inventory, or not. They are displaced by impassible things and should be as static as the rest. This entity may or may not be permanent, and if it isnt permanent, it has an idle countdown timer on it. Subtypes include the following.
+    - ITEM
+    - LIVING
+        Complex entities that usually move on their own and have hitpoints, resistances, AI and more status information that may be put together within the entity itself. Defaultly permanent unless specified otherwise. Has a simple angular vector of 8 possible facings, to represent the heading of the entity.
+        - ALIGNED, describes an AI with preferential treatment to a specific group or individual, such as a hostile ant that is passive towards its clan but hostile towards players
+            - PLAYER
+        - NEUTRAL, describes an AI with no ability for preference to violence or caring.
+    - TILE
+        An object that takes a place within the world and does not have the ability to move on its own but can be moved entire blocks at a time. Things like walls and chests, anything you can place or have on the floor.
+        - SOLID, an object that is impassible. Could be a wall or a stone.
+        - FLOOR, an object that is capable of supporting a player, can be placed on the ground, and supported in the air possibly
+        - EPHEMERAL, an object that is able to be passed through by anything and does not support people.
+
+Also there needs to be a way to compress data into a solid format for disk space saving. So its compressed, its entity data, and it contains JSON data about our entity. Its going to be standardized and almost short sighted but who cares.
+I figure what i could do is create a data compactor clause for each entity and apply that as a named compression tag. Named and Serializable Compressed Attribute Tag or NSCAT are comprised of a pattern, that expands the data to JSON data for later parsing. If someone knows the pattern already, they can interface with the object from the disk. Its a neat way to store binary data, and seems like a good way to store data to the disk
+on the disk, the pattern would have a UUID worth 4 bytes, giving us a maximum pattern amount of 4,294,967,295 which is excessive and should never realistically be reached. The likelyhood of this game using every tag possible is insane and we could fix this with tag nesting anyways.

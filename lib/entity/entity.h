@@ -7,6 +7,8 @@
 
 #include <string>
 #include "../json/json.h"
+#include "../world/coordinate.h"
+#include "../world/location.h"
 
 /**
  * 3:2, And so god said the world would then be filled with more than earth, finally branching out and calling itself something more than a boring structure of static life.
@@ -29,13 +31,6 @@ class ENTITY {
     /**
     * All entities will be interpreted with a location as an integer, however the minimum resolution for movement will be a tenth of a block, to ensure smooth movement.
     */
-    struct LOCATION {
-        int x, y;
-    };
-
-    struct OFFSET {
-        short x, y;
-    };
 
     LOCATION location;
 
@@ -43,7 +38,15 @@ class ENTITY {
     * All things must have some sort of health, and by default they always have at least one health.
     */
     int maxHealth = 1;
-    int currentHealth =1;
+    int currentHealth = 1;
+
+    /**
+     * All things must be resistant in some way, and there are a lot of resistances.
+     * Resistance curves are defined by the master deductor, a function designed to take a resistance and spit out a percentage.
+     * This is the amount of damage that should be deducted from the total amount of damage recieved.
+     * <br>
+     * The deductor should be a function that derives the damage recieved from an attack considering the individual resistances present 
+     */
 
     /**
     * If something is to be marked as invulnerable, it cannot take damage from any source but can have its health set to specific values. by default, this is false.
@@ -51,9 +54,11 @@ class ENTITY {
     bool invincible = false;
 
     /**
-     * The item should have a unique ID and a parent name, so that each thing may be identifiable in its rawest form
+     * The item should have a unique ID and a real name, so that each thing may be identifiable in its rawest form.
+     * A uniqueID would be the fully qualified name of the object or entity
+     * A real name is the actual name, visible to the user and human readable
      */
-    std::string parent;
+    std::string type;
     std::string uniqueID;
 
     /**
@@ -82,11 +87,17 @@ public:
 
     //////////////
     //Translators
-    void offsetMove(OFFSET offset);
     void decrementHealth();
     void incrementHealth();
     void changeHealthBy(int hp);
 
-
+    ////////////////
+    //Serialization
+    /**
+     * NCAT stands for Patternized Compressed Attribute String
+     * This function serves as a serializer method for compressing this data as much as possible for later usage or storage. We can use this when constructing packets for players or saving data to disk
+     * @return The stringified version of this class
+     */
+    std::string compileToPCAS();
 };
 #endif //HALCYONICUS_ENTITY_H
