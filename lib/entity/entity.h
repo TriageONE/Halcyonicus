@@ -29,16 +29,17 @@ class ENTITY {
     */
 
     /**
-    * All entities will be interpreted with a location as an integer, however the minimum resolution for movement will be a tenth of a block, to ensure smooth movement.
+    * All entities will be interpreted with a location
+    * They also must have the region they exist in, and this should be validated against its location
     */
-
     LOCATION location;
+    REGIONCOORD region;
 
     /**
-    * All things must have some sort of health, and by default they always have at least one health.
+    * Not all things should have health. Somthing with no health has infinite life.
     */
-    int maxHealth = 1;
-    int currentHealth = 1;
+    //unsigned int maxHealth = 1;
+    //unsigned int currentHealth = 1;
 
     /**
      * All things must be resistant in some way, and there are a lot of resistances.
@@ -49,20 +50,21 @@ class ENTITY {
      */
 
     /**
-    * If something is to be marked as invulnerable, it cannot take damage from any source but can have its health set to specific values. by default, this is false.
-    */
-    bool invincible = false;
+     * This is an intrinsic value that should be tested for within JSON data as a singlet field found in the tags area. Within JSON data, we should be able to define tags
+     * for entities where each tag describes something about the entity such as INV means invulnerable, INVIS means Invisible, SHK means Shocked, etc.
+     * */
+    //bool invincible = false;
 
     /**
-     * The item should have a unique ID and a real name, so that each thing may be identifiable in its rawest form.
-     * A uniqueID would be the fully qualified name of the object or entity
-     * A real name is the actual name, visible to the user and human readable
+     * The item should have a unique ID to identify itself as something in the world uniquely
+     * The entity should also have a fully qualified type identifier that follows convention of strings similar to minecrafts way of creating a system of naming objects and things
+     * The TYPE is a thing that describes the type of item and this may be redundant or fairly large
      */
     std::string type;
     std::string uniqueID;
 
     /**
-     * All things must have a jsonData of sorts so they may be identified and have other properties
+     * All things must have a jsonData of sorts so they may have other properties
      */
     nlohmann::json jsonData;
 
@@ -70,31 +72,19 @@ class ENTITY {
 public:
     ///////////
     //Getters
-
+    REGIONCOORD getRegion();
     LOCATION getLocation();
-    [[nodiscard]] int getMaxHealth() const;
-    [[nodiscard]] int getCurrentHealth() const;
-    [[nodiscard]] bool isInvincible() const;
     nlohmann::json getData();
 
     //////////
     //Setters
     void setLocation(LOCATION l);
-    void setMaxHealth(int maxHealth);
-    void setCurrentHealth(int currentHealth);
-    void setInvincibility(bool invincible);
     void setData(nlohmann::json json);
-
-    //////////////
-    //Translators
-    void decrementHealth();
-    void incrementHealth();
-    void changeHealthBy(int hp);
 
     ////////////////
     //Serialization
     /**
-     * NCAT stands for Patternized Compressed Attribute String
+     * PCAS stands for Patternized Compressed Attribute String
      * This function serves as a serializer method for compressing this data as much as possible for later usage or storage. We can use this when constructing packets for players or saving data to disk
      * @return The stringified version of this class
      */
