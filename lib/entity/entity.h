@@ -33,10 +33,9 @@ class ENTITY {
     * They also must have the region they exist in, and this should be validated against its location
     */
     LOCATION location;
-    REGIONCOORD region;
 
     /**
-    * Not all things should have health. Somthing with no health has infinite life.
+    * Not all things should have health. Something with no health has infinite life.
     */
     //unsigned int maxHealth = 1;
     //unsigned int currentHealth = 1;
@@ -56,38 +55,44 @@ class ENTITY {
     //bool invincible = false;
 
     /**
-     * The item should have a unique ID to identify itself as something in the world uniquely
      * The entity should also have a fully qualified type identifier that follows convention of strings similar to minecrafts way of creating a system of naming objects and things
      * The TYPE is a thing that describes the type of item and this may be redundant or fairly large
      */
     std::string type;
+
+    /**
+     * The item should have a unique ID to identify itself as something in the world uniquely
+     */
     std::string uniqueID;
 
     /**
-     * All things must have a jsonData of sorts so they may have other properties
+     * Every entity stems from the base entity. Base entities are the only datatype available to the user to parse and use, therefore the base entity should have a place to store the extra abstraction data
+     * therefore a PCAS string is present where we can store PCAS data
      */
-    nlohmann::json jsonData;
+    std::string pcas;
 
+    std::map<std::string ,
 
 public:
     ///////////
     //Getters
-    REGIONCOORD getRegion();
     LOCATION getLocation();
-    nlohmann::json getData();
 
     //////////
     //Setters
     void setLocation(LOCATION l);
-    void setData(nlohmann::json json);
 
     ////////////////
     //Serialization
     /**
-     * PCAS stands for Patternized Compressed Attribute String
+     * PCAS stands for Patternized Casted Attribute String
+     * Patternized, because it follows a convention from the next;
+     * Casted, like in real life, a mold has specific ruts, grooves, shapes and ways of forming the metal, or in this case data. It comes as a .hcas file and a follows the YAML convention
+     * Attribute, for the things it describes the attributes by name for the processor and ticker to work on and make decisions for
+     *
      * This function serves as a serializer method for compressing this data as much as possible for later usage or storage. We can use this when constructing packets for players or saving data to disk
      * @return The stringified version of this class
      */
-    std::string compileToPCAS();
+    std::string getPCAS();
 };
 #endif //HALCYONICUS_ENTITY_H

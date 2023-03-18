@@ -181,3 +181,103 @@ An entity needs a disambiguation between something with an AI, or something simp
 Also there needs to be a way to compress data into a solid format for disk space saving. So its compressed, its entity data, and it contains JSON data about our entity. Its going to be standardized and almost short sighted but who cares.
 I figure what i could do is create a data compactor clause for each entity and apply that as a named compression tag. Named and Serializable Compressed Attribute Tag or NSCAT are comprised of a pattern, that expands the data to JSON data for later parsing. If someone knows the pattern already, they can interface with the object from the disk. Its a neat way to store binary data, and seems like a good way to store data to the disk
 on the disk, the pattern would have a UUID worth 4 bytes, giving us a maximum pattern amount of 4,294,967,295 which is excessive and should never realistically be reached. The likelyhood of this game using every tag possible is insane and we could fix this with tag nesting anyways.
+
+////////////////////////
+03-15-23
+
+Im a dumbass and went to the airport way too early. Im gonna take a walk and find a place to think to myself
+I found a food court by the international area
+
+I want to focus on how i format entities on disk. I cant do JSON like notch, because that relies on general compression like GZIP to handle data which is less efficient than compressing the data myself and finally compressing it with GZIP.
+
+Entities should be able to layer in inheriteance on top of eachother, so we can add more types by using less data. By declaring a template, we need a parent class to inherit from
+The first entry into an entity template is the parent. This name is a fully qualified name such as "projectile" to start. Everything is a base entity and if it has no parent then is stays as a base entity
+
+All entities must have a texture, therefore we should simply use the qualified name of the entity to derive what texture it should have
+
+Next is the datatypes that should be implemented on top of the base entity data. This is the data that will be encapsulated within the {} that exist at the end of the entity entry. Each template is fairly specific, with the following format:
+
+Template:
+    type projectile;
+    parent;
+    members: [
+        byte xPrecision
+        byte yPrecision
+        float xV
+        float yV
+        ]
+
+In order to set this up correctly, we need to ensure the following:
+- a texture is present, otherwise itll use the default texture
+- a valid template
+- a unique type name
+
+Once set up we should have a new entity.
+
+Valid datatypes are exactly the same as in C++, however we dont have extended types.
+    1 byte:
+        char, compile to UTF-8 Character
+        byte, a number that can range from -128 to 127
+        ubyte, a number that can range from 0 - 256
+        pack, a special datatype that can hold named data, where you can name the bits and pack in up to 8 of them into one char.
+           use multiple of these to form a large bitfield for special data
+
+    2 bytes:
+        short, a number that ranges from -32,768 to 32,767
+        ushort, a number that ranges from 0 to 65,536
+        float11, a number with imprecision, known as nanoFloat that can range from -128.000 to 127.000. The precision granted to the number aliases at marks truncated at each fraction of 256/100, so you count by 0.390625. The minimum climb or descent rate is the same as the resolution times the update rate.
+
+    4 bytes
+        int, a number that ranges from -2,147,483,648 to 2,147,483,647
+        uint, a number that ranges from 4,294,967,294
+        float31, a 3 byte number with 1 byte of standard precision
+
+    8 bytes
+        long, a number ranging from -9223372036854775808 to 9223372036854775807
+        ulong, a really long number that youll never count to its max fully
+        float71, a 7 byte integer with 1 byte of standard precision. Ranges from -4611686018427387904.000 4611686018427387903.000
+
+
+    variable datatypes requiring a 2b ushort for size
+        string, an array of characters that can contain any character. Max entry size is 65536. Size calculated on
+
+One thing to note is the concept of added precision on some datatypes. nFloat, mFloat and iFloat are all datatypes that allow for enhanced precision up to a nominal constant limit. Floating point units lose precision with greater values, which is fine for small values but fails when we want to have a large number with enhanced precision.
+By adding a character to the end of the data, we can sacrifice a bit of the floor or ceiling for a decimal point with a configurable amount of precise places.
+
+In addition to pcas, with that being the datatype, we need a type of file to hold this data and a format for that as well.
+To define a template, we would make am HACP, or Halcyonicus Attribute Casting Pattern. The HACP is responsible for defining the way our data looks and works, and how it compiles to an object based on name. When we define an HCAP, we would make a new text file and emplace our template defined above within. The file may be short, so we can probably allow people to organize the entities they want to define based on their own criteria. We can open this possiblity up with the ability to put multiple things in one file, and read from that file on boot. This saves a lot of headache with constantly statting more and more little files within a directory.
+
+How do we load all of this into memory and work with it though?
+On the server, which would be loaded in any capacity if we want to play (SP binds to the machine address with a random port and deny all ACL except user X) we would probably store the entity after we grab its custom data, and say:
+
+    "we know this special type of entity exists and has these properties stored in a KV map. This is a type, not an entity yet. We have just started the server and dont know if there is anything that matches this in the areas that may get loaded yet."
+
+Once stated, we can start loading things from the disk. We can then say:
+
+    "A load request was queued for chunk XX:YY, and therefore we need to restore the positions of the entities within. When we do this, we should indiscriminately load all the entities within this area into memory, and finally add them to the correct index and register them as an active entitiy"
+
+Once we have an entity in the world, it first gets added to an index where it will be registered for that type, with a secondary index for the location in which it is in as well. This index helps us find and work with the entities, and run their scripts. Since every entity is unique and does something different, every entity should have a script that it runs based on type. We can then say the following, albeit slightly longer than the last:
+
+   "This entity was recently added to a registry of active objects, and was indexed to its processor. The processor has defined attributes about how to affect this entity in memory, changing the KV information within and performs actions on it now along with the rest of the indexable entries for that object class.
+
+   While in the registry of entities, this will now be subject to any effects defined by the entity processor for this entry. when this chunk is not loaded, the entity goes out of scope, or goes into low power mode where its processed and aged in the background on a timer that opportunistically updates as it sees fit, and may forward the workload to other systems for lazy distributed processing as fully qualified jobs."
+
+////////////////////////
+03-17-23
+
+I need to narrow the job scope of my entity class. The entity class is built to contain and store data, output the final data of the entity and traceback pcas data that can set up entites and read templates. I should start with the bottom, the YAML parser that allows people to create entities out of a yaml file.
+
+I suppose i also have already a JSON parser and this isnt exactly a problem for the format since YAML is basically the same as JSON. I can use my header only json parser and deal with that in the same way.
+
+The entity storage format should be simple and work like so:
+    Template has a set of static and active values, where static values are immutable. Active values change with the entity and are going to eventually be stored in memory for later usage alongside the entity ingame
+    The template needs the following as well:
+        A name
+        the parent in which precedes it
+
+    So all in all, we have three things, parent, typename, and attributes. Simple. Remember this is just data storage and defining the save pattern behavior. Nothing about this requires extensive thought about how an entity should be handled- yet.
+
+    All active attributes should be stored in a flat KV map within the entity.
+    What happens when we want to pull data in any way from this entry? In memory, we have a VK map where everything is stored by name. Of course matching strings is tough and we dont want to do that all the time while updating entities, or would we? I mean..
+    This makes me think about imposing artificial limits to the system, so we dont add abstractions too far from our base entity.. I am not sure if this is responsible or not but we will figure that out soon
+

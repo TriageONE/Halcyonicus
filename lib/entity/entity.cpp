@@ -9,24 +9,9 @@ LOCATION ENTITY::getLocation() {
     return this->location;
 }
 
-nlohmann::json ENTITY::getData() {
-    return this->jsonData;
-}
-
 void ENTITY::setLocation(LOCATION l) {
     this->location = l;
-    this->region = l.getRegionCoord();
 }
-
-REGIONCOORD ENTITY::getRegion(){
-    return this->region;
-}
-
-
-void ENTITY::setData(nlohmann::json json) {
-    this->jsonData = std::move(json);
-}
-
 
 //TODO: GETER DONE.. SOON
 std::string ENTITY::compileToPCAS() {
