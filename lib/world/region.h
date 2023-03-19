@@ -5,6 +5,7 @@
 #ifndef HALCYONICUS_REGION_H
 #define HALCYONICUS_REGION_H
 
+#include <filesystem>
 #include "world.h"
 #include "regioncoord.h"
 

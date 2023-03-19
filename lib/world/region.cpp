@@ -3,13 +3,11 @@
 //
 #include <fstream>
 #include <iostream>
-#include <sstream>
-#include <unistd.h>
 #include <ctime>
 #include <sys/stat.h>
 #include "region.h"
 #include "regioncoord.h"
-
+#include <filesystem>
 #ifdef WIN32
     #include <fileapi.h>
     #include <windows.h>
@@ -113,34 +111,24 @@ string ExePath() {
     char buffer[MAX_PATH] = { 0 };
     GetModuleFileName( nullptr, buffer, MAX_PATH );
     string s = string{buffer};
-    long long pos = s.find_last_of("\\/");
+    unsigned long long pos = s.find_last_of("\\/");
     return s.substr(0, pos);
 }
 
 bool DirectoryExists(LPCTSTR lpszDirectoryPath)
 {
     struct _stat buffer{};
-    int   iRetTemp = 0;
+    int iRetTemp = 0;
 
     memset ((void*)&buffer, 0, sizeof(buffer));
 
     iRetTemp = _stat(lpszDirectoryPath, &buffer);
 
-    if (iRetTemp == 0)
-    {
-        if (buffer.st_mode & _S_IFDIR)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+    if (iRetTemp == 0){
+        if (buffer.st_mode & _S_IFDIR) return true;
+        else return false;
     }
-    else
-    {
-        return false;
-    }
+    else return false;
 }
 #endif
 
@@ -279,10 +267,20 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
     std::ifstream regionFile;
     std::stringstream name;
     name << "rg_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hcr";
-    regionFile.open(prependWorldDir(name.str()));
-    bool isOpen = regionFile.is_open();
-    if (isOpen) regionFile.close();
-    return isOpen;
+    string absPath = prependWorldDir(name.str());
+
+    #if defined(WIN32)
+        DWORD stat = GetFileAttributesA(absPath.c_str());
+        return (stat != INVALID_FILE_ATTRIBUTES && !(stat & FILE_ATTRIBUTE_DIRECTORY));
+    #else
+        bool isOpen;
+        regionFile.open();
+        bool isOpen = regionFile.is_open();
+        if (isOpen) regionFile.close();
+        return isOpen;
+    #endif
+
+
 }
 
 ////////////////////////////////////
@@ -290,7 +288,12 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
 
 std::string REGION::prependWorldDir(const std::string& in) {
     std::stringstream ss;
-    ss << "./world/" << in;
+    #if defined(WIN32)
+        string currentPath = ExePath();
+        ss << currentPath << "\\world\\" << in;
+    #else
+        ss << "./world/" << in;
+    #endif
     return ss.str();
 }
 

@@ -91,9 +91,36 @@ std::string WORLD::getRawHash() {
     ss << this->climatemap.getRawHash();
     ss << this->saturationmap.getRawHash();
 
-    for (CAVE c : caves){
+    for (CAVE &c : caves){
         ss << c.getRawHash();
     }
 
     return ss.str();
+}
+
+void WORLD::out() {
+    using namespace std;
+
+    cout << "/////////////// Heightmap: ///////////////" << endl;
+    cout <<  this->heightmap.getRawHash() << endl;
+    this->heightmap.out();
+    cout << endl;
+
+    cout << "/////////////// ClimateMap: ///////////////" << endl;
+    cout <<  this->climatemap.getRawHash() << endl;
+    this->climatemap.out();
+    cout << endl;
+
+    cout << "/////////////// SaturationMap: ///////////////" << endl;
+    cout <<  this->saturationmap.getRawHash() << endl;
+    this->saturationmap.out();
+    cout << endl;
+
+    for (CAVE &c : this->caves){
+        cout << "/////////////// C" << c.getLevel() << " ///////////////" << endl;
+        cout <<  c.getRawHash() << endl;
+
+        c.out();
+        cout << endl;
+    }
 }

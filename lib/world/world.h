@@ -117,6 +117,7 @@ public:
     int getHash();
 
     std::string getRawHash();
+    void out();
 
 };
 
