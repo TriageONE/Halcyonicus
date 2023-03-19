@@ -6,9 +6,11 @@
 #define HALCYONICUS_ENTITY_H
 
 #include <string>
-#include "../json/json.h"
+#include <utility>
+#include <map>
 #include "../world/coordinate.h"
 #include "../world/location.h"
+#include "./dynablob.h"
 
 /**
  * 3:2, And so god said the world would then be filled with more than earth, finally branching out and calling itself something more than a boring structure of static life.
@@ -65,22 +67,29 @@ class ENTITY {
      */
     std::string uniqueID;
 
-    /**
-     * Every entity stems from the base entity. Base entities are the only datatype available to the user to parse and use, therefore the base entity should have a place to store the extra abstraction data
-     * therefore a PCAS string is present where we can store PCAS data
-     */
-    std::string pcas;
-
-    std::map<std::string ,
+    std::map<std::string, DYNABLOB> attributes;
 
 public:
+
+    ENTITY(LOCATION location, std::string type, std::string uniqueID) {
+        this->location = location;
+        this->type = std::move(type);
+        this->uniqueID = std::move(uniqueID);
+    }
     ///////////
     //Getters
     LOCATION getLocation();
+    std::string getType();
+    std::string getUniqueID();
+    DYNABLOB * getAttribute(const std::string& attribute);
+    std::map<std::string, DYNABLOB> getAllAttributes();
 
     //////////
     //Setters
     void setLocation(LOCATION l);
+    void setType(std::string type);
+    void setUniqueID(std::string uuid);
+    void setAttribute(DYNABLOB, std::string attribute);
 
     ////////////////
     //Serialization
@@ -93,6 +102,6 @@ public:
      * This function serves as a serializer method for compressing this data as much as possible for later usage or storage. We can use this when constructing packets for players or saving data to disk
      * @return The stringified version of this class
      */
-    std::string getPCAS();
+    //std::string getPCAS();
 };
 #endif //HALCYONICUS_ENTITY_H
