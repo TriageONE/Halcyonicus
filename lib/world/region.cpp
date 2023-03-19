@@ -10,6 +10,14 @@
 #include "region.h"
 #include "regioncoord.h"
 
+#ifdef WIN32
+    #include <fileapi.h>
+    #include <windows.h>
+    #include <direct.h>
+#endif
+
+
+
 bool REGION::writeChunk(WORLD* world) {
     //Should be preceded by check if region exists
 
@@ -98,25 +106,82 @@ bool REGION::readChunk(WORLD* world) {
 /**
  * Creates the directories that are used to hold worlds, entities and other things. Will not change current contents but may be appended to in the future. comes with checks
  */
-bool REGION::createDirectories(){
-    std::array<std::filesystem::path, 4> dirs {"./world", "./world/entities", "./world/players", "./world/data"};
-    struct stat s{};
-    bool completed = true;
-    for (const std::filesystem::path& path : dirs){
-        std::cout << "Checking for " << path << std::endl;
-        stat(path.c_str(), &s);
-        if (!S_ISDIR(s.st_mode)){
-            //Create a directory for the world that is readable and writable for us but not others
-            int dErr = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-            std::cout << "Attempted create on " << path << " with code " << dErr << std::endl;
-            if (dErr == 0) {
-                std::cout << "Created " << path << std::endl;
-                continue;
-            }
-            std::cerr << "DISK_IO ERROR, CLASS WORLD_INIT; " << path << " Directory creation failed, mkdir error returned \'" << dErr << "\' and ERRNO " << errno << ", currently in " << std::filesystem::current_path() << std::endl;
-            completed = false;
+
+#if defined(WIN32)
+using namespace std;
+string ExePath() {
+    char buffer[MAX_PATH] = { 0 };
+    GetModuleFileName( nullptr, buffer, MAX_PATH );
+    string s = string{buffer};
+    long long pos = s.find_last_of("\\/");
+    return s.substr(0, pos);
+}
+
+bool DirectoryExists(LPCTSTR lpszDirectoryPath)
+{
+    struct _stat buffer{};
+    int   iRetTemp = 0;
+
+    memset ((void*)&buffer, 0, sizeof(buffer));
+
+    iRetTemp = _stat(lpszDirectoryPath, &buffer);
+
+    if (iRetTemp == 0)
+    {
+        if (buffer.st_mode & _S_IFDIR)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
+    else
+    {
+        return false;
+    }
+}
+#endif
+
+bool REGION::createDirectories(){
+    bool completed = true;
+    #if defined(WIN32)
+    //WIN32
+    const array<LPCSTR, 4> dirs {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data"};
+    string currentPath = ExePath();
+    for (const LPCSTR path : dirs) {
+        string absPath = currentPath;
+        absPath.append(path);
+        if (CreateDirectoryA(absPath.c_str(), nullptr)){
+            std::cout << "Created " << absPath << std::endl;
+        }
+    }
+    #else
+    //POSIX
+
+        const std::array<std::filesystem::path, 4> dirs {"./world", "./world/entities", "./world/players", "./world/data"};
+
+        struct stat s{};
+
+        for (const std::filesystem::path& path : dirs){
+            std::cout << "Checking for " << path << std::endl;
+            stat(path.c_str(), &s);
+
+            if (!S_ISDIR(s.st_mode)){
+                //Create a directory for the world that is readable and writable for us but not others
+                int dErr = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+                std::cout << "Attempted create on " << path << " with code " << dErr << std::endl;
+                if (dErr == 0) {
+                    std::cout << "Created " << path << std::endl;
+                    continue;
+                }
+                std::cerr << "DISK_IO ERROR, CLASS WORLD_INIT; " << path << " Directory creation failed, mkdir error returned \'" << dErr << "\' and ERRNO " << errno << ", currently in " << std::filesystem::current_path() << std::endl;
+                completed = false;
+            }
+        }
+    #endif
     return completed;
 }
 
@@ -125,16 +190,35 @@ bool REGION::createDirectories(){
  * @return True if the directories exist
  */
 bool REGION::checkForDirectoryStructure(){
+    using namespace std;
+    #if defined(WIN32)
+    const array<LPCSTR, 4> dirs {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data"};
+    string currentPath = ExePath();
+
+    for (const LPCSTR path : dirs) {
+        string absPath = currentPath;
+        absPath.append(path);
+        cout << "Checking " << absPath << endl;
+        if (DirectoryExists(absPath.c_str())) {
+            cout << "Path was a valid directory: " << absPath << endl;
+            continue;
+        }
+        cout << "Directory " << absPath << " does not exist!" << endl;
+        return false;
+    }
+    #else
     std::array<std::filesystem::path, 4> dirs {"./world", "./world/entities", "./world/players", "./world/data"};
     struct stat s{};
     for (const std::filesystem::path& path : dirs){
-        std::cout << "Checking for " << path << std::endl;
+        cout << "Checking for " << path << endl;
         stat(path.c_str(), &s);
         if (!S_ISDIR(s.st_mode)){
-            std::cout << "Path of " << path << " does not exist!" << std::endl;
+            cout << "Path of " << path << " does not exist!" << endl;
             return false;
         }
     }
+    #endif
+
     return true;
 }
 
@@ -190,7 +274,6 @@ bool REGION::worldExists(WORLDCOORD worldcoord) {
 
     return chunkExists(arrayOffset, &regionFile);
 }
-
 
 bool REGION::regionExists(REGIONCOORD regioncoord) {
     std::ifstream regionFile;
