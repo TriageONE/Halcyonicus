@@ -34,6 +34,8 @@ public:
         this->z = z;
     }
 
+    LOCATION() = default;
+
     /**
      * A relative coordinate that specifies itself as having a value strictly in-between 0 and 63, denoting the place within the current world shard this object exists at.
      */
