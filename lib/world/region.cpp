@@ -486,7 +486,7 @@ void REGION::readWorldData(int arrayOffset, std::fstream *fstream, WORLD *world)
 
     char data[1024] {};
 
-    fstream->seekg( (arrayOffset * 15360) + 2080 );
+    fstream->seekp( (arrayOffset * 15360) + 2080 );
     fstream->seekg( (arrayOffset * 15360) + 2080 );
 
     using namespace std;
@@ -520,23 +520,22 @@ void REGION::readWorldData(int arrayOffset, std::fstream *fstream, WORLD *world)
     // Commence reading each cave and emplacing data onto each
     int cn = 0;
     for (CAVE &cave : world->caves){
+        long long before = fstream->tellg();
         fstream->read(data, 1024);
-
+        long long after = fstream->tellg();
         i = 0;
         for (char d : data){
             cave.setRaw(i,d);
             i++;
         }
-        cout << "\t\t#CV_INSPECT_IN " << cave.getLevel() << " HSH: " << cave.getRawHash() << endl;
-
+        cout << "\t\t#CV_INSPECT_IN " << cave.getLevel() << " HSH: " << cave.getRawHash() << " PLACE " << before << " -> " << after << endl;
+        ::memset(data, 0, 1024);
         cn++;
     }
 }
 
 void REGION::writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world) {
     arrayOffset = std::clamp(arrayOffset, 0, 255);
-
-
     char data[1024] {};
 
     fstream->seekp( (arrayOffset * 15360) + 2080 );
@@ -568,10 +567,14 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world
 
     using namespace std;
     for (CAVE &cave : world->caves){
-        cout << "\t\t#CV_INSPECT_OUT " << cave.getLevel() << " HSH: " << cave.getRawHash() << endl;
+
+        ::memset(data, 0, 1024);
         for (int i = 0; i < 1024; i++){
             data[i] = cave.getRaw(i);
         }
+        long long before = fstream->tellg();
         fstream->write(data, 1024);
+        long long after = fstream->tellg();
+        cout << "\t\t#CV_INSPECT_OUT " << cave.getLevel() << " HSH: " << cave.getRawHash() <<  " PLACE " << before << " -> " << after << endl;
     }
 }
