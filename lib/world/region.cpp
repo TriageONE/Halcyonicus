@@ -4,6 +4,8 @@
 #include <fstream>
 #include <iostream>
 #include <ctime>
+#include <sstream>
+#include <string>
 #include <sys/stat.h>
 #include "region.h"
 #include "regioncoord.h"
@@ -269,6 +271,7 @@ bool REGION::worldExists(WORLDCOORD worldcoord) {
 }
 
 bool REGION::regionExists(REGIONCOORD regioncoord) {
+    using namespace std;
     std::ifstream regionFile;
     std::stringstream name;
     name << "rg_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hcr";
@@ -278,8 +281,7 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
         DWORD stat = GetFileAttributesA(absPath.c_str());
         return (stat != INVALID_FILE_ATTRIBUTES && !(stat & FILE_ATTRIBUTE_DIRECTORY));
     #else
-        bool isOpen;
-        regionFile.open();
+        regionFile.open(absPath);
         bool isOpen = regionFile.is_open();
         if (isOpen) regionFile.close();
         return isOpen;
