@@ -83,6 +83,11 @@ public:
         heightmap.init(seed,w);
         climatemap.init(s1,w);
         saturationmap.init(s2,w);
+        int cn = 0;
+        for (CAVE &c : caves){
+            c.init(seed, cn, this->worldcoord);
+            cn++;
+        }
         this->worldcoord = w;
         this->initialized = true;
     }

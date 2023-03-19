@@ -40,12 +40,21 @@ int main() {
 
             w.generate();
 
-            w.out();
+            //w.out();
 
             REGIONCOORD rc = wc.getRegionCoordinates();
             cout << "Region " << rc.getX() << ", " << rc.getY() << endl;
             cout << "WorldShard " << wc.getX() << ", " << wc.getY() << endl;
 
+            if (existenceCache.empty()){
+                bool exists = REGION::regionExists(wc.getRegionCoordinates());
+                filesystem::path path = REGION::parseFullPathFromRegionCoord(wc.getRegionCoordinates());
+                if (!exists){
+                    cout << "Creating empty world with path " << path << endl;
+                    REGION::createEmptyWorld(path);
+                }
+                existenceCache.push_back(rc);
+            }
             for (REGIONCOORD r : existenceCache){
                 int x1,y1;
                 x1=r.getX();
@@ -70,6 +79,10 @@ int main() {
             WORLD w2(seed, wc);
             REGION::readChunk(&w2);
             w2h = w2.getRawHash();
+
+            cout << "##################\nCOMMENCE READ OUTPUT\n##################" << endl;
+
+            //w2.out();
 
             cout << "WC_" << x << "_" << y << ": \n\t" << w1h << ", \n\t" << w2h << ";\n\t" << ((w1h == w2h) ? "MATCH" : "NO_MATCH") << endl;
         }

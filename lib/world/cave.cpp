@@ -4,6 +4,7 @@
 
 #include "cave.h"
 #include <bit>
+#include <iostream>
 #include "../hash/md5.h"
 #include "../noise/perlin.h"
 
@@ -13,10 +14,10 @@
  * deadly spells, spanning dungeons and watchful eyes with
  */
 void CAVE::generate() {
-    MD5 md5;
-    uint32_t s1 = *(int*) (md5(&seed, 8).c_str());
-    s1 = std::rotr(s1, level) + (level * 2);
 
+    uint32_t s1 = *(int*) seed.c_str();
+    s1 = std::rotr(s1, level) + (level * 2);
+    std::cout << "   #CAVEGEN S1 " << s1 << std::endl;
     const siv::PerlinNoise::seed_type pseed = s1;
     const siv::PerlinNoise perlin{ pseed };
     int xo, yo;

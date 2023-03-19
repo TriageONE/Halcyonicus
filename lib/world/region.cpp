@@ -18,20 +18,23 @@
 
 bool REGION::writeChunk(WORLD* world) {
     //Should be preceded by check if region exists
-
+    using namespace std;
     //Must read entire region in order to implement changes to chunks
-    std::fstream regionFile;
+    fstream regionFile;
     //find the name of the file
     REGIONCOORD regioncoord = findRegioncoordFromWorldShard(world);
     //Parse it to a filename
 
-    std::filesystem::path path = prependWorldDir(parseRegioncoordToFname(regioncoord));
+    string path = prependWorldDir(parseRegioncoordToFname(regioncoord));
+    cout << "\t#CHUNK_WRITE: \'" << path << "\'" <<endl;
 
     int arrayOffset = findChunkArrayOffset(world->getLocation());
 
     regionFile.open(path);
-    if (!(regionFile)) return false;
-    using namespace std;
+    if (!(regionFile)) {
+        cerr << "\t#CHUNK_WRITE_ERR: \'" << path << "\' CANNOT BE OPENED" << endl;
+        return false;
+    }
     //We just attempted to open it. If its open, we can start writing.
     if(regionFile.is_open()){
         //We have exactly one world that we want to write to the region.
@@ -47,9 +50,10 @@ bool REGION::writeChunk(WORLD* world) {
         int hash2 = getHash(arrayOffset, &regionFile);
 
         //If we find that the worlds are the exact same, we can assume that we should not do anything more and simply leave the area alone.
-        if (hash == hash2) return true;
+        //if (hash == hash2) return true;
 
         //Write the world data
+        cout << "Writing world data for " << world->getLocation().getX() << ", " << world->getLocation().getY() << endl;
         writeWorldData(arrayOffset, &regionFile, world);
 
         //We will always want to update the timestamp, but this should likely occur after the world write
@@ -58,6 +62,7 @@ bool REGION::writeChunk(WORLD* world) {
 
         setHash(arrayOffset, &regionFile, hash);
     } else {
+        cerr << "\t#CHUNK_WRITE_ERR: \'" << path << "\' ATTEMPTED OPEN BUT FAILED" << endl;
         regionFile.close();
         return false;
     }
@@ -522,6 +527,8 @@ void REGION::readWorldData(int arrayOffset, std::fstream *fstream, WORLD *world)
             cave.setRaw(i,d);
             i++;
         }
+        cout << "\t\t#CV_INSPECT_IN " << cave.getLevel() << " HSH: " << cave.getRawHash() << endl;
+
         cn++;
     }
 }
@@ -559,7 +566,9 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world
     }
     fstream->write(data, 1024);
 
-    for (CAVE cave : world->caves){
+    using namespace std;
+    for (CAVE &cave : world->caves){
+        cout << "\t\t#CV_INSPECT_OUT " << cave.getLevel() << " HSH: " << cave.getRawHash() << endl;
         for (int i = 0; i < 1024; i++){
             data[i] = cave.getRaw(i);
         }

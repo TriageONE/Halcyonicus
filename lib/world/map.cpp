@@ -342,10 +342,12 @@ float MAP::getW3() const {
 
 void MAP::generate() {
     //Reinterpretation cast to integer from character array
+    using namespace std;
     int s1 = *(int*) (seed.c_str());
+    cout << "   #MAPGEN S1 " << s1 << endl;
 
-    MD5 md5;
-    int s2 = *(int*) (md5(&seed, 8).c_str()) << 1;
+    int s2 = ((*(int*) seed.c_str()) << 1) + 16;
+    cout << "   #MAPGEN S2 " << s2 << endl << endl;
 
     const siv::PerlinNoise::seed_type pseed = s1;
     const siv::PerlinNoise perlin{ pseed };
