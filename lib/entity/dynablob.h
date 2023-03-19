@@ -15,7 +15,7 @@
  *  the interpretation function, it should return a correctly typed datum that represents the wrapped data.
  */
 
-template <class T>
+
 class DYNABLOB{
 public:
     enum TYPE{
@@ -26,36 +26,43 @@ public:
 
         SHORT,
         USHORT,
-        FLOAT11,
 
         INT,
         UINT,
-        FLOAT31,
 
         LONG,
         ULONG,
-        FLOAT71,
 
         STR
     };
 
 private:
+
     TYPE type;
-    T payload;
+    void * data;
 
 public:
-    /**
-     * When creating a new blob, we must know exactly how we want to interpret it. This means that we cant just pass a primitive in and let it be, we have to first deconstruct the data and copy it into an array we have to dynamically define.
-     * @tparam T The type of data coming in
-     * @param data The data that should be stored
-     * @param interpretation what it should be interpreted as
-     */
-    DYNABLOB(T data, TYPE interpretation){
-        this->payload = data;
+
+    DYNABLOB(void * data, int size, TYPE interpretation){
+        this->data = malloc(size);
+        memcpy(this->data, data, size);
         this->type = interpretation;
     }
 
+    ~DYNABLOB(){
+        free(data);
+    }
 
+    void* getRaw(){
+        return this->data;
+    }
 
+    void setRaw(void* d){
+        memcpy(this->data, d, sizeof(data));
+    }
+
+    TYPE getType(){
+        return this->type;
+    }
 };
 #endif //HALCYONICUS_DYNABLOB_H
