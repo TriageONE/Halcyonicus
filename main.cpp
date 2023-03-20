@@ -28,8 +28,8 @@ int main() {
 
     vector<REGIONCOORD> existenceCache;
 
-    for (int x = 0; x < 1; x++){
-        for (int y = 0; y < 1; y++){
+    for (int x = 0; x < 16; x++){
+        for (int y = 0; y < 16; y++){
             WORLDCOORD wc = WORLDCOORD(x,y,0);
             WORLD w = WORLD(seed, wc);
             w.constrain();
@@ -47,6 +47,7 @@ int main() {
             cout << "WorldShard " << wc.getX() << ", " << wc.getY() << endl;
 
             if (existenceCache.empty()){
+                cout << "Testing to see if the region " << rc.getX() << ", " << rc.getY() << " exists.." << endl;
                 bool exists = REGION::regionExists(wc.getRegionCoordinates());
                 filesystem::path path = REGION::parseFullPathFromRegionCoord(wc.getRegionCoordinates());
                 if (!exists){
@@ -60,16 +61,17 @@ int main() {
                 x1=r.getX();
                 y1=r.getY();
                 if (rc.getY() == y1 && rc.getX() == x1){
+                    cout << "Testing to see if the region " << x1 << ", " << y1 << " exists.." << endl;
                     bool exists = REGION::regionExists(wc.getRegionCoordinates());
                     filesystem::path path = REGION::parseFullPathFromRegionCoord(wc.getRegionCoordinates());
                     if (!exists){
                         cout << "Creating empty world with path " << path << endl;
                         REGION::createEmptyWorld(path);
+                        existenceCache.push_back(rc);
                     }
-                    existenceCache.push_back(rc);
+
                 }
             }
-
 
             string w1h, w2h;
 

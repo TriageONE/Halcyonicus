@@ -281,3 +281,11 @@ The entity storage format should be simple and work like so:
     What happens when we want to pull data in any way from this entry? In memory, we have a VK map where everything is stored by name. Of course matching strings is tough and we dont want to do that all the time while updating entities, or would we? I mean..
     This makes me think about imposing artificial limits to the system, so we dont add abstractions too far from our base entity.. I am not sure if this is responsible or not but we will figure that out soon
 
+///////////////////////
+03-19-23
+
+A lot of work was recently done now that i have access to my windows machine. Upon transferring the updated tests and commits to the windows machine, i attempted a few tests to ensure everything was working as expected. Upon doing this, i initially only tested entities and how they would function, and that worked fine. Reimplementing the world read test found that the world was no longer writing to the correct areas, and the directories were not creating. This eventually componded to a unique issue that took lots of my time and found me sitting for hours on end, unavailable to continue forward.
+
+Firstly, i had to make a lot of translations to how windows handles reading and creating directories, as doing so requires the usage of the windows.h library in order to get anything done. I had to steal a method that got me the current directory and a few other things that allow me to manipulate files and folders. This was annoying, but possible and relatively easy compared to the next task.
+
+The next roadblock in gist was not being able to fully write out my worlds and instead only partially doing so. The reason for this behavior is because there was at one point some sort of issue regarding the
