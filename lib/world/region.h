@@ -136,7 +136,7 @@ public:
     static void setChunkExists(int arrayOffset, std::fstream* fstream);
 
     //The function returns an int to show if it exists or not, so we can use this as the value returned
-    static char chunkExists(int arrayOffset, std::fstream *fstream);
+    static char chunkExists(int arrayOffset, std::ifstream *ifstream);
 
     static int getHash(int arrayOffset, std::fstream *fstream);
 
@@ -145,10 +145,6 @@ public:
     static int getTimestamp(int arrayOffset, std::fstream *fstream);
 
     static void setTimestamp(int arrayOffset, std::fstream *fstream, int timestamp);
-
-    static void readWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
-
-    static void writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
 
     static std::string prependWorldDir(const std::string& in);
 
@@ -159,6 +155,12 @@ public:
     static void createEmptyWorld(const std::filesystem::path& path);
 
     static bool checkForDirectoryStructure();
+
+    static char chunkExists(int arrayOffset, std::fstream *fstream);
+
+    static void writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
+
+    static void readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world);
 };
 
 #endif //HALCYONICUS_REGION_H

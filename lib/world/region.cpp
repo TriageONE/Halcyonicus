@@ -31,8 +31,8 @@ bool REGION::writeChunk(WORLD* world) {
     cout << "\t#CHUNK_WRITE: \'" << path << "\'" <<endl;
 
     int arrayOffset = findChunkArrayOffset(world->getLocation());
+    regionFile.open(path, ios::out|ios::in|ios::binary);
 
-    regionFile.open(path);
     if (!(regionFile)) {
         cerr << "\t#CHUNK_WRITE_ERR: \'" << path << "\' CANNOT BE OPENED" << endl;
         return false;
@@ -73,7 +73,7 @@ bool REGION::writeChunk(WORLD* world) {
 }
 
 bool REGION::readChunk(WORLD* world) {
-
+    using namespace std;
     //Affect the linked world to be overwritten with new data from the file
     //Must read entire region in order to implement changes to chunks
     std::fstream regionFile;
@@ -81,21 +81,17 @@ bool REGION::readChunk(WORLD* world) {
     REGIONCOORD regioncoord = findRegioncoordFromWorldShard(world);
     //Parse it to a filename
     std::filesystem::path path = prependWorldDir(parseRegioncoordToFname(regioncoord));
-
+    cout << "\t#CHUNK_READ: \'" << path << "\'" <<endl;
 
     int arrayOffset = findChunkArrayOffset(world->getLocation());
 
-    regionFile.open(path);
+    regionFile.open(path, ios::out|ios::in|ios::binary);
+
     if (!(regionFile)) return false;
     //We just attempted to open it. If its open, we can start writing.
     if(regionFile.is_open()){
         //We have exactly one world that we want to Read from the region.
         //Make sure it exists and go for it
-
-        char exists = chunkExists(arrayOffset, &regionFile);
-        if (!exists){
-            return false;
-        }
         //Read the world data
         std::cout << "Reading " << world->getLocation().getX() << ", " << world->getLocation().getY() << std::endl;
         readWorldData(arrayOffset, &regionFile, world);
@@ -410,7 +406,6 @@ char REGION::chunkExists(int arrayOffset, std::fstream *fstream) {
     unsigned int readPoint = (arrayOffset / 8);
 
     fstream->seekg( readPoint ); // If we just divide the array position by the length of the data, we can get exactly the offset needed to read, plus 32 for the start of the data
-    fstream->seekp( readPoint );
 
     fstream->read(&data, 1);
 
@@ -483,48 +478,58 @@ void REGION::setTimestamp(int arrayOffset, std::fstream *fstream, int timestamp)
 //////////////
 
 // Emplaces world data found from the file stream provided onto the refrence world object.
-void REGION::readWorldData(int arrayOffset, std::fstream *fstream, WORLD *world){
+void REGION::readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world){
     arrayOffset = std::clamp(arrayOffset, 0, 255);
 
     char data[1024] {};
 
-    fstream->seekp( (arrayOffset * 15360) + 2080 );
-    fstream->seekg( (arrayOffset * 15360) + 2080 );
+    ifstream->seekg( (arrayOffset * 15360) + 2080 );
 
     using namespace std;
 
-    fstream->read(data, 1024);
+    long long before = ifstream->tellg();
+    ifstream->read(data, 1024);
+    long long after = ifstream->tellg();
     MAP *currentMap = &world->climatemap;
     int i = 0;
     for (char d : data){
         currentMap->setRaw(i,d);
         i++;
     }
+    cout << "\t\t#CM_INSPECT_IN HSH: " << world->climatemap.getRawHash() << " PLACE " << before << " -> " << after << endl;
 
     // Next the heightmap
-    fstream->read(data, 1024);
+    before = ifstream->tellg();
+    ifstream->read(data, 1024);
+    after = ifstream->tellg();
+
     currentMap = &world->heightmap;
     i = 0;
     for (char d : data){
         currentMap->setRaw(i,d);
         i++;
     }
+    cout << "\t\t#HM_INSPECT_IN HSH: " << world->heightmap.getRawHash() << " PLACE " << before << " -> " << after << endl;
 
     // Finally the saturation map
-    fstream->read(data, 1024);
+    before = ifstream->tellg();
+    ifstream->read(data, 1024);
+    after = ifstream->tellg();
+
     currentMap = &world->saturationmap;
     i = 0;
     for (char d : data){
         currentMap->setRaw(i,d);
         i++;
     }
+    cout << "\t\t#SM_INSPECT_IN HSH: " << world->saturationmap.getRawHash() << " PLACE " << before << " -> " << after << endl;
 
     // Commence reading each cave and emplacing data onto each
     int cn = 0;
     for (CAVE &cave : world->caves){
-        long long before = fstream->tellg();
-        fstream->read(data, 1024);
-        long long after = fstream->tellg();
+        before = ifstream->tellg();
+        ifstream->read(data, 1024);
+        after = ifstream->tellg();
         i = 0;
         for (char d : data){
             cave.setRaw(i,d);
@@ -536,12 +541,11 @@ void REGION::readWorldData(int arrayOffset, std::fstream *fstream, WORLD *world)
     }
 }
 
-void REGION::writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world) {
+void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *world) {
     arrayOffset = std::clamp(arrayOffset, 0, 255);
     char data[1024] {};
 
-    fstream->seekp( (arrayOffset * 15360) + 2080 );
-    fstream->seekg( (arrayOffset * 15360) + 2080 );
+    ofstream->seekp( (arrayOffset * 15360) + 2080 );
 
     using namespace std;
 
@@ -550,14 +554,22 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world
     for (int i = 0; i < 1024; i++){
         data[i] = currentMap->getRaw(i);
     }
-    fstream->write(data, 1024);
+    long long before = ofstream->tellp();
+    ofstream->write(data, 1024);
+    long long after = ofstream->tellp();
+
+    cout << "\t\t#CM_INSPECT_OUT HSH: " << currentMap->getRawHash() << " PLACE " << before << " -> " << after << endl;
 
     // Next the heightmap
     currentMap = &world->heightmap;
     for (int i = 0; i < 1024; i++){
         data[i] = currentMap->getRaw(i);
     }
-    fstream->write(data, 1024);
+    before = ofstream->tellp();
+    ofstream->write(data, 1024);
+    after = ofstream->tellp();
+
+    cout << "\t\t#HM_INSPECT_OUT HSH: " << currentMap->getRawHash() << " PLACE " << before << " -> " << after << endl;
 
     // Finally the saturation map
     currentMap = &world->saturationmap;
@@ -565,7 +577,11 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world
     for (int i = 0; i < 1024; i++){
         data[i] = currentMap->getRaw(i);
     }
-    fstream->write(data, 1024);
+    before = ofstream->tellp();
+    ofstream->write(data, 1024);
+    after = ofstream->tellp();
+
+    cout << "\t\t#SM_INSPECT_OUT  HSH: " <<  currentMap->getRawHash() << " PLACE " << before << " -> " << after << endl;
 
     using namespace std;
     for (CAVE &cave : world->caves){
@@ -574,9 +590,9 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world
         for (int i = 0; i < 1024; i++){
             data[i] = cave.getRaw(i);
         }
-        long long before = fstream->tellg();
-        fstream->write(data, 1024);
-        long long after = fstream->tellg();
+        before = ofstream->tellp();
+        ofstream->write(data, 1024);
+        after = ofstream->tellp();
         cout << "\t\t#CV_INSPECT_OUT " << cave.getLevel() << " HSH: " << cave.getRawHash() <<  " PLACE " << before << " -> " << after << endl;
     }
 }
