@@ -52,7 +52,7 @@ bool REGION::writeChunk(WORLD* world) {
         int hash2 = getHash(arrayOffset, &regionFile);
 
         //If we find that the worlds are the exact same, we can assume that we should not do anything more and simply leave the area alone.
-        //if (hash == hash2) return true;
+        if (hash == hash2) return true;
 
         //Write the world data
         cout << "Writing world data for " << world->getLocation().getX() << ", " << world->getLocation().getY() << endl;

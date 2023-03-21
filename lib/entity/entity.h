@@ -102,6 +102,7 @@ public:
      * This function serves as a serializer method for compressing this data as much as possible for later usage or storage. We can use this when constructing packets for players or saving data to disk
      * @return The stringified version of this class
      */
-    //std::string getPCAS();
+    std::string getPCAS();
 };
 #endif //HALCYONICUS_ENTITY_H
+//(Input / Codecs > Audio codecs > FluidSynth).

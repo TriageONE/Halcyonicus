@@ -27,6 +27,7 @@ int main() {
     }
 
     vector<REGIONCOORD> existenceCache;
+    int matches = 0, misses = 0;
 
     for (int x = 0; x < 16; x++){
         for (int y = 0; y < 16; y++){
@@ -87,18 +88,11 @@ int main() {
             //w2.out();
 
             cout << "WC_" << x << "_" << y << ": \n\t" << w1h << ", \n\t" << w2h << ";\n\t" << ((w1h == w2h) ? "MATCH" : "NO_MATCH") << endl;
+            if (w1h == w2h) matches++; else misses++;
         }
     }
 
-
-
-
-
-
-
-
-
-
+    cout << "JOB FINISHED, MATCHES:" << matches << ", MISSES: " << misses << endl;
     return 0;
 
 }
