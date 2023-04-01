@@ -69,15 +69,16 @@ public:
     ////////////////
     //Serialization
     /**
-     * PCAS stands for Patternized Casted Attribute String
-     * Patternized, because it follows a convention from the next;
-     * Casted, like in real life, a mold has specific ruts, grooves, shapes and ways of forming the metal, or in this case data. It comes as a .hcas file and a follows the YAML convention
-     * Attribute, for the things it describes the attributes by name for the processor and ticker to work on and make decisions for
+     * The largest struggle i have is deciding how to serialize entities into a file. We can create entities, modify them,
+     * and even destroy them, but the thing i get tripped up about on is how to serialize them.
      *
-     * This function serves as a serializer method for compressing this data as much as possible for later usage or storage. We can use this when constructing packets for players or saving data to disk
-     * @return The stringified version of this class
+     * This class isnt actually meant to serialize itself. We should not be worrying about that, since we should have another
+     * class responsible for these things. The thing that we need is the ability to look within memory, which is a server
+     * side implementation to gather the entities. In fact, the entity serializer should be able to pick at entities as needed
+     * because of the way that we grab entities. In memory, we should be able to grab entities by location and other ways
+     *
+     * Dont serialize entities in this class
      */
-    std::string getPCAS();
 };
 #endif //HALCYONICUS_ENTITY_H
 //(Input / Codecs > Audio codecs > FluidSynth).

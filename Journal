@@ -290,6 +290,23 @@ Firstly, i had to make a lot of translations to how windows handles reading and 
 
 The next roadblock in gist was not being able to fully write out my worlds and instead only partially doing so. The reason for this behavior is because there was at one point some sort of issue regarding the
 
+//////////////////////////
+03-29-23
+
+Ive decided what art style i want to target, i want to create all my assets in the light of how Hyperlight drifter does theirs.
+
+Here's how i start with my game, i should first start small, and make a texture atlas of simple tiles, that of which is my floor tile, just something simple
+get that to intelligently be able to blend with all the other tile types by allowing it to have stony walls and variations with out stony walls
+
+    1. Create a grass tile that is easily repeatable
+    2. find the best way to create rocks on the grass for the edges that border the water
+
+I just had another thought, we need to expand the verticality of the heightmap into 4 bits instead of 2. My compactor algorithm should be overridden so we can multiply the amount of heightmap we have
+Our region files also desperately need a version string worth 16 characters at the beginning.
+Why stop at 4, why not 8?
+Hmmm, it seems that the mapping algorithm might have some trouble with 256 values, maybe we should stick to.. maybe
+The mapping object actually, it will only have issues with the rounding bias, which we can remove. We should instead not worry about that and override it anyways
+
 //////////////////////
 03-26-23
 

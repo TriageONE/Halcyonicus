@@ -128,7 +128,8 @@ public:
 
     void setSeed(std::string seed);
     void setLocation(WORLDCOORD worldcoord);
-    void setVBias(float vBias);
+
+    virtual void setVBias(float vBias);
     void setScalar(float scalar);
     void setRoughness(float roughness);
 

@@ -3,6 +3,7 @@
 #include "lib/world/world.h"
 #include "lib/noise/perlin.h"
 #include "lib/world/region.h"
+#include "lib/world/heightmap.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <Windows.h>
@@ -18,6 +19,7 @@ int main() {
         // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
         setvbuf(stdout, nullptr, _IOFBF, 2000);
     #endif
+
 
     string seed = "hyperion";
 
