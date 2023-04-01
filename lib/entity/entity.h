@@ -18,11 +18,6 @@
  */
 
 class ENTITY {
-
-    /**
-    * An entity must have a location in order to exist
-    */
-
     /**
     * Philosophicus, 4:0:
     *  To provide nothing more than 2 layers of verticality will severely strip the game of its vertical nature. Imagine a world where you can only travel left and right,
@@ -35,26 +30,6 @@ class ENTITY {
     * They also must have the region they exist in, and this should be validated against its location
     */
     LOCATION location;
-
-    /**
-    * Not all things should have health. Something with no health has infinite life.
-    */
-    //unsigned int maxHealth = 1;
-    //unsigned int currentHealth = 1;
-
-    /**
-     * All things must be resistant in some way, and there are a lot of resistances.
-     * Resistance curves are defined by the master deductor, a function designed to take a resistance and spit out a percentage.
-     * This is the amount of damage that should be deducted from the total amount of damage recieved.
-     * <br>
-     * The deductor should be a function that derives the damage recieved from an attack considering the individual resistances present 
-     */
-
-    /**
-     * This is an intrinsic value that should be tested for within JSON data as a singlet field found in the tags area. Within JSON data, we should be able to define tags
-     * for entities where each tag describes something about the entity such as INV means invulnerable, INVIS means Invisible, SHK means Shocked, etc.
-     * */
-    //bool invincible = false;
 
     /**
      * The entity should also have a fully qualified type identifier that follows convention of strings similar to minecrafts way of creating a system of naming objects and things

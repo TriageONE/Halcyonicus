@@ -289,3 +289,10 @@ A lot of work was recently done now that i have access to my windows machine. Up
 Firstly, i had to make a lot of translations to how windows handles reading and creating directories, as doing so requires the usage of the windows.h library in order to get anything done. I had to steal a method that got me the current directory and a few other things that allow me to manipulate files and folders. This was annoying, but possible and relatively easy compared to the next task.
 
 The next roadblock in gist was not being able to fully write out my worlds and instead only partially doing so. The reason for this behavior is because there was at one point some sort of issue regarding the
+
+//////////////////////
+03-26-23
+
+Ive had a lot of thoughts about entities and how they should be in my game. I think too much about these things and i want to make sure that my game is complete to a point, where i feel comfortable with the product. I cant stagnate when it comes to development, and while i dont have a deadline, i also dont have all the time in the world. I want my idea to come about some way or another. The idea is simple, and dynamic. I could for hours think and scream at nothing, but i should not, because if i do, well, ill eventually become nothing, all at the end of nowhere. Another project that went nowhere. Another thought not completed or flushed out.
+This is the poison i consume, the effects of never completing anything in the way i want. Ive set normal goals, ones that are achievable and within reach, but my mind wanders and becomes.. something that i cannot explain in words.
+This is my game. I have the ability to do everything i want or could possibly need, and now- now ive taken a break, and its time to stop this. I need to continue pushing forward. This entity 
