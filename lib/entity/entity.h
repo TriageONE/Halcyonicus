@@ -11,6 +11,7 @@
 #include "../world/coordinate.h"
 #include "../world/location.h"
 #include "./dynablob.h"
+#include "entitylocation.h"
 
 /**
  * 3:2, And so god said the world would then be filled with more than earth, finally branching out and calling itself something more than a boring structure of static life.
@@ -29,7 +30,7 @@ class ENTITY {
     * All entities will be interpreted with a location
     * They also must have the region they exist in, and this should be validated against its location
     */
-    LOCATION location;
+    ENTITYLOCATION location;
 
     /**
      * The entity should also have a fully qualified type identifier that follows convention of strings similar to minecrafts way of creating a system of naming objects and things
@@ -46,7 +47,7 @@ class ENTITY {
 
 public:
 
-    ENTITY(LOCATION location, std::string type, std::string uniqueID) {
+    ENTITY(ENTITYLOCATION location, std::string type, std::string uniqueID) {
         this->location = location;
         this->type = std::move(type);
         this->uniqueID = std::move(uniqueID);
@@ -81,4 +82,3 @@ public:
      */
 };
 #endif //HALCYONICUS_ENTITY_H
-//(Input / Codecs > Audio codecs > FluidSynth).

@@ -5,6 +5,11 @@
 #ifndef HALCYONICUS_ENTITYSTORAGE_H
 #define HALCYONICUS_ENTITYSTORAGE_H
 
+#include <string>
+#include <sstream>
+#include "entity.h"
+
+
 /**
  * A static class responsible for manipulating entities within files and performing mass serializations of entities in
  * memory
@@ -29,6 +34,12 @@
  * The only problem is working with creating a system where we can store every entity in a disk.
  */
 class ENTITYSTORAGE{
+public:
+
+    static std::string serialize(std::vector<ENTITY> entities);
 
 };
+
+
+
 #endif //HALCYONICUS_ENTITYSTORAGE_H

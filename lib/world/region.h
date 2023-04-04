@@ -133,10 +133,7 @@ public:
      */
     static int findChunkArrayOffset(WORLDCOORD chunkLocation);
 
-    static void setChunkExists(int arrayOffset, std::fstream* fstream);
-
-    //The function returns an int to show if it exists or not, so we can use this as the value returned
-    static char chunkExists(int arrayOffset, std::ifstream *ifstream);
+    static void setChunkExists(int arrayOffset, std::fstream *fstream);
 
     static int getHash(int arrayOffset, std::fstream *fstream);
 
@@ -161,6 +158,21 @@ public:
     static void writeWorldData(int arrayOffset, std::fstream *fstream, WORLD *world);
 
     static void readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world);
+
+    //////////////
+
+    static std::string prependEntityDir(const std::string& in);
+
+    static void createEntityRegion(REGIONCOORD regioncoord);
+
+    /**
+     * Parses the region coordinate to an entity file name standard
+     * @param regioncoord
+     * @return
+     */
+    static std::string parseRegioncoordToEname(REGIONCOORD regioncoord);
+
+    static bool entityRegionExists(REGIONCOORD regioncoord);
 };
 
 #endif //HALCYONICUS_REGION_H

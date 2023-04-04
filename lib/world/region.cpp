@@ -177,7 +177,7 @@ bool REGION::createDirectories(){
 }
 
 /**
- * Will return the state of the directory structure
+ * Will return the state of the directory structure. Handles all directories within the world, including the data for the entities, entities themselves and the players
  * @return True if the directories exist
  */
 bool REGION::checkForDirectoryStructure(){
@@ -282,8 +282,6 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
         if (isOpen) regionFile.close();
         return isOpen;
     #endif
-
-
 }
 
 ////////////////////////////////////
@@ -595,4 +593,39 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *worl
         after = ofstream->tellp();
         cout << "\t\t#CV_INSPECT_OUT " << cave.getLevel() << " HSH: " << cave.getRawHash() <<  " PLACE " << before << " -> " << after << endl;
     }
+}
+
+std::string REGION::prependEntityDir(const string &in) {
+    std::stringstream ss;
+    #if defined(WIN32)
+        string currentPath = ExePath();
+        ss << currentPath << R"(\world\entities\)" << in;
+    #else
+        ss << "./world/entities/" << in;
+    #endif
+    return ss.str();
+}
+
+bool REGION::entityRegionExists(REGIONCOORD regioncoord) {
+    using namespace std;
+    std::ifstream regionFile;
+    std::stringstream name;
+    name << "rge_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hdb";
+    string absPath = prependEntityDir(name.str());
+
+#if defined(WIN32)
+    DWORD stat = GetFileAttributesA(absPath.c_str());
+    return (stat != INVALID_FILE_ATTRIBUTES && !(stat & FILE_ATTRIBUTE_DIRECTORY));
+#else
+    regionFile.open(absPath);
+        bool isOpen = regionFile.is_open();
+        if (isOpen) regionFile.close();
+        return isOpen;
+#endif
+}
+
+std::string REGION::parseRegioncoordToEname(REGIONCOORD regioncoord){
+    std::stringstream name;
+    name << "rge_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hdb";
+    return name.str();
 }

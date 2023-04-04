@@ -3,7 +3,8 @@
 #include "lib/world/world.h"
 #include "lib/noise/perlin.h"
 #include "lib/world/region.h"
-#include "lib/world/heightmap.h"
+
+#include "lib/sqlite/sqlite3.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <Windows.h>
@@ -11,16 +12,106 @@
 #endif
 
 using namespace std;
-
+static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
+    int i;
+    for(i = 0; i<argc; i++) {
+        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    printf("\n");
+    return 0;
+}
 int main() {
 
-    #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-        SetConsoleOutputCP(CP_UTF8);
-        // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
-        setvbuf(stdout, nullptr, _IOFBF, 2000);
-    #endif
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    SetConsoleOutputCP(CP_UTF8);
+    // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
+    setvbuf(stdout, nullptr, _IOFBF, 2000);
+
+#endif
+
+    /* New test for database functionality */
+    sqlite3 *db;
+    string sql;
+    int rc;
+
+    rc = sqlite3_open("test.db", &db);
+
+    if( rc ) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        return(0);
+    } else {
+        fprintf(stderr, "Opened database successfully\n");
+    }
+
+    //Create a new statement
+    sqlite3_stmt *stmt;
+
+    /** CREATE A NEW TABLE FOR THE DATABASE **
+    sql = "CREATE TABLE LAYERS("
+          "POSITION SMALLINT NOT NULL, "
+          "LEVEL BIT NOT NULL, "
+          "ENTITIES BLOB);";
+    rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
+
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    } else {
+        fprintf(stdout, "Table created successfully\n");
+    }
+
+    /* *********************** */
+
+    /** INSERT INTO DATABASE A NEW ENTRY PLACE 0 LEVEL 0 **
+    if (sqlite3_prepare_v2(db, "INSERT INTO LAYERS VALUES(?, ?, ?)", -1, &stmt, nullptr)) {
+        printf("Error executing sql statement\n");
+        sqlite3_close(db);
+        exit(-1);
+    }
+
+    sqlite3_bind_int(stmt, 1, 0);
+    sqlite3_bind_int(stmt, 2, 0);
+    sqlite3_bind_blob(stmt, 3, (void*) "lole", -1, NULL);
+
+    if (sqlite3_step(stmt)){
+        printf("Error executing sql statement\n");
+        sqlite3_close(db);
+        exit(-1);
+    }
+
+    sqlite3_finalize(stmt);
+
+    /* *********************** */
+
+    /** SELECT AND VIEW THE BLOB AT POSITION 0 0 WITHIN TABLE LAYERS **/
+    sql = "SELECT ENTITIES FROM LAYERS WHERE POSITION=0 AND LEVEL=0;";
+    rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc) {
+        printf("PrepError executing sql statement\n");
+        sqlite3_close(db);
+        exit(-1);
+    }
+    rc = sqlite3_step(stmt);
+    if (!rc){
+        printf("ExecError executing sql statement\n");
+        sqlite3_close(db);
+        exit(-1);
+    }
+
+    auto* lol = sqlite3_column_blob(stmt, 0);
+
+    string s = string((char*) lol);
+
+    sqlite3_finalize(stmt);
+
+    cout << s << endl;
+
+    /* *********************** */
+
+    sqlite3_close(db);
 
 
+    /* ARCHIVED TEST FOR WORLD GENERATION
     string seed = "hyperion";
 
     if(!REGION::checkForDirectoryStructure()){
@@ -96,5 +187,6 @@ int main() {
 
     cout << "JOB FINISHED, MATCHES:" << matches << ", MISSES: " << misses << endl;
     return 0;
+     */
 
 }
