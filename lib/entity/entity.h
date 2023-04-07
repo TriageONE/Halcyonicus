@@ -10,7 +10,7 @@
 #include <map>
 #include "../world/coordinate.h"
 #include "../world/location.h"
-#include "./dynablob.h"
+#include "../types/dynablob.h"
 #include "entitylocation.h"
 
 /**
@@ -36,49 +36,45 @@ class ENTITY {
      * The entity should also have a fully qualified type identifier that follows convention of strings similar to minecrafts way of creating a system of naming objects and things
      * The TYPE is a thing that describes the type of item and this may be redundant or fairly large
      */
-    std::string type;
+    std::string type = "?";
 
-    /**
-     * The item should have a unique ID to identify itself as something in the world uniquely
-     */
-    std::string uniqueID;
+    bool errored = false;
 
     std::map<std::string, DYNABLOB> attributes;
 
 public:
 
-    ENTITY(ENTITYLOCATION location, std::string type, std::string uniqueID) {
+    ENTITY(ENTITYLOCATION location, std::string type) {
         this->location = location;
         this->type = std::move(type);
-        this->uniqueID = std::move(uniqueID);
+    }
+
+    ENTITY() {
+        this->errored = true;
+    }
+
+    ENTITY(ENTITYLOCATION location) {
+        this->location = location;
     }
     ///////////
     //Getters
-    LOCATION getLocation();
+    ENTITYLOCATION getLocation();
     std::string getType();
-    std::string getUniqueID();
     DYNABLOB * getAttribute(const std::string& attribute);
     std::map<std::string, DYNABLOB> getAllAttributes();
+    bool getErrored();
 
     //////////
     //Setters
-    void setLocation(LOCATION l);
+    void setLocation(ENTITYLOCATION l);
     void setType(std::string type);
-    void setUniqueID(std::string uuid);
     void setAttribute(DYNABLOB, std::string attribute);
 
     ////////////////
     //Serialization
-    /**
-     * The largest struggle i have is deciding how to serialize entities into a file. We can create entities, modify them,
-     * and even destroy them, but the thing i get tripped up about on is how to serialize them.
-     *
-     * This class isnt actually meant to serialize itself. We should not be worrying about that, since we should have another
-     * class responsible for these things. The thing that we need is the ability to look within memory, which is a server
-     * side implementation to gather the entities. In fact, the entity serializer should be able to pick at entities as needed
-     * because of the way that we grab entities. In memory, we should be able to grab entities by location and other ways
-     *
-     * Dont serialize entities in this class
-     */
+    static string serialize(ENTITY entity);
+    static ENTITY deserialize(string entityString);
+
+
 };
 #endif //HALCYONICUS_ENTITY_H
