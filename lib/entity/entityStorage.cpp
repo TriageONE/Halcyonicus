@@ -5,7 +5,7 @@
 #include "entityStorage.h"
 #include "set"
 using namespace std;
-string ENTITYSTORAGE::serialize(std::vector<ENTITY> entities) {
+/*string ENTITYSTORAGE::serializeEntity(std::vector<ENTITY> entities) {
     string output;
     //We should find all types of one entity and pack them into a group of entities of the same class, then give them their unique attrs
     map<string, std::vector<ENTITY>> organizer;
@@ -25,4 +25,4 @@ string ENTITYSTORAGE::serialize(std::vector<ENTITY> entities) {
     // Serialize the entities in chunks so that we can pack data together easily based on a template
 
 
-}
+}*/
