@@ -39,6 +39,7 @@ class ENTITY {
     std::string type = "?";
 
     bool errored = false;
+    bool missingType = false;
 
     std::map<std::string, DYNABLOB> attributes;
 
@@ -51,10 +52,12 @@ public:
 
     ENTITY() {
         this->errored = true;
+        this->missingType = true;
     }
 
     ENTITY(ENTITYLOCATION location) {
         this->location = location;
+        this->missingType = true;
     }
     ///////////
     //Getters
@@ -69,11 +72,13 @@ public:
     void setLocation(ENTITYLOCATION l);
     void setType(std::string type);
     void setAttribute(DYNABLOB, std::string attribute);
+    void setAttributes(map<string, DYNABLOB> attributes);
 
     ////////////////
     //Serialization
-    static string serialize(ENTITY entity);
-    static ENTITY deserialize(string entityString);
+    string serializeEntity();
+    ENTITY deserializeEntity(string entityString);
+
 
 
 };
