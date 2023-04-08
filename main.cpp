@@ -29,7 +29,14 @@ int main() {
 
 #endif
 
-    /* New test for database functionality */
+    ENTITYLOCATION el = ENTITYLOCATION(1555.22, 1232.333, 8923.23333);
+    string type = "base.tree";
+    ENTITY e = ENTITY(el, type);
+
+    string serial = e.serializeEntity();
+
+    cout << serial << endl;
+    /* New test for database functionality
     sqlite3 *db;
     string sql;
     int rc;
@@ -83,7 +90,7 @@ int main() {
 
     /* *********************** */
 
-    /** SELECT AND VIEW THE BLOB AT POSITION 0 0 WITHIN TABLE LAYERS **/
+    /** SELECT AND VIEW THE BLOB AT POSITION 0 0 WITHIN TABLE LAYERS
     sql = "SELECT ENTITIES FROM LAYERS WHERE POSITION=0 AND LEVEL=0;";
     rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
     if (rc) {
@@ -106,9 +113,10 @@ int main() {
 
     cout << s << endl;
 
+    sqlite3_close(db);
     /* *********************** */
 
-    sqlite3_close(db);
+
 
 
     /* ARCHIVED TEST FOR WORLD GENERATION
