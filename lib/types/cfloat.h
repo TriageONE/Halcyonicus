@@ -20,13 +20,13 @@ public:
 
     cfloat(float f ) {
         this->whole = (int) f;
-        double temp = f - (uint) f;
+        double temp = f - (unsigned int) f;
         this->fraction = (temp * UINT16_MAX);
     }
 
     cfloat(double f ) {
         this->whole = (int) f;
-        double temp = f - (uint) f;
+        double temp = f - (unsigned int) f;
         this->fraction = (temp * UINT16_MAX);
     }
 
