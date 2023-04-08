@@ -20,7 +20,6 @@
 
 bool REGION::writeChunk(WORLD* world) {
     //Should be preceded by check if region exists
-    using namespace std;
     //Must read entire region in order to implement changes to chunks
     fstream regionFile;
     //find the name of the file
@@ -73,7 +72,7 @@ bool REGION::writeChunk(WORLD* world) {
 }
 
 bool REGION::readChunk(WORLD* world) {
-    using namespace std;
+
     //Affect the linked world to be overwritten with new data from the file
     //Must read entire region in order to implement changes to chunks
     std::fstream regionFile;
@@ -109,7 +108,7 @@ bool REGION::readChunk(WORLD* world) {
  */
 
 #if defined(WIN32)
-using namespace std;
+
 string ExePath() {
     char buffer[MAX_PATH] = { 0 };
     GetModuleFileName( nullptr, buffer, MAX_PATH );
@@ -181,7 +180,7 @@ bool REGION::createDirectories(){
  * @return True if the directories exist
  */
 bool REGION::checkForDirectoryStructure(){
-    using namespace std;
+
     #if defined(WIN32)
     const array<LPCSTR, 4> dirs {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data"};
     string currentPath = ExePath();
@@ -218,7 +217,7 @@ void REGION::createEmptyWorld(const std::filesystem::path& path){
     std::fstream file;
     file.open(path);
 
-    using namespace std;
+
 
     //Create new file if not exists
     if (!file.is_open())
@@ -267,7 +266,7 @@ bool REGION::worldExists(WORLDCOORD worldcoord) {
 }
 
 bool REGION::regionExists(REGIONCOORD regioncoord) {
-    using namespace std;
+
     std::ifstream regionFile;
     std::stringstream name;
     name << "rg_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hcr";
@@ -483,7 +482,7 @@ void REGION::readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world
 
     ifstream->seekg( (arrayOffset * 15360) + 2080 );
 
-    using namespace std;
+
 
     long long before = ifstream->tellg();
     ifstream->read(data, 1024);
@@ -545,7 +544,7 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *worl
 
     ofstream->seekp( (arrayOffset * 15360) + 2080 );
 
-    using namespace std;
+
 
     //We now have the first map, the climate map
     MAP *currentMap = &world->climatemap;
@@ -581,7 +580,7 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *worl
 
     cout << "\t\t#SM_INSPECT_OUT  HSH: " <<  currentMap->getRawHash() << " PLACE " << before << " -> " << after << endl;
 
-    using namespace std;
+
     for (CAVE &cave : world->caves){
 
         ::memset(data, 0, 1024);
@@ -607,7 +606,7 @@ std::string REGION::prependEntityDir(const string &in) {
 }
 
 bool REGION::entityRegionExists(REGIONCOORD regioncoord) {
-    using namespace std;
+
     std::ifstream regionFile;
     std::stringstream name;
     name << "rge_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hdb";
