@@ -3,7 +3,6 @@
 //
 #include "entity.h"
 #include <utility>
-#include <chrono>
 #include <sstream>
 
 ENTITYLOCATION ENTITY::getLocation() {
@@ -39,14 +38,18 @@ void ENTITY::setAttribute(DYNABLOB data, std::string attribute) {
     attributes.insert( std::pair<std::string, DYNABLOB> (attribute, data) );
 }
 
+void ENTITY::setAttributes(std::map<std::string, DYNABLOB> attrs){
+    this->attributes = std::move(attrs);
+}
+
 std::map<std::string, DYNABLOB> ENTITY::getAllAttributes() {
     return this->attributes;
 }
 
-string ENTITY::serialize(ENTITY entity){
+string ENTITY::serializeEntity(){
     // Ignore the type, just worry about extraneous data and location
 
-    ENTITYLOCATION el = entity.getLocation();
+    ENTITYLOCATION el = this->getLocation();
     cfloat x(0), y(0), z(0);
 
     x = el.getX();
@@ -55,9 +58,10 @@ string ENTITY::serialize(ENTITY entity){
 
     stringstream ss;
 
+    //     0     1-6              7-12             13-18             19
     ss << '{' << x.serialize() << y.serialize() << z.serialize() << '{';
 
-    for (pair<string, DYNABLOB> p : entity.getAllAttributes()){
+    for (pair<string, DYNABLOB> p : this->attributes){
         ss << '[' << p.first << p.second.serialize() << ']';
     }
 
@@ -66,27 +70,26 @@ string ENTITY::serialize(ENTITY entity){
 
 }
 
-ENTITY ENTITY::deserialize(string entityString){
+ENTITY ENTITY::deserializeEntity(string entityString){
 
     if (entityString[0] != '{'){
-        cerr << "Attempted to deserialize a malformed entityString, stuck on first char, expected \'{\', got " << entityString[0] << endl;
+        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on first char, expected \'{\', got " << entityString[0] << endl;
         return ENTITY();
     }
     if (entityString[19] != '{'){
-        cerr << "Attempted to deserialize a malformed entityString, stuck on attribute section initializer, expected \'{\', got " << entityString[19] << endl;
+        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section initializer, expected \'{\', got " << entityString[19] << endl;
         return ENTITY();
     }
 
-    int len = entityString.length();
+    unsigned long long len = entityString.length();
     if (entityString[len-1] != '}'){
-        cerr << "Attempted to deserialize a malformed entityString, stuck on last char escape, expected \'}\', got " << entityString[len-1] << endl;
+        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on last char escape, expected \'}\', got " << entityString[len-1] << endl;
         return ENTITY();
     }
     if (entityString[len-2] != '}'){
-        cerr << "Attempted to deserialize a malformed entityString, stuck on attribute section escape, expected \'}\', got " << entityString[len-2] << endl;
+        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section escape, expected \'}\', got " << entityString[len-2] << endl;
         return ENTITY();
     }
-
 
     ENTITYLOCATION el;
     cfloat  x = cfloat::deserializeToNewCFloat(entityString.substr(1,6)),
@@ -96,9 +99,49 @@ ENTITY ENTITY::deserialize(string entityString){
     el.setX(x);
     el.setY(y);
     el.setZ(z);
+    ENTITY e = ENTITY(el);
 
     int place = 20; // Start on the first char of the first attribute.
-    if (place == len-2) return ENTITY(el);
+    if (place == len-2) return e;
 
+    std::map<std::string, DYNABLOB> attributes;
+    //Loop through until we find a bracket, however if we reach len-2 then we are done
+
+    while (place < len - 1){
+        // When we find a bracket, start reading the name into the stringstream
+        if (entityString[place] == '['){
+            stringstream ss;
+            place++;
+            while(entityString[place] != '{'){
+                if (place >= len-2){
+                    cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << endl;
+                    return e;
+                }
+                ss << entityString[place];
+                place++;
+            }
+            string attrName = ss.str();
+            ss.clear();
+            ss << entityString[place];
+            place++;
+            while (entityString[place] != '}'){
+                if (place >= len-2){
+                    cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << endl;
+                    return e;
+                }
+                ss << entityString[place];
+                place++;
+            }
+            ss << entityString[place];
+            place++;
+            //Should now be at the end of the attribute
+            DYNABLOB data = DYNABLOB::deserialize(ss.str());
+            attributes.insert({attrName, data});
+        } else {
+            place++;
+        }
+    }
+    e.setAttributes(attributes);
+    return e;
 }
 
