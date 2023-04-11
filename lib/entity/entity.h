@@ -65,7 +65,9 @@ public:
     string getType();
     string getAttribute(const string& attribute);
     map<string, string> getAllAttributes();
-    [[nodiscard]] bool getErrored() const;
+    [[nodiscard]] bool isErrored() const;
+    [[nodiscard]] bool isUntyped() const;
+
 
     //////////
     //Setters
