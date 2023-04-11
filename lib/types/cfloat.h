@@ -81,12 +81,29 @@ public:
         return os;
     }
 
+    friend bool operator< (const cfloat& lhs, const cfloat& rhs){
+        if (lhs.whole == rhs.whole){
+            return (lhs.fraction < rhs.fraction);
+        } else return (lhs.whole < rhs.whole);
+    }
+
+    friend bool operator> (const cfloat& lhs, const cfloat& rhs) { return rhs < lhs; }
+
+    friend bool operator<=(const cfloat& lhs, const cfloat& rhs) { return !(lhs > rhs); }
+
+    friend bool operator>=(const cfloat& lhs, const cfloat& rhs) { return !(lhs < rhs); }
+
+    inline cfloat& operator=(const cfloat& other){
+        this->whole = other.whole;
+        this->fraction = other.fraction;
+    }
+
     [[nodiscard]] static short getPercentDiff(const cfloat& f) {
         double percentage = (static_cast<double>(f.fraction) / static_cast<double>(UINT16_MAX)) * 100.0;
         return (percentage * 100 ) + 1;
     }
 
-    [[nodiscard]] short getPercentDiff() {
+    [[nodiscard]] short getPercentDiff() const {
         double percentage = (static_cast<double>(this->fraction) / static_cast<double>(UINT16_MAX)) * 100.0;
         return (percentage * 100 ) + 1;
     }
@@ -97,30 +114,33 @@ public:
         for (; i < sizeof(int); i++){
             ss << ((char*) &this->whole)[i];
         }
+        int i2 = 0;
         for (; i < sizeof(short) + sizeof(int); i++){
-            ss << ((char*) &this->fraction)[i];
+            ss << ((char*) &this->fraction)[i2];
         }
         return ss.str();
     }
 
     void deserialize(string s){
         int i = 0;
+        int sum = 0;
         for (; i < sizeof(int); i++){
             ((char*) &this->whole)[i] = s[i];
         }
-        for (; i < sizeof(short) + sizeof(int); i++){
-            ((char*) &this->fraction)[i] = s[i];
+        int i2 = 0;
+        for (; i < sizeof(short) + sizeof(int); i++, i2++){
+            ((char*) &this->fraction)[i2] = s[i];
         }
     }
 
     static cfloat deserializeToNewCFloat(string s){
         int i = 0;
         cfloat c(0.0f);
-        for (; i < sizeof(int); i++){
+        for (; i < 4; i++){
             ((char*) &c.whole)[i] = s[i];
         }
-        for (; i < sizeof(short) + sizeof(int); i++){
-            ((char*) &c.fraction)[i] = s[i];
+        for (int j = 0; j < 2; j++, i++){
+            ((char*) &c.fraction)[j] = s[i];
         }
         return c;
     }
