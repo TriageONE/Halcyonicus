@@ -99,8 +99,11 @@ public:
         }
 
         while (sqlite3_step(stmt) != SQLITE_DONE) {
-            cluster->areas[sqlite3_column_int(stmt, 1)] = (char*) sqlite3_column_blob(stmt, 2);
+            int layer = sqlite3_column_int(stmt, 1);
+            string result = (char*) sqlite3_column_blob(stmt, 2);
+            cluster->deserializeIntolayer(result, layer);
         }
     }
+
 };
 #endif //HALCYONICUS_HDB_H
