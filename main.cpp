@@ -3,6 +3,7 @@
 #include "lib/world/world.h"
 #include "lib/noise/perlin.h"
 #include "lib/world/region.h"
+#include "lib/entity/entityCluster.h"
 
 #include "lib/sqlite/sqlite3.h"
 
@@ -11,15 +12,6 @@
 #include <cstdio>
 #endif
 
-using namespace std;
-static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
-    int i;
-    for(i = 0; i<argc; i++) {
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }
-    printf("\n");
-    return 0;
-}
 int main() {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -28,14 +20,63 @@ int main() {
     setvbuf(stdout, nullptr, _IOFBF, 2000);
 
 #endif
+    cfloat x(9555.22), y(1232.333), z(2);
+    cfloat x2(155.5552), y2(-2732.0), z2(-10);
+    cfloat x3(15.552), y3(8292.9823), z3(-133);
 
-    ENTITYLOCATION el = ENTITYLOCATION(1555.22, 1232.333, 8923.23333);
+    ENTITYLOCATION el = ENTITYLOCATION(x,y,z);
+    ENTITYLOCATION el2 = ENTITYLOCATION(x2,y2,z2);
+    ENTITYLOCATION el3 = ENTITYLOCATION(x3,y3,z3);
+
     string type = "base.tree";
+    string type2 = "base.machine";
+
     ENTITY e = ENTITY(el, type);
+    ENTITY e1 = ENTITY(el2, type);
+    ENTITY e2 = ENTITY(el3, type2);
 
-    string serial = e.serializeEntity();
+    DYNABLOB d1 = DYNABLOB(string("a lot"));
+    DYNABLOB d2 = DYNABLOB(cfloat(1209031.203), DYNABLOB::CFLOAT );
+    DYNABLOB d3 = DYNABLOB('1', DYNABLOB::CHAR);
+    DYNABLOB d4 = DYNABLOB(50023, DYNABLOB::SHORT);
+    DYNABLOB d5 = DYNABLOB(5.00231, DYNABLOB::FLOAT);
 
-    cout << serial << endl;
+    string d1s = d1.serialize();
+    string d2s = d2.serialize();
+    string d3s = d3.serialize();
+    string d4s = d4.serialize();
+    string d5s = d5.serialize();
+
+    e.setAttribute(d1s, "hp");
+    e.setAttribute(d2s, "age");
+    e1.setAttribute(d3s, "dead");
+    e2.setAttribute(d4s, "halScale");
+    e2.setAttribute(d5s, "eFactor" );
+    //Time to create a cluster
+    WORLDCOORD wc = WORLDCOORD(0,1,4);
+
+    ENTITYCLUSTER ec = ENTITYCLUSTER(wc);
+
+    ec.areas[0].push_back(e);
+    ec.areas[0].push_back(e1);
+    ec.areas[0].push_back(e2);
+
+    string levelSerial0 = ec.serializeLayer(0);
+
+    cout << "LEVEL SERIALIZATION RESULT: " << endl << levelSerial0 << endl << "LEVEL SERIALIZATION END" << endl;
+
+    ENTITYCLUSTER ec2 = ENTITYCLUSTER(wc);
+
+    ec2.deserializeIntolayer(levelSerial0, 0);
+
+    cout << "BEGIN OUTPUT FOR ENTITIES IN EC2: " << endl;
+
+    for (ENTITY ex : ec2.areas[0]) ex.out();
+
+    cout << "END OUTPUT FOR ENTITIES IN EC2" << endl;
+
+
+    return 0;
     /* New test for database functionality
     sqlite3 *db;
     string sql;
