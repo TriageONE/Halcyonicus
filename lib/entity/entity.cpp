@@ -29,9 +29,14 @@ string ENTITY::getAttribute(const std::string& attribute) {
     return attributes.find(attribute)->second;
 }
 
-bool ENTITY::getErrored() const {
+bool ENTITY::isErrored() const {
     return errored;
 }
+
+bool ENTITY::isUntyped() const{
+    return missingType;
+}
+
 
 void ENTITY::setAttribute(const std::string& dblob, const std::string& attribute) {
     cout << "Erasing " << attribute<< endl;
