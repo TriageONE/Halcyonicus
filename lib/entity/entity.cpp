@@ -22,27 +22,29 @@ void ENTITY::setType(std::string t) {
     this->type = std::move(t);
 }
 
-DYNABLOB *ENTITY::getAttribute(const std::string& attribute) {
-    std::map<std::string,DYNABLOB>::iterator it;
+string ENTITY::getAttribute(const std::string& attribute) {
+    std::map<std::string,string>::iterator it;
     it = attributes.find(attribute);
-    if (it == attributes.end()) return nullptr;
-    return &attributes.find(attribute)->second;
+    if (it == attributes.end()) return "NULL";
+    return attributes.find(attribute)->second;
 }
 
-bool ENTITY::getErrored() {
+bool ENTITY::getErrored() const {
     return errored;
 }
 
-void ENTITY::setAttribute(DYNABLOB data, std::string attribute) {
-    attributes.erase(attribute);
-    attributes.insert( std::pair<std::string, DYNABLOB> (attribute, data) );
+void ENTITY::setAttribute(const std::string& dblob, const std::string& attribute) {
+    cout << "Erasing " << attribute<< endl;
+    int erased = attributes.erase(attribute);
+    cout << "Erased " << erased << " entity attributes " << endl;
+    attributes.insert( pair<string, string>(attribute, dblob) );
 }
 
-void ENTITY::setAttributes(std::map<std::string, DYNABLOB> attrs){
-    this->attributes = std::move(attrs);
+void ENTITY::setAttributes(std::map<string, string> *attrs){
+    this->attributes = std::move(*attrs);
 }
 
-std::map<std::string, DYNABLOB> ENTITY::getAllAttributes() {
+std::map<string, string> ENTITY::getAllAttributes() {
     return this->attributes;
 }
 
@@ -58,11 +60,13 @@ string ENTITY::serializeEntity(){
 
     stringstream ss;
 
-    //     0     1-6              7-12             13-18             19
-    ss << '{' << x.serialize() << y.serialize() << z.serialize() << '{';
+    string xs = x.serialize(), ys = y.serialize(), zs = z.serialize();
 
-    for (pair<string, DYNABLOB> p : this->attributes){
-        ss << '[' << p.first << p.second.serialize() << ']';
+    //     0     1-6              7-12             13-18             19
+    ss << '{' << xs << ys << zs << '{';
+
+    for (pair<string, string> p : this->attributes){
+        ss << '[' << p.first << p.second << ']';
     }
 
     ss << "}}";
@@ -91,10 +95,19 @@ ENTITY ENTITY::deserializeEntity(string entityString){
         return ENTITY();
     }
 
+
     ENTITYLOCATION el;
-    cfloat  x = cfloat::deserializeToNewCFloat(entityString.substr(1,6)),
-            y = cfloat::deserializeToNewCFloat(entityString.substr(7,12)),
-            z = cfloat::deserializeToNewCFloat(entityString.substr(13,18));
+    cfloat x(0), y(0), z(0);
+
+    string substr = entityString.substr(1,6);
+    x = cfloat::deserializeToNewCFloat(substr);
+
+    substr = entityString.substr(7,6);
+    y = cfloat::deserializeToNewCFloat(substr);
+
+    substr = entityString.substr(13,6);
+    z = cfloat::deserializeToNewCFloat(substr);
+
 
     el.setX(x);
     el.setY(y);
@@ -102,9 +115,9 @@ ENTITY ENTITY::deserializeEntity(string entityString){
     ENTITY e = ENTITY(el);
 
     int place = 20; // Start on the first char of the first attribute.
-    if (place == len-2) return e;
+    if (place >= len-2) return e;
 
-    std::map<std::string, DYNABLOB> attributes;
+    std::map<std::string, std::string> attributes;
     //Loop through until we find a bracket, however if we reach len-2 then we are done
 
     while (place < len - 1){
@@ -121,6 +134,7 @@ ENTITY ENTITY::deserializeEntity(string entityString){
                 place++;
             }
             string attrName = ss.str();
+            ss.str("");
             ss.clear();
             ss << entityString[place];
             place++;
@@ -135,13 +149,34 @@ ENTITY ENTITY::deserializeEntity(string entityString){
             ss << entityString[place];
             place++;
             //Should now be at the end of the attribute
-            DYNABLOB data = DYNABLOB::deserialize(ss.str());
-            attributes.insert({attrName, data});
+            attributes.insert({attrName, ss.str()});
         } else {
             place++;
         }
     }
-    e.setAttributes(attributes);
+    e.setAttributes(&attributes);
     return e;
 }
 
+void ENTITY::out(){
+    cout << "ENTITY OUTPUT:" << endl << "\tTYPE: \"" << this->type << "\"" << endl;
+    cout << "\tERRORED: " << ((this->errored)? "TRUE" : "FALSE") << endl;
+    cout << "\tX: " << this->getLocation().getX().asString()  << endl;
+    cout << "\tY: " << this->getLocation().getY().asString()  << endl;
+    cout << "\tZ: " << this->getLocation().getZ().asString() << endl;
+
+    cout << "ATTRIBUTES: {" << endl;
+    for (pair<string, string> p : this->attributes){
+        cout << "\t\t" << p.first << " : " << p.second << endl;
+    }
+    cout << "}\n\rEND ENTITY OUTPUT" << endl;
+
+}
+
+bool ENTITY::removeAttribute(const string& attribute) {
+    return this->attributes.erase(attribute);
+}
+
+bool ENTITY::hasAttribute(const string& attribute){
+    return this->attributes.contains(attribute);
+}
