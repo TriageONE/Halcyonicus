@@ -41,7 +41,7 @@ class ENTITY {
     bool errored = false;
     bool missingType = false;
 
-    std::map<std::string, DYNABLOB> attributes;
+    std::map<std::string, std::string> attributes;
 
 public:
 
@@ -62,23 +62,44 @@ public:
     ///////////
     //Getters
     ENTITYLOCATION getLocation();
-    std::string getType();
-    DYNABLOB * getAttribute(const std::string& attribute);
-    std::map<std::string, DYNABLOB> getAllAttributes();
-    bool getErrored();
+    string getType();
+    string getAttribute(const string& attribute);
+    map<string, string> getAllAttributes();
+    [[nodiscard]] bool getErrored() const;
 
     //////////
     //Setters
     void setLocation(ENTITYLOCATION l);
     void setType(std::string type);
-    void setAttribute(DYNABLOB, std::string attribute);
-    void setAttributes(map<string, DYNABLOB> attributes);
+    void setAttribute(const std::string& dblob, const std::string& attribute);
+    void setAttributes(map<string, string> * attributes);
+
+    ////////////
+    //Modifiers
+    bool removeAttribute(const string& attribute);
+    bool hasAttribute(const string& attribute);
 
     ////////////////
     //Serialization
     string serializeEntity();
-    ENTITY deserializeEntity(string entityString);
+    static ENTITY deserializeEntity(string entityString);
 
+    ////////////
+    //Operators
+    friend bool operator==(const ENTITY& lhs, const ENTITY& rhs)
+    {
+        //Must compare all attributes unless UUID as a attr is used
+        if (lhs.type != rhs.type) return false;
+        if (lhs.attributes.contains("uuid") && rhs.attributes.contains("uuid")){
+            return (lhs.attributes.find("uuid") == rhs.attributes.find("uuid"));
+        }
+        //If they do not have a uuid then we cannot guarantee that they are equal.
+        return false;
+    }
+
+    ////////////
+    //Debuggers
+    void out();
 
 
 };
