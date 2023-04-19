@@ -92,7 +92,7 @@ public:
     {
         //Must compare all attributes unless UUID as a attr is used
         if (lhs.type != rhs.type) return false;
-        if (lhs.attributes.contains("uuid") && rhs.attributes.contains("uuid")){
+        if ((lhs.attributes.find("uuid") == lhs.attributes.end()) && (rhs.attributes.find("uuid") == rhs.attributes.end())){
             return (lhs.attributes.find("uuid") == rhs.attributes.find("uuid"));
         }
         //If they do not have a uuid then we cannot guarantee that they are equal.

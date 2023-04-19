@@ -12,7 +12,7 @@
 #include <filesystem>
 #ifdef WIN32
     #include <fileapi.h>
-    #include <windows.h>
+    #include <libloaderapi.h>
     #include <direct.h>
 #endif
 

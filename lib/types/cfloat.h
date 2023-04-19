@@ -96,6 +96,7 @@ public:
     inline cfloat& operator=(const cfloat& other){
         this->whole = other.whole;
         this->fraction = other.fraction;
+        return *this;
     }
 
     [[nodiscard]] static short getPercentDiff(const cfloat& f) {
@@ -108,8 +109,8 @@ public:
         return (percentage * 100 ) + 1;
     }
 
-    string serialize(){
-        stringstream ss;
+    std::string serialize(){
+        std::stringstream ss;
         int i = 0;
         for (; i < sizeof(int); i++){
             ss << ((char*) &this->whole)[i];
@@ -121,7 +122,7 @@ public:
         return ss.str();
     }
 
-    void deserialize(string s){
+    void deserialize(std::string s){
         int i = 0;
         int sum = 0;
         for (; i < sizeof(int); i++){
@@ -133,7 +134,7 @@ public:
         }
     }
 
-    static cfloat deserializeToNewCFloat(string s){
+    static cfloat deserializeToNewCFloat(std::string s){
         int i = 0;
         cfloat c(0.0f);
         for (; i < 4; i++){
@@ -145,8 +146,8 @@ public:
         return c;
     }
 
-    string asString(){
-        stringstream ss;
+    std::string asString(){
+        std::stringstream ss;
         ss << this->whole << ".";
 
         ss << getPercentDiff();

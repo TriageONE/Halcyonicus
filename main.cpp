@@ -7,16 +7,18 @@
 #include "lib/sqlite/sqlite3.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#include <Windows.h>
+
+#include <io.h>
+#include <fcntl.h>
 #include <cstdio>
 #endif
 
 int main() {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    SetConsoleOutputCP(CP_UTF8);
+    //_setmode(_fileno(stdout), _O_U16TEXT);
     // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
-    setvbuf(stdout, nullptr, _IOFBF, 2000);
+    //setvbuf(stdout, nullptr, _IOFBF, 2000);
 
 #endif
 
@@ -79,6 +81,7 @@ int main() {
     for (ENTITY ex : ec2.areas[0]) ex.out();
 
     cout << "END OUTPUT FOR ENTITIES IN EC2" << endl;
+
     return 0;
     */
 
