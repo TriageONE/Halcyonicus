@@ -1,9 +1,8 @@
 #include <iostream>
-#include <fstream>
 #include "lib/world/world.h"
 #include "lib/noise/perlin.h"
 #include "lib/world/region.h"
-#include "lib/entity/entityCluster.h"
+
 
 #include "lib/sqlite/sqlite3.h"
 
@@ -20,6 +19,12 @@ int main() {
     setvbuf(stdout, nullptr, _IOFBF, 2000);
 
 #endif
+
+    //cout << HDB::createNewEntityDatabase(REGIONCOORD(0,0));
+
+    /**
+     * ENTITY SERIALIZATION EXAMPLE FOR PUSHING MANY ENTITIES TO A CLUSTER AND THEN HAVING THEM RETURN AS NORMAL ENTITIES
+
     cfloat x(9555.22), y(1232.333), z(2);
     cfloat x2(155.5552), y2(-2732.0), z2(-10);
     cfloat x3(15.552), y3(8292.9823), z3(-133);
@@ -74,9 +79,9 @@ int main() {
     for (ENTITY ex : ec2.areas[0]) ex.out();
 
     cout << "END OUTPUT FOR ENTITIES IN EC2" << endl;
-
-
     return 0;
+    */
+
     /* New test for database functionality
     sqlite3 *db;
     string sql;
@@ -111,6 +116,8 @@ int main() {
     /* *********************** */
 
     /** INSERT INTO DATABASE A NEW ENTRY PLACE 0 LEVEL 0 **
+     * PREPARE, BIND, STEP, FINALIZE
+
     if (sqlite3_prepare_v2(db, "INSERT INTO LAYERS VALUES(?, ?, ?)", -1, &stmt, nullptr)) {
         printf("Error executing sql statement\n");
         sqlite3_close(db);
@@ -132,6 +139,8 @@ int main() {
     /* *********************** */
 
     /** SELECT AND VIEW THE BLOB AT POSITION 0 0 WITHIN TABLE LAYERS
+     * PREPARE, STEP, COLUMN-GRAB, OUTPUT
+
     sql = "SELECT ENTITIES FROM LAYERS WHERE POSITION=0 AND LEVEL=0;";
     rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
     if (rc) {
@@ -160,8 +169,8 @@ int main() {
 
 
 
-    /* ARCHIVED TEST FOR WORLD GENERATION
-    string seed = "hyperion";
+    // ARCHIVED TEST FOR WORLD GENERATION
+    string seed = "seed2";
 
     if(!REGION::checkForDirectoryStructure()){
         cout << "Creating directories..." << endl;
@@ -171,8 +180,8 @@ int main() {
     vector<REGIONCOORD> existenceCache;
     int matches = 0, misses = 0;
 
-    for (int x = 0; x < 16; x++){
-        for (int y = 0; y < 16; y++){
+    for (int x = 0; x < 1; x++){
+        for (int y = 0; y < 1; y++){
             WORLDCOORD wc = WORLDCOORD(x,y,0);
             WORLD w = WORLD(seed, wc);
             w.constrain();
@@ -183,12 +192,12 @@ int main() {
 
             w.generate();
 
-            //w.out();
+            w.out();
 
             REGIONCOORD rc = wc.getRegionCoordinates();
             cout << "Region " << rc.getX() << ", " << rc.getY() << endl;
             cout << "WorldShard " << wc.getX() << ", " << wc.getY() << endl;
-
+            /**
             if (existenceCache.empty()){
                 cout << "Testing to see if the region " << rc.getX() << ", " << rc.getY() << " exists.." << endl;
                 bool exists = REGION::regionExists(wc.getRegionCoordinates());
@@ -231,11 +240,12 @@ int main() {
 
             cout << "WC_" << x << "_" << y << ": \n\t" << w1h << ", \n\t" << w2h << ";\n\t" << ((w1h == w2h) ? "MATCH" : "NO_MATCH") << endl;
             if (w1h == w2h) matches++; else misses++;
+             */
         }
     }
 
     cout << "JOB FINISHED, MATCHES:" << matches << ", MISSES: " << misses << endl;
     return 0;
-     */
+
 
 }
