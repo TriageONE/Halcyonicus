@@ -1,0 +1,24 @@
+{
+  "name" : "halcyonicus",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "2b1757dd1d5ed7d9d5bb65fd8316631b157e7afc",
+  "dependencies" : [ {
+    "name" : "cryptopp",
+    "version>=" : "8.7.0#3",
+    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(cryptopp CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE cryptopp::cryptopp)\n"
+  }, {
+    "name" : "7zip",
+    "version>=" : "22.01",
+    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(7zip CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE 7zip::7zip)\n"
+  }, {
+    "name" : "vcpkg-cmake-get-vars",
+    "version>=" : "2023-03-02"
+  }, {
+    "name" : "openssl",
+    "version>=" : "3.1.0#2"
+  }, {
+    "name" : "libsodium",
+    "version>=" : "1.0.18#8",
+    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(unofficial-sodium CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE unofficial-sodium::sodium)\n"
+  } ]
+}

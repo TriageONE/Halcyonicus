@@ -1,0 +1,42 @@
+#include "lib/crypto/ecdh.h"
+
+#include <iostream>
+#include <string>
+#include <cstdio>
+
+using namespace std;
+
+std::string stringToHex(const std::string& input) {
+    std::stringstream stream;
+    stream << std::hex << std::setfill('0');
+    for (char i : input) {
+        stream << " " << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(i));
+    }
+    return stream.str();
+}
+
+int main() {
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    //Does not work for no good reason
+    //_setmode(_fileno(stdout), _O_U16TEXT);
+    // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
+    setvbuf(stdout, nullptr, _IOFBF, 2000);
+#endif
+
+    ECDH alice{};
+    ECDH bob{};
+
+    alice.createNewKey();
+    bob.createNewKey();
+
+    string aEC = alice.extractECPOINT();
+    string bEC = bob.extractECPOINT();
+
+    //You can wrap each string in stringToHex() if they pose issues with formatting
+    cout << stringToHex(aEC) << endl << stringToHex(bEC) << endl;
+    cout << stringToHex(alice.getSecretFromOthersKey(bEC)) << endl << stringToHex(bob.getSecretFromOthersKey(aEC)) << endl;
+
+    return 0;
+
+}

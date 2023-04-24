@@ -235,7 +235,7 @@ void MAP::out(){
     int line = 0;
     for (int y = 0; y < 64; ++y)
     {
-        std::cout << std::endl << "#" << line << ":  \t" ;
+        std::wcout << std::endl << "#" << line << ":  \t" ;
         line++;
         for (int x = 0; x < 64; ++x)
         {
@@ -243,16 +243,16 @@ void MAP::out(){
             place++;
             switch(h){
                 case 0b00000000:
-                    std::cout << "░░";
+                    std::wcout << "░░";
                     break;
                 case 0b00000001:
-                    std::cout << "▒▒";
+                    std::wcout << "▒▒";
                     break;
                 case 0b00000010:
-                    std::cout << "▓▓";
+                    std::wcout << "▓▓";
                     break;
                 default:
-                    std::cout << "██";
+                    std::wcout << "██";
             }
         }
     }
