@@ -14,3 +14,6 @@ target_link_libraries(Halcyonicus PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
 find_package(unofficial-sodium CONFIG REQUIRED)
 target_link_libraries(Halcyonicus PRIVATE unofficial-sodium::sodium)
+
+find_package(unofficial-enet CONFIG REQUIRED)
+target_link_libraries(Halcyonicus PRIVATE unofficial::enet::enet)
