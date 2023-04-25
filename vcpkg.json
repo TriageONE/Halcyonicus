@@ -20,5 +20,9 @@
     "name" : "libsodium",
     "version>=" : "1.0.18#8",
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(unofficial-sodium CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE unofficial-sodium::sodium)\n"
+  }, {
+    "name" : "enet",
+    "version>=" : "1.3.17#1",
+    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(unofficial-enet CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE unofficial::enet::enet)\n"
   } ]
 }
