@@ -1,5 +1,5 @@
 #include "lib/crypto/ecdh.h"
-#include <sodium.h>
+#include "lib/crypto/cc20.h"
 
 #include <iostream>
 #include <string>
@@ -38,45 +38,30 @@ int main() {
     string bobSecret = bob.getSecretFromOthersKey(aEC);
 
     //You can wrap each string in stringToHex() if they pose issues with formatting
-    cout << stringToHex(aEC) << endl << stringToHex(bEC) << endl;
-    cout << stringToHex(aliceSecret) << endl << stringToHex(bobSecret) << endl;
+    cout << "Alice's Public Key: " << stringToHex(aEC) << endl << "Bob's Public Key: " << stringToHex(bEC) << endl;
+    cout << "Alice's Private Key: " << stringToHex(aliceSecret) << endl << "Bob's Private Key: " << stringToHex(bobSecret) << endl;
 
     string alicesSecretMessage = "This is alice's secret message that must be encrypted and decrypted";
     string bobsSecretMessage = "This is bob's secret message that must be encrypted and decrypted";
 
-    // Initialize libsodium
-    if (sodium_init() == -1) {
-        std::cerr << "Error initializing libsodium" << std::endl;
-        return 1;
-    }
+    cout << "Plaintext Alice: " << alicesSecretMessage << endl;
+    cout << "Plaintext Bob: " << bobsSecretMessage << endl;
 
-    // Generate a random key and nonce
-    unsigned char key[crypto_stream_chacha20_KEYBYTES];
-    unsigned char nonce[crypto_stream_chacha20_NONCEBYTES];
-    randombytes_buf(key, sizeof key);
-    randombytes_buf(nonce, sizeof nonce);
+    CC20 chaB {bobSecret};
+    CC20 chaA {aliceSecret};
 
-    // Encrypt a string
-    std::string plaintext = "This is a secret message";
-    std::string ciphertext(plaintext.size(), '\0');
-    crypto_stream_chacha20_xor(reinterpret_cast<unsigned char*>(&ciphertext[0]),
-                               reinterpret_cast<const unsigned char*>(plaintext.c_str()),
-                               plaintext.size(),
-                               nonce,
-                               key);
+    string encA = chaA.encryptMessage(alicesSecretMessage);
+    string encB = chaB.encryptMessage(bobsSecretMessage);
 
-    // Decrypt the string
-    std::string decryptedtext(ciphertext.size(), '\0');
-    crypto_stream_chacha20_xor(reinterpret_cast<unsigned char*>(&decryptedtext[0]),
-                               reinterpret_cast<const unsigned char*>(ciphertext.c_str()),
-                               ciphertext.size(),
-                               nonce,
-                               key);
+    cout << "Ciphertext Alice: " << stringToHex( encA ) << endl;
+    cout << "Ciphertext Bob: " << stringToHex( encB ) << endl;
 
-    // Print the results
-    std::cout << "Original message: " << plaintext << std::endl;
-    std::cout << "Encrypted message: " << ciphertext << std::endl;
-    std::cout << "Decrypted message: " << decryptedtext << std::endl;
+    string decA = chaA.decryptMessage(encA);
+    string decB = chaB.decryptMessage(encB);
+
+    cout << "Deciphered Text Alice: " << decA << endl;
+    cout << "Deciphered Text Bob: " << decB << endl;
+
 
     return 0;
 
