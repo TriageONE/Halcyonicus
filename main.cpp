@@ -1,20 +1,21 @@
-#include "lib/crypto/ecdh.h"
-#include "lib/crypto/cc20.h"
-
 #include <iostream>
 #include <string>
 #include <cstdio>
 
+#include "lib/net/halNet.h"
+#include "lib/net/halNetP.h"
+#include <thread>
+#include <chrono>
+
 using namespace std;
 
-std::string stringToHex(const std::string& input) {
-    std::stringstream stream;
-    stream << std::hex << std::setfill('0');
-    for (char i : input) {
-        stream << /*" " <<*/ std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(i));
+[[noreturn]] void helloWorldThread() {
+    while (true) {
+        std::cout << "Hello, world!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    return stream.str();
 }
+
 
 int main() {
 
@@ -25,43 +26,17 @@ int main() {
     setvbuf(stdout, nullptr, _IOFBF, 2000);
 #endif
 
-    ECDH alice{};
-    ECDH bob{};
+    // create a new thread and start running the helloWorldThread function
+    std::thread t(helloWorldThread);
 
-    alice.createNewKey();
-    bob.createNewKey();
+    // main thread continues running while the other thread is running in the background
+    while (true) {
+        // do some other work in the main thread
+        // ...
+    }
 
-    string aEC = alice.extractECPOINT();
-    string bEC = bob.extractECPOINT();
-
-    string aliceSecret = alice.getSecretFromOthersKey(bEC);
-    string bobSecret = bob.getSecretFromOthersKey(aEC);
-
-    //You can wrap each string in stringToHex() if they pose issues with formatting
-    cout << "Alice's Public Key: " << stringToHex(aEC) << endl << "Bob's Public Key: " << stringToHex(bEC) << endl;
-    cout << "Alice's Private Key: " << stringToHex(aliceSecret) << endl << "Bob's Private Key: " << stringToHex(bobSecret) << endl;
-
-    string alicesSecretMessage = "This is alice's secret message that must be encrypted and decrypted";
-    string bobsSecretMessage = "This is bob's secret message that must be encrypted and decrypted";
-
-    cout << "Plaintext Alice: " << alicesSecretMessage << endl;
-    cout << "Plaintext Bob: " << bobsSecretMessage << endl;
-
-    CC20 chaB {bobSecret};
-    CC20 chaA {aliceSecret};
-
-    string encA = chaA.encryptMessage(alicesSecretMessage);
-    string encB = chaB.encryptMessage(bobsSecretMessage);
-
-    cout << "Ciphertext Alice: " << stringToHex( encA ) << endl;
-    cout << "Ciphertext Bob: " << stringToHex( encB ) << endl;
-
-    string decA = chaA.decryptMessage(encA);
-    string decB = chaB.decryptMessage(encB);
-
-    cout << "Deciphered Text Alice: " << decA << endl;
-    cout << "Deciphered Text Bob: " << decB << endl;
-
+    // wait for the other thread to finish before exiting the program
+    t.join();
 
     return 0;
 
