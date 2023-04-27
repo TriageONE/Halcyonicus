@@ -13,6 +13,9 @@
  * Its an abstraction on top of UDP and works to patch all systems together.
  * This may turn into a massive class filled with thousands of working parts...
  */
+
+using namespace std;
+
 class HALNET{
 
     /*
@@ -42,15 +45,16 @@ public:
         // Bind address 1982 for player interactions
         address.port = 1982;
 
+        cout << "SRV: Attempting to start server..." << endl;
         server = enet_host_create (&address /* the address to bind the server host to */,
-                                   4096      /* allow up to 4096 clients and/or outgoing connections */,
+                                   4      /* allow up to 4096 clients and/or outgoing connections */,
                                    2      /* allow up to 2 channels to be used, 0 and 1 */,
                                    0      /* assume any amount of incoming bandwidth */,
                                    0      /* assume any amount of outgoing bandwidth */);
         if (server == NULL)
         {
             fprintf (stderr,
-                     "An error occurred while trying to create an ENet server host.\n");
+                     "SRV: An error occurred while trying to create an ENet server host.\n");
             exit (EXIT_FAILURE);
         }
 
@@ -62,19 +66,19 @@ public:
 
     void listen(){
         ENetEvent event;
-        while (enet_host_service (server, & event, 1000) > 0)
+        while (enet_host_service (server, &event, 3000) > 0)
         {
             switch (event.type)
             {
                 case ENET_EVENT_TYPE_CONNECT:
-                    printf ("A new client connected from %x:%u.\n",
+                    printf ("SRV: A new client connected from %x:%u.\n",
                             event.peer -> address.host,
                             event.peer -> address.port);
                     /* Store any relevant client information here. */
                     event.peer -> data = (void *) "Client information";
                     break;
                 case ENET_EVENT_TYPE_RECEIVE:
-                    printf ("A packet of length %zu containing %s was received from %s on channel %u.\n",
+                    printf ("SRV: A packet of length %zu containing %s was received from %s on channel %u.\n",
                             event.packet -> dataLength,
                             event.packet -> data,
                             event.peer -> data,
@@ -85,7 +89,7 @@ public:
                     break;
 
                 case ENET_EVENT_TYPE_DISCONNECT:
-                    printf ("%s disconnected.\n", event.peer -> data);
+                    printf ("SRV: %s disconnected.\n", event.peer -> data);
                     /* Reset the peer's client information. */
                     event.peer -> data = NULL;
             }
