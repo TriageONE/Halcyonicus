@@ -337,4 +337,7 @@ Bataireacht fighting as a wizards foci where when they hit the stick with someth
 "Name something youve seen but never heard of, something that comes once and looks like youve seen it before but has no name for you to use"
 The Sheleighlah
 
+//////////////////////
+04-27-23
 
+Ive fund a cross platform difference between windows and mac for the library i use called ENET. ENET is my library i use to prepare communications between host and server, set up listeners and sockets etc. This fails to install and work on windows, which is a dealbreaker. I assume if it works on my mac, it will logically work on linux as well, and maybe on windows, but we cant be sure. I need everything here to compile on my NT platform because i plan to have this be fully windows/mac/linux cross compatible. The server at least should work on any deployment, be entirely self contained, have no external dependencies and be interfaceable via a terminal
