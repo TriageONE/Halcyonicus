@@ -5,8 +5,8 @@
 #ifndef HALCYONICUS_HALNET_H
 #define HALCYONICUS_HALNET_H
 
-#include <enet/enet.h>
 #include <cstdio>
+#include <enet/enet.h>
 
 /**
  * HALNET is the backbone networking solution to everything halcyonicus.
@@ -47,7 +47,7 @@ public:
 
         cout << "SRV: Attempting to start server..." << endl;
         server = enet_host_create (&address /* the address to bind the server host to */,
-                                   4      /* allow up to 4096 clients and/or outgoing connections */,
+                                   4      /* allow up to 4 clients and/or outgoing connections */,
                                    2      /* allow up to 2 channels to be used, 0 and 1 */,
                                    0      /* assume any amount of incoming bandwidth */,
                                    0      /* assume any amount of outgoing bandwidth */);

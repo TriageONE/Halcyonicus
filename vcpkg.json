@@ -7,7 +7,7 @@
     "version>=" : "2023-03-02"
   }, {
     "name" : "openssl",
-    "version>=" : "3.1.0#2"
+    "version>=" : "3.1.0#3"
   }, {
     "name" : "libsodium",
     "version>=" : "1.0.18#8",

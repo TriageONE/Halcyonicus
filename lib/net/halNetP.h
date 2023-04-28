@@ -6,6 +6,10 @@
 #define HALCYONICUS_HALNETP_H
 #include <enet/enet.h>
 #include <cstdio>
+#include <string>
+#include <iostream>
+
+using namespace std;
 
 class HALNET_P{
     /** describes the idea of a player connecting to a server, and will evolve to become massive and interesting
@@ -17,7 +21,7 @@ class HALNET_P{
     bool connected = false;
 
 public:
-    HALNET_P(std::string addressString){
+    HALNET_P(string addressString){
         enet_address_set_host (& address, addressString.c_str());
         this->address.port = 1982;
         client = enet_host_create (nullptr /* create a client host */,
@@ -53,7 +57,7 @@ public:
 
     void disconnect(){
         if (!connected) {
-            cout << "CLI: Client was not connected to any server!" << endl;
+            std::cout << "CLI: Client was not connected to any server!" << endl;
             return;
         }
         ENetEvent event;

@@ -5,8 +5,8 @@
 #include "lib/net/halNet.h"
 #include "lib/net/halNetP.h"
 #include <thread>
-#include <chrono>
 #include <mutex>
+#include <unistd.h>
 
 using namespace std;
 
@@ -21,7 +21,11 @@ int main() {
     // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
     setvbuf(stdout, nullptr, _IOFBF, 2000);
 #endif
-
+    if (enet_initialize() != 0)
+    {
+        std::cerr << "Failed to initialize Enet" << std::endl;
+        exit(EXIT_FAILURE);
+    }
     HALNET server;
     // create a new thread and start running the helloWorldThread function
     std::thread t( [&server] () {
