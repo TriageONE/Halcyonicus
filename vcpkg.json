@@ -17,11 +17,7 @@
     "version>=" : "1.3.17#1",
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(unofficial-enet CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE unofficial::enet::enet)\n"
   }, {
-    "name" : "cpp-netlib",
-    "version>=" : "0.13.0#8"
-  }, {
-    "name" : "sdl2-net",
-    "version>=" : "2.2.0#1",
-    "$comment" : "    find_package(SDL2_net CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE $<IF:$<TARGET_EXISTS:SDL2_net::SDL2_net>,SDL2_net::SDL2_net,SDL2_net::SDL2_net-static>)\n"
+    "name" : "zlib",
+    "version>=" : "1.2.13"
   } ]
 }

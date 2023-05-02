@@ -1,0 +1,46 @@
+This file is used to track the status of the network API, where we require many channels of looping and intertwined functions to be able to be made. When you create one function, there must be a rabbithole for every next step, ensuring all bases for the conversation are covered
+
+define stdSessionHeader as = sessionKey << enc(nonce8b) << enc+(payload)
+define enc() as "Encrypt using the private key only with no nonce or nonce as 0"
+define enc+() as "Encrypt using nonce and pkey"
+
+//This is known as stage3 encryption or HalCrypt, and is extremely resistant to attacks, however someone could scrape the session identifier, and possibly MITM if they overtook their IP address
+
+CREQ    //Connection request, a request that initially comes unencrypted to connect
+    To server,
+        should contain CREQ << [32byte Pub key]
+    Check length, exact size
+    Check alreadyConnected, session scan
+        If already connected, give back session ID and respond ARCN with session ID as next 4 bytes
+    Generate our keypair
+    Generate unique session identifier
+    Insert a session into the session map
+    Respond CASS with session ID appended as next 4 bytes with public key after
+
+
+
+CTES    //Ctest, connection tester to ensure that encrypt works
+    To Server,
+        stdSessionHeader
+            where payload is "a constant string labeled as [CTESHello, Halcyonicus!]"
+    Find session by session key
+        if session exists, continue
+        if no session exists, do not respond and return
+    compare last IP and port to this ip and port from session gathered
+        if match continue
+        if no match, respond with stdSessionHeader where payload is CHNG + [random 17 chars] and return
+    gather nonce and private key,
+    decrypt payload with nonce and key
+    if result equals the known "CTESHello, Halcyonicus!"
+        respond with stdSessionHeader where payload is "SCSSHello, Traveller!"
+        else respond with [SessionID]FAIL
+
+    CLIENTSIDE
+    after send,
+        TODO: If recieve no response,
+            assume there is no session,
+            TODO: take appropriate action to reconnect using RCON
+        TODO: If recieve CHNG+[17bytes random data],
+            IDEA: Take action with RCON and attempt a reconnect
+        TODO: If recieve "SCSSHello, Traveller!"
+            TODO: do nothing, just relax as this means you made it and all encryption data is used correctly

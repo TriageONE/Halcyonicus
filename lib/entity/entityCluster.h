@@ -36,28 +36,28 @@ public:
         areas[layer].push_back(e);
     }
 
-    string serializeLayer(int layer){
+    std::string serializeLayer(int layer){
         if (this->areas[layer].empty()){
-            cout << "Serialization from layer " << layer << " failed, layer is empty." << endl;
+            std::cout << "Serialization from layer " << layer << " failed, layer is empty." << std::endl;
             return {""};
         }
         std::clamp(layer, 0, 12);
 
-        std::vector<string> types;
+        std::vector<std::string> types;
 
         //Sort the types for the entities and bag them together eventually
         for (ENTITY e : this->areas[layer]){
-            string type = e.getType();
+            std::string type = e.getType();
             if (std::find(types.begin(), types.end(), type) == types.end())
                 types.push_back(type);
         }
         //We should have put together all the types and now we can shuffle them into a sacrificial vector
 
-        vector<ENTITY> sev = vector<ENTITY>(this->areas[layer]);
+        std::vector<ENTITY> sev = std::vector<ENTITY>(this->areas[layer]);
 
-        stringstream ss;
+        std::stringstream ss;
 
-        for (const string& type : types){
+        for (const std::string& type : types){
             unsigned long realLen = type.length();
             auto tLen = (unsigned short) realLen;
             char length[2];
@@ -68,13 +68,13 @@ public:
             // purposes
 
             ss << "{" << length[0] << length[1] << type.substr(0, tLen );
-            cout << "Current SS: " << ss.str() << endl;
+            std::cout << "Current SS: " << ss.str() << std::endl;
             auto it = sev.begin();
             while (it != sev.end()){
                 if (it->getType() == type){
-                    cout << "Preparing to serialize new entity.. "<< endl;
-                    string entity = it->serializeEntity();
-                    cout << "Found entity as:" << endl;
+                    std::cout << "Preparing to serialize new entity.. "<< std::endl;
+                    std::string entity = it->serializeEntity();
+                    std::cout << "Found entity as:" << std::endl;
                     outputNeatly(entity);
 
                     ss << entity;
@@ -87,9 +87,9 @@ public:
         return ss.str();
     }
 
-    void deserializeIntolayer(const string& data, int layer){
+    void deserializeIntolayer(const std::string& data, int layer){
         if (data.length() <= 2){
-            cout << "Layer is empty, no changes made." << endl;
+            std::cout << "Layer is empty, no changes made." << std::endl;
             return;
         }
         std::clamp(layer, 0, 12);
@@ -106,20 +106,20 @@ public:
             //start by finding the first token using a bracket counter
             while (data[position] != '{') {
                 if (position > len-1) {
-                    cerr << "WARN: Deserialization into layer " << layer << " completed because we could not find an opener \'{\', last character at position " << position << " was \'" << data[position] << '\'' << endl;
+                    std::cerr << "WARN: Deserialization into layer " << layer << " completed because we could not find an opener \'{\', last character at position " << position << " was \'" << data[position] << '\'' << std::endl;
                     return;
                 }
                 position++;
             }
             //We have reached our first bracket and that means we can start recording the first entity type
-            cout << "Reached first token at position " << position << endl;
+            std::cout << "Reached first token at position " << position << std::endl;
             typeCounter = true;
-            stringstream ent;
-            stringstream type;
+            std::stringstream ent;
+            std::stringstream type;
             //We are looking for another bracket and recording the characters into the type buffer
             //Raise the position to not count the bracket
             position++;
-            cout << "Position is now " << position << endl;
+            std::cout << "Position is now " << position << std::endl;
             unsigned short tLen;
             char tcLen[2];
             tcLen[0] = data[position];
@@ -130,18 +130,18 @@ public:
             int tracker = 0;
             while (typeCounter){
                 if (position > len-1) {
-                    cout << "INFO: Reached end of file during typecounter step, possibly a malformed string?" << endl;
+                    std::cout << "INFO: Reached end of file during typecounter step, possibly a malformed string?" << std::endl;
                     return;
                 }
                 char thisChar = data[position];
                 if ( tracker >= tLen) {
-                    cout << "Entered type " << type.str() << " on char " << data[position] << endl;
+                    std::cout << "Entered type " << type.str() << " on char " << data[position] << std::endl;
                     bracketCoutner++;
                     ent << thisChar;
                     position++;
                     while (bracketCoutner != 0){
                         if (position > len-1) {
-                            cout << "INFO: Reached end of file at position " << position << " with current buffer: " << endl << ent.str() << endl;
+                            std::cout << "INFO: Reached end of file at position " << position << " with current buffer: " << std::endl << ent.str() << std::endl;
                             return;
                         }
                         thisChar = data[position];
@@ -152,17 +152,17 @@ public:
                         }
                         position++;
                     }
-                    cout << "INFO: Found end of entity, emplacing into layer.." << endl;
+                    std::cout << "INFO: Found end of entity, emplacing into layer.." << std::endl;
                     ENTITY e = ENTITY::deserializeEntity(ent.str());
                     e.setType(type.str());
                     areas[layer].push_back(e);
-                    cout << "INFO: Pushed entity into layer: " << ent.str() << endl;
+                    std::cout << "INFO: Pushed entity into layer: " << ent.str() << std::endl;
                     ent.str("");
                     ent.clear();
                     //Skip the newline
                     //If we find that this is also a closing bracket we have to assume that this is the end of the stack of entity types
                     if (data[position] == '}') {
-                        cout << "INFO: reached end of type \"" << type.str() << "\" at position " << position << endl;
+                        std::cout << "INFO: reached end of type \"" << type.str() << "\" at position " << position << std::endl;
                         typeCounter = false;
                         type.str("");
                         type.clear();
@@ -179,34 +179,35 @@ public:
         }
     }
 
-    static void outputNeatly(const string& s){
+    static void outputNeatly(const std::string& s){
         int bracketcount = 0;
         for (char c : s) {
             if (c == '{'){
-                cout << endl;
+                std::cout << std::endl;
 
                 for (int i = 0; i <= bracketcount; i++){
-                    cout << '\t';
+                    std::cout << '\t';
                 }
                 bracketcount++;
-                cout << c;
-                cout << endl;
+                std::cout << c;
+                std::cout << std::endl;
                 for (int i = 0; i <= bracketcount; i++){
-                    cout << '\t';
+                    std::cout << '\t';
                 }
             } else
             if (c == '}'){
-                cout << endl;bracketcount--;
+                std::cout << std::endl;
+                bracketcount--;
                 for (int i = 0; i <= bracketcount; i++){
-                    cout << '\t';
+                    std::cout << '\t';
                 }
 
-                cout << c;
-                cout << endl;
+                std::cout << c;
+                std::cout << std::endl;
                 for (int i = 0; i <= bracketcount; i++){
-                    cout << '\t';
+                    std::cout << '\t';
                 }
-            } else cout << c;
+            } else std::cout << c;
 
         }
     }

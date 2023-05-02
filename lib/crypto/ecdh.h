@@ -18,7 +18,8 @@
 #include <vector>
 #include <iomanip>
 
-using namespace std;
+#include "../tools/streamtools.h"
+
 
 class ECDH{
     /*
@@ -62,7 +63,7 @@ public:
         this->errored = false;
     }
 
-    std::string extractECPOINT() {
+    std::string getPublicKey() {
         /* Get the EC_GROUP object for the key
         const EC_GROUP *ecGroup = EC_KEY_get0_group(key);
 
@@ -93,24 +94,24 @@ public:
 
         // Get size of serialized point
         size_t size = EC_POINT_point2oct(group, ec_point, POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
-
         // Serialize point to string
         std::string serialized_point(size, '\0');
         EC_POINT_point2oct(group, ec_point, POINT_CONVERSION_UNCOMPRESSED, (unsigned char*)serialized_point.data(), size, NULL);
         return serialized_point;
     }
 
-    std::string getSecretFromOthersKey(const std::string &publicKey){
+    std::string getPrivateKey(const std::string &publicKey){
         EC_GROUP* group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
         EC_POINT *ec_point = EC_POINT_new(group);
         const auto* newString = reinterpret_cast<const unsigned char*>(publicKey.data());
 
         if (!EC_POINT_oct2point( group, ec_point, newString, publicKey.size(), nullptr)) {
-            cerr << "ERROR OCCRUED DURING oct2point CONVERSION, STRING FED: " << publicKey << endl;
-            return string{""};
+            std::cerr << "ERROR OCCURRED DURING oct2point CONVERSION, STRING FED: " << std::endl;
+            stringToHex(publicKey);
+            return std::string{""};
         }
         const char * secret = get_secret(ec_point);
-        return string{secret};
+        return std::string{secret};
     }
 
 private:

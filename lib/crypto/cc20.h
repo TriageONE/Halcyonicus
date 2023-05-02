@@ -8,7 +8,6 @@
 #include <sodium.h>
 #include <iostream>
 
-using namespace std;
 
 class CC20{
     /**
@@ -25,7 +24,7 @@ class CC20{
 
 public:
 
-    CC20(const string& key, const string& nonce) {
+    CC20(const std::string& key, const std::string& nonce) {
         nonce.copy((char*) this->nonce, crypto_stream_chacha20_NONCEBYTES);
         key.copy((char*) this->key, crypto_stream_chacha20_KEYBYTES);
         this->keySet = true;
@@ -36,7 +35,7 @@ public:
         }
     }
 
-    explicit CC20(const string& key) {
+    explicit CC20(const std::string& key) {
         setRandomNonce();
         key.copy((char*) this->key, crypto_stream_chacha20_KEYBYTES);
         this->keySet = true;
@@ -56,12 +55,12 @@ public:
     }
 
 
-    void setKey(const string& newKey){
+    void setKey(const std::string& newKey){
         newKey.copy((char*) this->key, crypto_stream_chacha20_KEYBYTES);
         keySet = true;
     }
 
-    void setNonce(const string& newNonce) {
+    void setNonce(const std::string& newNonce) {
         newNonce.copy((char*) this->nonce, crypto_stream_chacha20_NONCEBYTES);
         nonceSet = true;
     }
@@ -71,10 +70,10 @@ public:
         nonceSet = true;
     }
 
-    string getNonce() {
+    std::string getNonce() {
         if (this->nonceSet)
-            return string{(char*)this->nonce};
-        return string{""};
+            return std::string{(char*)this->nonce};
+        return std::string{""};
     }
 
     [[nodiscard]] bool isNonceSet() const { return this->nonceSet; }
@@ -83,9 +82,24 @@ public:
 
     [[nodiscard]] bool isErrored() const { return this->errored; }
 
-    string encryptMessage(const string& message){
+    std::string encryptMessage(char* message){
         if (!isKeySet() || !isNonceSet() || isErrored()){
-            cerr << "ERROR WHEN PROCESSING ENCRYPT: KEYSET=" << isKeySet() << ", NONCESET=" << isNonceSet() << ", ERRORED=" << isErrored() << endl;
+            std::cerr << "ERROR WHEN PROCESSING ENCRYPT: KEYSET=" << isKeySet() << ", NONCESET=" << isNonceSet() << ", ERRORED=" << isErrored() << std::endl;
+            return {""};
+        }
+        std::string convertedMessage(message);
+        std::string ciphertext(convertedMessage.size(), '\0');
+        crypto_stream_chacha20_xor(reinterpret_cast<unsigned char*>(&ciphertext[0]),
+                                   reinterpret_cast<const unsigned char*>(message),
+                                   convertedMessage.size(),
+                                   nonce,
+                                   key);
+        return ciphertext;
+    }
+
+    std::string encryptMessage(const std::string& message){
+        if (!isKeySet() || !isNonceSet() || isErrored()){
+            std::cerr << "ERROR WHEN PROCESSING ENCRYPT: KEYSET=" << isKeySet() << ", NONCESET=" << isNonceSet() << ", ERRORED=" << isErrored() << std::endl;
             return {""};
         }
         std::string ciphertext(message.size(), '\0');
@@ -97,9 +111,9 @@ public:
         return ciphertext;
     }
 
-    string decryptMessage(const string& ciphertext){
+    std::string decryptMessage(const std::string& ciphertext){
         if (!isKeySet() || !isNonceSet() || isErrored()){
-            cerr << "ERROR WHEN PROCESSING ENCRYPT: KEYSET=" << isKeySet() << ", NONCESET=" << isNonceSet() << ", ERRORED=" << isErrored() << endl;
+            std::cerr << "ERROR WHEN PROCESSING ENCRYPT: KEYSET=" << isKeySet() << ", NONCESET=" << isNonceSet() << ", ERRORED=" << isErrored() << std::endl;
             return {""};
         }
 

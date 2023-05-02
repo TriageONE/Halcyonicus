@@ -21,19 +21,19 @@
 bool REGION::writeChunk(WORLD* world) {
     //Should be preceded by check if region exists
     //Must read entire region in order to implement changes to chunks
-    fstream regionFile;
+    std::fstream regionFile;
     //find the name of the file
     REGIONCOORD regioncoord = findRegioncoordFromWorldShard(world);
     //Parse it to a filename
 
-    string path = prependWorldDir(parseRegioncoordToFname(regioncoord));
-    cout << "\t#CHUNK_WRITE: \'" << path << "\'" <<endl;
+    std::string path = prependWorldDir(parseRegioncoordToFname(regioncoord));
+    std::cout << "\t#CHUNK_WRITE: \'" << path << "\'" << std::endl;
 
     int arrayOffset = findChunkArrayOffset(world->getLocation());
-    regionFile.open(path, ios::out|ios::in|ios::binary);
+    regionFile.open(path, std::ios::out|std::ios::in|std::ios::binary);
 
     if (!(regionFile)) {
-        cerr << "\t#CHUNK_WRITE_ERR: \'" << path << "\' CANNOT BE OPENED" << endl;
+        std::cerr << "\t#CHUNK_WRITE_ERR: \'" << path << "\' CANNOT BE OPENED" << std::endl;
         return false;
     }
     //We just attempted to open it. If its open, we can start writing.
@@ -54,7 +54,7 @@ bool REGION::writeChunk(WORLD* world) {
         if (hash == hash2) return true;
 
         //Write the world data
-        cout << "Writing world data for " << world->getLocation().getX() << ", " << world->getLocation().getY() << endl;
+        std::cout << "Writing world data for " << world->getLocation().getX() << ", " << world->getLocation().getY() << std::endl;
         writeWorldData(arrayOffset, &regionFile, world);
 
         //We will always want to update the timestamp, but this should likely occur after the world write
@@ -63,7 +63,7 @@ bool REGION::writeChunk(WORLD* world) {
 
         setHash(arrayOffset, &regionFile, hash);
     } else {
-        cerr << "\t#CHUNK_WRITE_ERR: \'" << path << "\' ATTEMPTED OPEN BUT FAILED" << endl;
+        std::cerr << "\t#CHUNK_WRITE_ERR: \'" << path << "\' ATTEMPTED OPEN BUT FAILED" << std::endl;
         regionFile.close();
         return false;
     }
@@ -80,11 +80,11 @@ bool REGION::readChunk(WORLD* world) {
     REGIONCOORD regioncoord = findRegioncoordFromWorldShard(world);
     //Parse it to a filename
     std::filesystem::path path = prependWorldDir(parseRegioncoordToFname(regioncoord));
-    cout << "\t#CHUNK_READ: \'" << path << "\'" <<endl;
+    std::cout << "\t#CHUNK_READ: \'" << path << "\'" << std::endl;
 
     int arrayOffset = findChunkArrayOffset(world->getLocation());
 
-    regionFile.open(path, ios::out|ios::in|ios::binary);
+    regionFile.open(path, std::ios::out|std::ios::in|std::ios::binary);
 
     if (!(regionFile)) return false;
     //We just attempted to open it. If its open, we can start writing.
@@ -109,10 +109,10 @@ bool REGION::readChunk(WORLD* world) {
 
 #if defined(WIN32)
 
-string ExePath() {
+std::string ExePath() {
     char buffer[MAX_PATH] = { 0 };
     GetModuleFileName( nullptr, buffer, MAX_PATH );
-    string s = string{buffer};
+    std::string s = std::string{buffer};
     unsigned long long pos = s.find_last_of("\\/");
     return s.substr(0, pos);
 }
@@ -138,10 +138,10 @@ bool REGION::createDirectories(){
     bool completed = true;
     #if defined(WIN32)
     //WIN32
-    const array<LPCSTR, 4> dirs {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data"};
-    string currentPath = ExePath();
+    const std::array<LPCSTR, 4> dirs {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data"};
+    std::string currentPath = ExePath();
     for (const LPCSTR path : dirs) {
-        string absPath = currentPath;
+        std::string absPath = currentPath;
         absPath.append(path);
         if (CreateDirectoryA(absPath.c_str(), nullptr)){
             std::cout << "Created " << absPath << std::endl;
@@ -182,18 +182,18 @@ bool REGION::createDirectories(){
 bool REGION::checkForDirectoryStructure(){
 
     #if defined(WIN32)
-    const array<LPCSTR, 4> dirs {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data"};
-    string currentPath = ExePath();
+    const std::array<LPCSTR, 4> dirs {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data"};
+    std::string currentPath = ExePath();
 
     for (const LPCSTR path : dirs) {
-        string absPath = currentPath;
+        std::string absPath = currentPath;
         absPath.append(path);
-        cout << "Checking " << absPath << endl;
+        std::cout << "Checking " << absPath << std::endl;
         if (DirectoryExists(absPath.c_str())) {
-            cout << "Path was a valid directory: " << absPath << endl;
+            std::cout << "Path was a valid directory: " << absPath << std::endl;
             continue;
         }
-        cout << "Directory " << absPath << " does not exist!" << endl;
+        std::cout << "Directory " << absPath << " does not exist!" << std::endl;
         return false;
     }
     #else
@@ -222,11 +222,11 @@ void REGION::createEmptyWorld(const std::filesystem::path& path){
     //Create new file if not exists
     if (!file.is_open())
     {
-        cout << "Creating new file \'" << path << endl;
+        std::cout << "Creating new file \'" << path << std::endl;
         file.clear();
         file.open(path, std::ios::out); // create file
 
-        cout << "good:" << file.good() << "; open:" << file.is_open() << endl;
+        std::cout << "good:" << file.good() << "; open:" << file.is_open() << std::endl;
 
         //After creating the empty file, we should write a 32 bit section of nothing to indicate that the maps are not generated
         std::filesystem::resize_file(path,3934241);
@@ -241,7 +241,7 @@ void REGION::createEmptyWorld(const std::filesystem::path& path){
         file.seekp(3934241);
         file.write("U", 1);
         file.close();
-        cout << "Finalized new file \'" << path << endl;
+        std::cout << "Finalized new file \'" << path << std::endl;
 
     } else {
         std::cerr << "DISK_IO WARNING, ATTEMPT TO CREATE EMPTY WORLD OVER ALREADY EXISTING WORLD; ATTEMPTED ON: " << path << "; ATTEMPT WAS REJECTED, NO CHANGES MADE";
@@ -270,7 +270,7 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
     std::ifstream regionFile;
     std::stringstream name;
     name << "rg_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hcr";
-    string absPath = prependWorldDir(name.str());
+    std::string absPath = prependWorldDir(name.str());
 
     #if defined(WIN32)
         DWORD stat = GetFileAttributesA(absPath.c_str());
@@ -289,7 +289,7 @@ bool REGION::regionExists(REGIONCOORD regioncoord) {
 std::string REGION::prependWorldDir(const std::string& in) {
     std::stringstream ss;
     #if defined(WIN32)
-        string currentPath = ExePath();
+    std::string currentPath = ExePath();
         ss << currentPath << "\\world\\" << in;
     #else
         ss << "./world/" << in;
@@ -493,7 +493,7 @@ void REGION::readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world
         currentMap->setRaw(i,d);
         i++;
     }
-    cout << "\t\t#CM_INSPECT_IN HSH: " << world->climatemap.getRawHash() << " PLACE " << before << " -> " << after << endl;
+    std::cout << "\t\t#CM_INSPECT_IN HSH: " << world->climatemap.getRawHash() << " PLACE " << before << " -> " << after << std::endl;
 
     // Next the heightmap
     before = ifstream->tellg();
@@ -506,7 +506,7 @@ void REGION::readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world
         currentMap->setRaw(i,d);
         i++;
     }
-    cout << "\t\t#HM_INSPECT_IN HSH: " << world->heightmap.getRawHash() << " PLACE " << before << " -> " << after << endl;
+    std::cout << "\t\t#HM_INSPECT_IN HSH: " << world->heightmap.getRawHash() << " PLACE " << before << " -> " << after << std::endl;
 
     // Finally the saturation map
     before = ifstream->tellg();
@@ -519,7 +519,7 @@ void REGION::readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world
         currentMap->setRaw(i,d);
         i++;
     }
-    cout << "\t\t#SM_INSPECT_IN HSH: " << world->saturationmap.getRawHash() << " PLACE " << before << " -> " << after << endl;
+    std::cout << "\t\t#SM_INSPECT_IN HSH: " << world->saturationmap.getRawHash() << " PLACE " << before << " -> " << after << std::endl;
 
     // Commence reading each cave and emplacing data onto each
     int cn = 0;
@@ -532,7 +532,7 @@ void REGION::readWorldData(int arrayOffset, std::fstream *ifstream, WORLD *world
             cave.setRaw(i,d);
             i++;
         }
-        cout << "\t\t#CV_INSPECT_IN " << cave.getLevel() << " HSH: " << cave.getRawHash() << " PLACE " << before << " -> " << after << endl;
+        std::cout << "\t\t#CV_INSPECT_IN " << cave.getLevel() << " HSH: " << cave.getRawHash() << " PLACE " << before << " -> " << after << std::endl;
         ::memset(data, 0, 1024);
         cn++;
     }
@@ -555,7 +555,7 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *worl
     ofstream->write(data, 1024);
     long long after = ofstream->tellp();
 
-    cout << "\t\t#CM_INSPECT_OUT HSH: " << currentMap->getRawHash() << " PLACE " << before << " -> " << after << endl;
+    std::cout << "\t\t#CM_INSPECT_OUT HSH: " << currentMap->getRawHash() << " PLACE " << before << " -> " << after << std::endl;
 
     // Next the heightmap
     currentMap = &world->heightmap;
@@ -566,7 +566,7 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *worl
     ofstream->write(data, 1024);
     after = ofstream->tellp();
 
-    cout << "\t\t#HM_INSPECT_OUT HSH: " << currentMap->getRawHash() << " PLACE " << before << " -> " << after << endl;
+    std::cout << "\t\t#HM_INSPECT_OUT HSH: " << currentMap->getRawHash() << " PLACE " << before << " -> " << after << std::endl;
 
     // Finally the saturation map
     currentMap = &world->saturationmap;
@@ -578,7 +578,7 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *worl
     ofstream->write(data, 1024);
     after = ofstream->tellp();
 
-    cout << "\t\t#SM_INSPECT_OUT  HSH: " <<  currentMap->getRawHash() << " PLACE " << before << " -> " << after << endl;
+    std::cout << "\t\t#SM_INSPECT_OUT  HSH: " <<  currentMap->getRawHash() << " PLACE " << before << " -> " << after << std::endl;
 
 
     for (CAVE &cave : world->caves){
@@ -590,14 +590,14 @@ void REGION::writeWorldData(int arrayOffset, std::fstream *ofstream, WORLD *worl
         before = ofstream->tellp();
         ofstream->write(data, 1024);
         after = ofstream->tellp();
-        cout << "\t\t#CV_INSPECT_OUT " << cave.getLevel() << " HSH: " << cave.getRawHash() <<  " PLACE " << before << " -> " << after << endl;
+        std::cout << "\t\t#CV_INSPECT_OUT " << cave.getLevel() << " HSH: " << cave.getRawHash() <<  " PLACE " << before << " -> " << after << std::endl;
     }
 }
 
-std::string REGION::prependEntityDir(const string &in) {
+std::string REGION::prependEntityDir(const std::string &in) {
     std::stringstream ss;
     #if defined(WIN32)
-        string currentPath = ExePath();
+    std::string currentPath = ExePath();
         ss << currentPath << R"(\world\entities\)" << in;
     #else
         ss << "./world/entities/" << in;
@@ -610,7 +610,7 @@ bool REGION::entityRegionExists(REGIONCOORD regioncoord) {
     std::ifstream regionFile;
     std::stringstream name;
     name << "rge_" << std::to_string(regioncoord.getX()) << "_" << std::to_string(regioncoord.getY()) << ".hdb";
-    string absPath = prependEntityDir(name.str());
+    std::string absPath = prependEntityDir(name.str());
 
 #if defined(WIN32)
     DWORD stat = GetFileAttributesA(absPath.c_str());

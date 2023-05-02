@@ -62,9 +62,9 @@ public:
     ///////////
     //Getters
     ENTITYLOCATION getLocation();
-    string getType();
-    string getAttribute(const string& attribute);
-    map<string, string> getAllAttributes();
+    std::string getType();
+    std::string getAttribute(const std::string& attribute);
+    std::map<std::string, std::string> getAllAttributes();
     [[nodiscard]] bool isErrored() const;
     [[nodiscard]] bool isUntyped() const;
 
@@ -74,17 +74,17 @@ public:
     void setLocation(ENTITYLOCATION l);
     void setType(std::string type);
     void setAttribute(const std::string& dblob, const std::string& attribute);
-    void setAttributes(map<string, string> * attributes);
+    void setAttributes(std::map<std::string, std::string> * attributes);
 
     ////////////
     //Modifiers
-    bool removeAttribute(const string& attribute);
-    bool hasAttribute(const string& attribute);
+    bool removeAttribute(const std::string& attribute);
+    bool hasAttribute(const std::string& attribute);
 
     ////////////////
     //Serialization
-    string serializeEntity();
-    static ENTITY deserializeEntity(string entityString);
+    std::string serializeEntity();
+    static ENTITY deserializeEntity(std::string entityString);
 
     ////////////
     //Operators

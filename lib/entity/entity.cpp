@@ -22,8 +22,8 @@ void ENTITY::setType(std::string t) {
     this->type = std::move(t);
 }
 
-string ENTITY::getAttribute(const std::string& attribute) {
-    std::map<std::string,string>::iterator it;
+std::string ENTITY::getAttribute(const std::string& attribute) {
+    std::map<std::string,std::string>::iterator it;
     it = attributes.find(attribute);
     if (it == attributes.end()) return "NULL";
     return attributes.find(attribute)->second;
@@ -39,21 +39,21 @@ bool ENTITY::isUntyped() const{
 
 
 void ENTITY::setAttribute(const std::string& dblob, const std::string& attribute) {
-    cout << "Erasing " << attribute<< endl;
+    std::cout << "Erasing " << attribute<< std::endl;
     int erased = attributes.erase(attribute);
-    cout << "Erased " << erased << " entity attributes " << endl;
-    attributes.insert( pair<string, string>(attribute, dblob) );
+    std::cout << "Erased " << erased << " entity attributes " << std::endl;
+    attributes.insert( std::pair<std::string, std::string>(attribute, dblob) );
 }
 
-void ENTITY::setAttributes(std::map<string, string> *attrs){
+void ENTITY::setAttributes(std::map<std::string, std::string> *attrs){
     this->attributes = std::move(*attrs);
 }
 
-std::map<string, string> ENTITY::getAllAttributes() {
+std::map<std::string, std::string> ENTITY::getAllAttributes() {
     return this->attributes;
 }
 
-string ENTITY::serializeEntity(){
+std::string ENTITY::serializeEntity(){
     // Ignore the type, just worry about extraneous data and location
 
     ENTITYLOCATION el = this->getLocation();
@@ -63,14 +63,14 @@ string ENTITY::serializeEntity(){
     y = el.getY();
     z = el.getZ();
 
-    stringstream ss;
+    std::stringstream ss;
 
-    string xs = x.serialize(), ys = y.serialize(), zs = z.serialize();
+    std::string xs = x.serialize(), ys = y.serialize(), zs = z.serialize();
 
     //     0     1-6              7-12             13-18             19
     ss << '{' << xs << ys << zs << '{';
 
-    for (pair<string, string> p : this->attributes){
+    for (std::pair<std::string, std::string> p : this->attributes){
         ss << '[' << p.first << p.second << ']';
     }
 
@@ -79,24 +79,24 @@ string ENTITY::serializeEntity(){
 
 }
 
-ENTITY ENTITY::deserializeEntity(string entityString){
+ENTITY ENTITY::deserializeEntity(std::string entityString){
 
     if (entityString[0] != '{'){
-        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on first char, expected \'{\', got " << entityString[0] << endl;
+        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on first char, expected \'{\', got " << entityString[0] << std::endl;
         return ENTITY();
     }
     if (entityString[19] != '{'){
-        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section initializer, expected \'{\', got " << entityString[19] << endl;
+        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section initializer, expected \'{\', got " << entityString[19] << std::endl;
         return ENTITY();
     }
 
     unsigned long long len = entityString.length();
     if (entityString[len-1] != '}'){
-        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on last char escape, expected \'}\', got " << entityString[len-1] << endl;
+        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on last char escape, expected \'}\', got " << entityString[len-1] << std::endl;
         return ENTITY();
     }
     if (entityString[len-2] != '}'){
-        cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section escape, expected \'}\', got " << entityString[len-2] << endl;
+        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section escape, expected \'}\', got " << entityString[len-2] << std::endl;
         return ENTITY();
     }
 
@@ -104,7 +104,7 @@ ENTITY ENTITY::deserializeEntity(string entityString){
     ENTITYLOCATION el;
     cfloat x(0), y(0), z(0);
 
-    string substr = entityString.substr(1,6);
+    std::string substr = entityString.substr(1,6);
     x = cfloat::deserializeToNewCFloat(substr);
 
     substr = entityString.substr(7,6);
@@ -128,24 +128,24 @@ ENTITY ENTITY::deserializeEntity(string entityString){
     while (place < len - 1){
         // When we find a bracket, start reading the name into the stringstream
         if (entityString[place] == '['){
-            stringstream ss;
+            std::stringstream ss;
             place++;
             while(entityString[place] != '{'){
                 if (place >= len-2){
-                    cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << endl;
+                    std::cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << std::endl;
                     return e;
                 }
                 ss << entityString[place];
                 place++;
             }
-            string attrName = ss.str();
+            std::string attrName = ss.str();
             ss.str("");
             ss.clear();
             ss << entityString[place];
             place++;
             while (entityString[place] != '}'){
                 if (place >= len-2){
-                    cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << endl;
+                    std::cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << std::endl;
                     return e;
                 }
                 ss << entityString[place];
@@ -164,24 +164,24 @@ ENTITY ENTITY::deserializeEntity(string entityString){
 }
 
 void ENTITY::out(){
-    cout << "ENTITY OUTPUT:" << endl << "\tTYPE: \"" << this->type << "\"" << endl;
-    cout << "\tERRORED: " << ((this->errored)? "TRUE" : "FALSE") << endl;
-    cout << "\tX: " << this->getLocation().getX().asString()  << endl;
-    cout << "\tY: " << this->getLocation().getY().asString()  << endl;
-    cout << "\tZ: " << this->getLocation().getZ().asString() << endl;
+    std::cout << "ENTITY OUTPUT:" << std::endl << "\tTYPE: \"" << this->type << "\"" << std::endl;
+    std::cout << "\tERRORED: " << ((this->errored)? "TRUE" : "FALSE") << std::endl;
+    std::cout << "\tX: " << this->getLocation().getX().asString()  << std::endl;
+    std::cout << "\tY: " << this->getLocation().getY().asString()  << std::endl;
+    std::cout << "\tZ: " << this->getLocation().getZ().asString() << std::endl;
 
-    cout << "ATTRIBUTES: {" << endl;
-    for (pair<string, string> p : this->attributes){
-        cout << "\t\t" << p.first << " : " << p.second << endl;
+    std::cout << "ATTRIBUTES: {" << std::endl;
+    for (std::pair<std::string, std::string> p : this->attributes){
+        std::cout << "\t\t" << p.first << " : " << p.second << std::endl;
     }
-    cout << "}\n\rEND ENTITY OUTPUT" << endl;
+    std::cout << "}\n\rEND ENTITY OUTPUT" << std::endl;
 
 }
 
-bool ENTITY::removeAttribute(const string& attribute) {
+bool ENTITY::removeAttribute(const std::string& attribute) {
     return this->attributes.erase(attribute);
 }
 
-bool ENTITY::hasAttribute(const string& attribute){
+bool ENTITY::hasAttribute(const std::string& attribute){
     return this->attributes.contains(attribute);
 }
