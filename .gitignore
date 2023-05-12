@@ -1,4 +1,2 @@
-/cmake-build-debug/
-/scratch
-/scratch.exe
-/scratch.dSYM/
+# Godot 4+ specific ignores
+.godot/

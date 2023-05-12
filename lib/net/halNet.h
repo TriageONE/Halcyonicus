@@ -18,7 +18,7 @@
 #include <ctime>   // Required for time() function
 #include <chrono>
 #include <random>
-
+#include <mutex>
 
 
 /**
@@ -62,6 +62,7 @@ class HALNET{
             std::string //Their unshared secret
             >
     > sessions {};
+    std::mutex sessionMutex;
 
     enum informalResponseCodes{
         CASS,   // Connection accepted, here is my public key
@@ -138,12 +139,36 @@ public:
                 case ENET_EVENT_TYPE_DISCONNECT:
                     printf ("SRV: %s disconnected.\n", event.peer -> data);
                     /* Reset the peer's client information. */
+                    destroySession( &event );
                     event.peer -> data = nullptr;
                 case ENET_EVENT_TYPE_NONE:
                     break;
             }
             enet_packet_destroy(event.packet);
         }
+    }
+
+    void destroySession(ENetEvent * event) {
+        //find the session by IP and port
+        sessionMutex.lock();
+        try {
+            enet_uint32 host = event->peer->address.host;
+            int port = event->peer->address.port;
+
+            for (auto it = sessions.begin(); it != sessions.end();) {
+                enet_uint32 cHost = std::get<0>(it->second).host;
+                int cPort = std::get<0>(it->second).port;
+                if (host == cHost && port == cPort){
+                    sessions.erase(it);
+                    break;
+                } else ++it;
+            }
+        } catch(const char *e){
+            std::cerr << "SRV-ERROR: Caught exception during hasExpectation: " << e << std::endl;
+        } catch (...){
+            std::cerr << "SRV-ERROR: Caught an unknown exception during destroySession" << std::endl;
+        }
+        sessionMutex.unlock();
     }
 
     void processIncoming(ENetEvent * event){
@@ -182,9 +207,8 @@ public:
                     // We have to assume anyone on another port with the same IP is possibly on a university network with other people
                     std::cerr << "ERROR: Client is already connected, sending ARCN<ID>..." << std::endl;
                     // Respond with "Already connected with session ID <id>
-                    char sessionKeyChar[4];
-                    ::memcpy(sessionKeyChar, &s.first, 4);
-                    sendUnreliableResponse(event, formulateInfoResponse(ARCN, std::string{ sessionKeyChar } ) );
+
+                    sendUnreliableResponse(event, formulateInfoResponse(ARCN, pad(s.first) ) );
                     return;
                 }
             }
@@ -244,7 +268,7 @@ public:
                 return;
             }
 
-            unsigned int sessionID = parseSessionID(eventData.substr(0, 8));
+            unsigned int sessionID = parseID(eventData.substr(0, 8));
 
             //Find session ID and association data
             auto it = sessions.find(sessionID);
@@ -283,12 +307,12 @@ public:
         while (n > 0) {
             paddedNumber << "0";
             n--;
-        } //TODO: Wrong side buddy
+        }
         paddedNumber << num;
         return paddedNumber.str();
     }
 
-    static unsigned int parseSessionID(const std::string& in){
+    static unsigned int parseID(const std::string& in){
         unsigned int num = 0; // initialize unsigned int variable to 0
         std::stringstream ss(in); // create a stringstream object with the string of numbers
         ss >> num;
@@ -303,26 +327,30 @@ public:
         return randomNumber;
     }
 
-    void processPhaseTwo(const std::string& decryptedPayload, ENetEvent * event, SESSION session) {
+    void processPhaseTwo(const std::string& decryptedPayload, ENetEvent * event, const SESSION& session) {
         //The first 4 of the payload should always be a command, never continuation data
+
+        if (decryptedPayload.length() < 12) {
+            std::cout << "Recieved short packet at phase 2, discarding.." << std::endl;
+            return;
+        }
+
         std::string command = decryptedPayload.substr(0, 4);
-        std::string payload = decryptedPayload.substr(4, decryptedPayload.length()-4);
+        std::string sequenceNumber = decryptedPayload.substr(4, 8);
+        std::string payload = decryptedPayload.substr(12);
+
         if (command == "CTES") {
             if (payload == "Hello, Halcyonicus!"){
-                sendReliableResponse(event, formatPayload( formulateInfoResponse(SCSS, "Hello, Traveller!"), session));
+                sendReliableResponse(event, formatPayload( formulateInfoResponse(SCSS, sequenceNumber + "Hello, Traveller!"), session));
                 return;
             } else {
                 std::cerr << "ERROR: Ping received, but plaintext data did not match the expected string! Recieved: " << payload << std::endl;
-                sendReliableResponse(event, formatPayload( formulateInfoResponse(FAIL, ""), session));
+                sendReliableResponse(event, formatPayload( formulateInfoResponse(FAIL, sequenceNumber), session));
                 return;
             }
         } else {
             return;
         }
-    }
-
-    static unsigned int getUINTSessionFromString(const std::string& sessionKey) {
-        return *(unsigned int*) sessionKey.substr(0, 4).data();
     }
 
     static std::string formulateInfoResponse(HALNET::informalResponseCodes code, const std::string& data){
@@ -383,7 +411,7 @@ public:
             return {""};
         }
 
-        if (parseSessionID(payload.substr(0, 8)) != session.getSessionKey()){
+        if (parseID(payload.substr(0, 8)) != session.getSessionKey()){
             std::cerr << "SRV-ERROR: Session ID was not the same as the registered session ID! Payload: " << payload;
             return {""};
         }
@@ -407,7 +435,7 @@ public:
         cc20.setNonce(nonce);
 
         //Decrypt the rest of the payload and return that
-        std::string data = cc20.decryptMessage(payload.substr(16, payload.length() - 17));
+        std::string data = cc20.decryptMessage(payload.substr(16));
         return data;
     }
 

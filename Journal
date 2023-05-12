@@ -340,4 +340,20 @@ The Sheleighlah
 //////////////////////
 04-27-23
 
-Ive fund a cross platform difference between windows and mac for the library i use called ENET. ENET is my library i use to prepare communications between host and server, set up listeners and sockets etc. This fails to install and work on windows, which is a dealbreaker. I assume if it works on my mac, it will logically work on linux as well, and maybe on windows, but we cant be sure. I need everything here to compile on my NT platform because i plan to have this be fully windows/mac/linux cross compatible. The server at least should work on any deployment, be entirely self contained, have no external dependencies and be interfaceable via a terminal
+Ive found a cross platform difference between windows and mac for the library i use called ENET. ENET is my library i use to prepare communications between host and server, set up listeners and sockets etc. This fails to install and work on windows, which is a dealbreaker. I assume if it works on my mac, it will logically work on linux as well, and maybe on windows, but we cant be sure. I need everything here to compile on my NT platform because i plan to have this be fully windows/mac/linux cross compatible. The server at least should work on any deployment, be entirely self contained, have no external dependencies and be interfaceable via a terminal
+
+//////////////////////
+05-04-23
+
+Ive been thinking and working with Godot for some time now and i believe i have what i need to create an actual game. The idea here is that we ship a server and a client like normal, but to what extent should we integrate this code into godot?
+
+When the client is running, we should ideally be able to choose between three options for playing, with the following needs :
+
+    a0. An internal server should be running, performing all the processing needed to emulate a normal server environment for Singleplayer
+    a1. For multiplayer, we should consider only using client server architecture needing the following below:
+    b. we may want to consider running the server entirely in godot, however this would obsolete, at least for now, most of our code we have written for godot.
+    c. We still need a way to interface with our other code, since the client should be able to use CC20, ECDH, and understand the entity spec/world spec we have
+
+//////////////////////
+05-11-2023
+

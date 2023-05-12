@@ -1,93 +1,102 @@
-#include <random>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <math.h>
 #include <iostream>
-#include <string>
-#include <sstream>
-
-
-#include "lib/net/halNet.h"
-#include "lib/tools/streamtools.h"
-#include "lib/net/halNetP.h"
-#include "lib/crypto/base64.h"
 #include <thread>
-#include <mutex>
-#include <unistd.h>
 
-using namespace std;
+const int SCREEN_WIDTH = 640;
+const int SCREEN_HEIGHT = 480;
 
-static int randomPositiveNumber() {
-    std::random_device rd; // create a random device to seed the generator
-    std::mt19937 gen(rd()); // create a Mersenne Twister generator seeded with the random device
-    std::uniform_int_distribution<> dist(0, 99999999); // create a uniform distribution between 0 and 99,999,999
-    int randomNumber = dist(gen); // generate a random number using the generator and distribution
-    return randomNumber;
-}
 
-bool stop = false; // shared variable to signal the worker thread to stop
-std::mutex stopMutex;
-std::mutex listenMutex;
+int main(int argc, char* argv[])
+{
+    bool quit = false;
+    // Initialize SDL2 and create a window and renderer
+    std::thread t{ [&quit] () {
+        SDL_Init(SDL_INIT_VIDEO);
+        SDL_Window* window = SDL_CreateWindow("SDL2 Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
+        SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+        unsigned long long frequency = SDL_GetPerformanceFrequency();
+        unsigned long long startTime = SDL_GetPerformanceCounter();
+        unsigned long long originTime = SDL_GetPerformanceCounter();
+        // Load a texture for the box
+        SDL_Surface* surface = IMG_Load("box.png");
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
 
-int main() {
+        // Define the box's position and size
+        const int ogWidth = SCREEN_WIDTH / 2 - 50, ogHeight = SCREEN_HEIGHT / 2 - 50;
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    //Does not work for no good reason
-    //_setmode(_fileno(stdout), _O_U16TEXT);
-    // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
-    setvbuf(stdout, nullptr, _IOFBF, 2000);
-#endif
+        SDL_Rect rect = { ogWidth, ogHeight, 100, 100 };
 
-    for (int i = 0; i <= 20; i++){
-        cout << randomPositiveNumber() << endl;
-    }
+        // Define the rotation angle and rotation center
+        float angle = 0.0f;
+        int fps = 0;
+        SDL_Point center = { 50, 50 };
 
-    HALNET server;
-    // create a new thread and start running the helloWorldThread function
-    std::thread t( [&server] () {
-        while (!stop){
-            cout << "SRV: listening.." << endl;
-            server.listen();
+        // Enter the main loop
+
+        while (!quit)
+        {
+            Uint64 currentTime = SDL_GetPerformanceCounter();
+            double delta = ((double)(currentTime - startTime) / frequency) * 100;
+            double sinceStart = ((double)(currentTime - originTime) / frequency);
+
+            //std::cout << delta << std::endl;
+
+            // Handle events
+            SDL_Event event;
+            while (SDL_PollEvent(&event))
+            {
+                switch (event.type)
+                {
+                    case SDL_QUIT:
+                        quit = true;
+                        break;
+                    case SDL_WINDOWEVENT:
+                        if (event.window.event == SDL_WINDOWEVENT_MOVED)
+                        {
+                            // The window has been moved
+                            // Ignore this event and continue rendering
+                        }
+
+                }
+            }
+
+            // Update the angle and wrap it around at 360 degrees
+            /*angle += 1.0f * delta * 2;
+            if (angle >= 360.0f)
+            {
+                angle -= 360.0f;
+            }*/
+
+            int newWidth, newHeight;
+            newWidth = ogWidth + (sin(sinceStart*20)*10);
+            newHeight = ogHeight + (cos(sinceStart*20)*10);
+
+            rect.w = newWidth;
+            rect.h = newHeight;
+
+            // Clear the renderer with black
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+
+            // Render the rotated box
+            SDL_RenderCopyEx(renderer, texture, NULL, &rect, angle, &center, SDL_FLIP_NONE);
+            // Present the renderer to the window
+            SDL_RenderPresent(renderer);
         }
-        cout << "SRV: Server Exited" << endl;
-    });
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
+        // Clean up resources
+        SDL_DestroyTexture(texture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+    }};
 
-    cout << "CLI: Starting client.. " << endl;
-    HALNET_P client("127.0.0.2");
-    client.connect();
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-
-    std::thread c( [&client] () {
-        cout << "CLI: Client Listener started.." << endl;
-        while (!stop){
-            cout << "CLI: listening.." << endl;
-
-            client.listen();
-        }
-        cout << "CLI: Client Exited" << endl;
-    });
-
-    sleep(1);
-    cout << "CLI: Connected client, now attempting assoc.." << endl;
-    client.associate();
-
-    // main thread continues running while the other thread is running in the background
-    int i = 0;
-    sleep(2);
-    while (i < 500) {
-        client.sendTest();
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
-        i++;
+    while (!quit) {
+        std::chrono::
     }
-    stopMutex.lock();
-
-    stop = true;
-    client.disconnect();
-    stopMutex.unlock();
-
     t.join();
-    c.join();
-    // wait for the other thread to finish before exiting the program */
     return 0;
-
 }

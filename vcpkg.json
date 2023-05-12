@@ -7,7 +7,7 @@
     "version>=" : "2023-03-02"
   }, {
     "name" : "openssl",
-    "version>=" : "3.1.0#3"
+    "version>=" : "3.1.0#4"
   }, {
     "name" : "libsodium",
     "version>=" : "1.0.18#8",
@@ -19,5 +19,17 @@
   }, {
     "name" : "zlib",
     "version>=" : "1.2.13"
+  }, {
+    "name" : "sdl2",
+    "version>=" : "2.26.5",
+    "$comment" : "    find_package(SDL2 CONFIG REQUIRED)\n\n    target_link_libraries(main\n\n        PRIVATE\n\n        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>\n\n        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>\n\n    )\n"
+  }, {
+    "name" : "sdl2-gfx",
+    "version>=" : "1.0.4#10",
+    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(sdl2-gfx CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE SDL2::SDL2_gfx)\n"
+  }, {
+    "name" : "sdl2-image",
+    "version>=" : "2.6.3",
+    "$comment" : "    find_package(SDL2_image CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)\n"
   } ]
 }

@@ -1,0 +1,12 @@
+#ifndef HALCYONICUS_GRABPOINT_H
+#define HALCYONICUS_GRABPOINT_H
+
+class GRABPOINT{
+
+public:
+    GRABPOINT() = default;
+
+
+};
+
+#endif //HALCYONICUS_GRABPOINT_H
