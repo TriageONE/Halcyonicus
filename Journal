@@ -357,3 +357,14 @@ When the client is running, we should ideally be able to choose between three op
 //////////////////////
 05-11-2023
 
+In my time researching the difference between windows and mac for how they both manage windows, it seems that when we resize windows or drag them on windows, the main loop gets blocked entirely, and no, its not waiting for an event- this is Win32 blocking the threaddue to some bullshit reason i cant explain, and you know what? i know what its called too, its called
+"Windows modal event loop blocking graphics threads"
+
+On windows, you can separate the event loop poller from the main thread and it seems to work fine, and this may be ideal under some circumstances i suppose.  On MacOS, you cant do this, and it freaks out and aborts.
+
+My plan for this is to engage in the rendering of my game through progressive blitting based on location and depth. 2D sprites will be progressively drawn on screen with variable depth and state. Part of the challenge is deciding what textures exist in screenspace and which ones dont. What about zooming in and out?
+
+Since everything on the screen may not comprise of everything loaded, we should have a portion of the screen that has a boundary, roughly half the screen added on to the top and bottom where we still blit textures to this area, but dont for anything past it. The bounds should be resizable, and able to change as needed constantly so that we can, every frame, effectively decide if we want to render certain parts of our world or not.
+There should be a flag for certain entities that allows them to be exempt from this, unless we restrict the size of entities to a maximum allowable amount. We need to be able to find the size and expand it to double the dimensions
+
+I see no reason why we should not be able to make EVERY single collision box a rectangle i mean, why not?
