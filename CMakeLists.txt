@@ -63,5 +63,8 @@ target_link_libraries(Halcyonicus PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_
 find_package(sdl2-gfx CONFIG REQUIRED)
 target_link_libraries(Halcyonicus PRIVATE SDL2::SDL2_gfx)
 
+find_package(GLEW REQUIRED)
+target_link_libraries(Halcyonicus PRIVATE GLEW::GLEW)
 
-
+find_package(glm CONFIG REQUIRED)
+target_link_libraries(Halcyonicus PRIVATE glm::glm)
