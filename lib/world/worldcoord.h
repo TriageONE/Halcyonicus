@@ -31,6 +31,36 @@ public:
         y1 = this->getY() >> 4;
         return {x1, y1};
     };
+
+    bool operator<(const WORLDCOORD& other) const {
+        if (this->getX() < other.getX())
+            return true;
+        if (this->getX() > other.getX())
+            return false;
+
+        if (this->getY() < other.getY())
+            return true;
+        if (this->getY() > other.getY())
+            return false;
+
+        return this->getZ() < other.getZ();
+    }
+
+    bool operator==(const WORLDCOORD& other) const{
+        return (
+                other.getX() == this->getX() &&
+                other.getY() == this->getY() &&
+                other.getZ() == this->getZ()
+                );
+    }
+
+    bool operator!=(const WORLDCOORD& other) const{
+        return (
+                other.getX() != this->getX() &&
+                other.getY() != this->getY() &&
+                other.getZ() != this->getZ()
+        );
+    }
 };
 
 

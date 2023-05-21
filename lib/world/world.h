@@ -59,6 +59,20 @@ public:
 
     std::array<CAVE, 12> caves {};
 
+    bool operator<(const WORLD& other) const {
+        if (worldcoord.getX() < other.worldcoord.getX())
+            return true;
+        if (worldcoord.getX() > other.worldcoord.getX())
+            return false;
+
+        if (worldcoord.getY() < other.worldcoord.getY())
+            return true;
+        if (worldcoord.getY() > other.worldcoord.getY())
+            return false;
+
+        return worldcoord.getZ() < other.worldcoord.getZ();
+    }
+
     WORLD(const std::string& seed, WORLDCOORD w){
 
         this->seed = seed;

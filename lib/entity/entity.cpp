@@ -4,6 +4,7 @@
 #include "entity.h"
 #include <utility>
 #include <sstream>
+#include <random>
 
 ENTITYLOCATION ENTITY::getLocation() {
     return this->location;
@@ -37,16 +38,22 @@ bool ENTITY::isUntyped() const{
     return missingType;
 }
 
+bool ENTITY::hasUUID() const{
+    return uuid != 0;
+}
+
 
 void ENTITY::setAttribute(const std::string& dblob, const std::string& attribute) {
-    std::cout << "Erasing " << attribute<< std::endl;
-    int erased = attributes.erase(attribute);
-    std::cout << "Erased " << erased << " entity attributes " << std::endl;
+    attributes.erase(attribute);
     attributes.insert( std::pair<std::string, std::string>(attribute, dblob) );
 }
 
 void ENTITY::setAttributes(std::map<std::string, std::string> *attrs){
     this->attributes = std::move(*attrs);
+}
+
+void ENTITY::setUUID(unsigned long long newUUID){
+    this->uuid = newUUID;
 }
 
 std::map<std::string, std::string> ENTITY::getAllAttributes() {
@@ -65,10 +72,17 @@ std::string ENTITY::serializeEntity(){
 
     std::stringstream ss;
 
+    char uid[8] {'\0'};
+    ::memcpy(uid, &this->uuid, 8);
     std::string xs = x.serialize(), ys = y.serialize(), zs = z.serialize();
 
-    //     0     1-6              7-12             13-18             19
-    ss << '{' << xs << ys << zs << '{';
+    ss <<
+        '{' <<  //0
+        xs <<   //1-6
+        ys <<   //7-12
+        zs <<   //13-18
+        uid <<  //19-26
+        '{';    //27
 
     for (std::pair<std::string, std::string> p : this->attributes){
         ss << '[' << p.first << p.second << ']';
@@ -85,7 +99,7 @@ ENTITY ENTITY::deserializeEntity(std::string entityString){
         std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on first char, expected \'{\', got " << entityString[0] << std::endl;
         return ENTITY();
     }
-    if (entityString[19] != '{'){
+    if (entityString[27] != '{'){
         std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section initializer, expected \'{\', got " << entityString[19] << std::endl;
         return ENTITY();
     }
@@ -113,13 +127,16 @@ ENTITY ENTITY::deserializeEntity(std::string entityString){
     substr = entityString.substr(13,6);
     z = cfloat::deserializeToNewCFloat(substr);
 
-
     el.setX(x);
     el.setY(y);
     el.setZ(z);
-    ENTITY e = ENTITY(el);
 
-    int place = 20; // Start on the first char of the first attribute.
+    substr = entityString.substr(19, 8);
+    unsigned long long uid = *(unsigned long long*) substr.c_str();
+
+    ENTITY e = ENTITY(el, uid);
+
+    int place = 28; // Start on the first char of the first attribute.
     if (place >= len-2) return e;
 
     std::map<std::string, std::string> attributes;
@@ -184,4 +201,14 @@ bool ENTITY::removeAttribute(const std::string& attribute) {
 
 bool ENTITY::hasAttribute(const std::string& attribute){
     return this->attributes.contains(attribute);
+}
+
+unsigned long long ENTITY::generateAndSetNewUUID(){
+    std::random_device rd;  // Seed for the random number engine
+    std::mt19937_64 engine(rd());  // 64-bit Mersenne Twister random number engine
+    std::uniform_int_distribution<unsigned long long> dist(0ULL, std::numeric_limits<unsigned long long>::max());
+
+    // Generate a random number
+    this->uuid = dist(engine);
+    return uuid;
 }

@@ -1,9 +1,9 @@
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <math.h>
 #include <iostream>
 #include <thread>
-#include <unistd.h>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     unsigned long long startTime = SDL_GetPerformanceCounter();
     unsigned long long originTime = SDL_GetPerformanceCounter();
     // Load a texture for the box
-    SDL_Surface* surface = IMG_Load("box.png");
+    SDL_Surface* surface = IMG_Load("assets/deep_water.png");
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
     SDL_FreeSurface(surface);
 
@@ -37,46 +37,13 @@ int main(int argc, char* argv[])
 
     // Enter the main loop
 
-    //Create the event poller in another thread
-    std::thread t( [ &startTime, &frequency, &originTime, &angle, &rect, &renderer, &texture, &center, &quit] () {
-        while (!quit)
-        {
-            Uint64 currentTime = SDL_GetPerformanceCounter();
-            double delta = ((double)(currentTime - startTime) / frequency) * 100;
-            double sinceStart = ((double)(currentTime - originTime) / frequency);
-            startTime = currentTime;
-            // Handle events
-
-
-            // Update the angle and wrap it around at 360 degrees
-            angle += 1.0f * delta ;
-            if (angle >= 360.0f)
-            {
-                angle -= 360.0f;
-            }
-
-            int newWidth, newHeight;
-            newWidth = ogWidth + (sin(sinceStart*20)*10);
-            newHeight = ogHeight + (sin(sinceStart*20)*-10);
-
-            rect.w = newWidth;
-            rect.h = newHeight;
-
-            rect.x = newHeight / 2;
-            rect.y = newWidth / 2;
-
-            // Clear the renderer with black
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
-
-            // Render the rotated box
-            SDL_RenderCopyEx(renderer, texture, NULL, &rect, angle, &center, SDL_FLIP_NONE);
-            // Present the renderer to the window
-            SDL_RenderPresent(renderer);
-        }
-    });
-
-    while (!quit){
+    while (!quit)
+    {
+        Uint64 currentTime = SDL_GetPerformanceCounter();
+        double delta = ((double)(currentTime - startTime) / frequency) * 100;
+        double sinceStart = ((double)(currentTime - originTime) / frequency);
+        startTime = currentTime;
+        // Handle events
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -94,9 +61,33 @@ int main(int argc, char* argv[])
 
             }
         }
-    }
 
-    t.join();
+        // Update the angle and wrap it around at 360 degrees
+        angle += 1.0f * delta ;
+        if (angle >= 360.0f)
+        {
+            angle -= 360.0f;
+        }
+
+        int newWidth, newHeight;
+        newWidth = ogWidth + (sin(sinceStart*20)*10);
+        newHeight = ogHeight + (sin(sinceStart*20)*-10);
+
+        rect.w = newWidth;
+        rect.h = newHeight;
+
+        rect.x = newHeight / 2;
+        rect.y = newWidth / 2;
+
+        // Clear the renderer with black
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        // Render the rotated box
+        SDL_RenderCopyEx(renderer, texture, NULL, &rect, angle, &center, SDL_FLIP_NONE);
+        // Present the renderer to the window
+        SDL_RenderPresent(renderer);
+    }
 
     // Clean up resources
     SDL_DestroyTexture(texture);

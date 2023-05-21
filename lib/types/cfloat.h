@@ -32,6 +32,10 @@ public:
 
     cfloat() = default;
 
+    int toInt(){
+        return this->whole;
+    }
+
     friend cfloat operator+(const cfloat& lhs, const cfloat& rhs) {
         int w = lhs.whole + rhs.whole;
         int frac = lhs.fraction + rhs.fraction;

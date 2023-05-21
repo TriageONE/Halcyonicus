@@ -33,6 +33,12 @@ class ENTITY {
     ENTITYLOCATION location;
 
     /**
+    * All entities will be interpreted with a facing
+    * If entities do not face in a direction, it is 0. It can never be negative and exceed 360
+    */
+    float facing = 0;
+
+    /**
      * The entity should also have a fully qualified type identifier that follows convention of strings similar to minecrafts way of creating a system of naming objects and things
      * The TYPE is a thing that describes the type of item and this may be redundant or fairly large
      */
@@ -43,11 +49,20 @@ class ENTITY {
 
     std::map<std::string, std::string> attributes;
 
+    //UUID of 0 means the entity is in an error state and cannot be processed
+    unsigned long long uuid = 0;
+
 public:
 
-    ENTITY(ENTITYLOCATION location, std::string type) {
+    ENTITY(ENTITYLOCATION location, std::string type, unsigned long long uuid) {
         this->location = location;
         this->type = std::move(type);
+        this->uuid = uuid;
+    }
+
+    ENTITY(ENTITYLOCATION location, unsigned long long uuid) {
+        this->location = location;
+        this->uuid = uuid;
     }
 
     ENTITY() {
@@ -59,20 +74,80 @@ public:
         this->location = location;
         this->missingType = true;
     }
+
+    ENTITY(std::string type) {
+        this->location = ENTITYLOCATION(0,0,0);
+    }
+
+    //////////////
+    //Comparators
+    friend bool operator==(const ENTITY& lhs, const ENTITY& rhs) {
+        return (lhs.uuid == rhs.uuid);
+    }
+
+    friend bool operator>(const ENTITY& lhs, const ENTITY& rhs) {
+        return (lhs.uuid > rhs.uuid);
+    }
+
+    friend bool operator<(const ENTITY& lhs, const ENTITY& rhs) {
+        return (lhs.uuid < rhs.uuid);
+    }
+
+    friend bool operator<=(const ENTITY& lhs, const ENTITY& rhs) {
+        return (lhs.uuid <= rhs.uuid);
+    }
+
+    friend bool operator>=(const ENTITY& lhs, const ENTITY& rhs) {
+        return (lhs.uuid >= rhs.uuid);
+    }
+
+    friend bool operator!=(const ENTITY& lhs, const ENTITY& rhs) {
+        return (lhs.uuid != rhs.uuid);
+    }
+
+    //////////////////////////
+    // Comparators, extended
+
+    bool operator==(const ENTITY& other) {
+        return (this->uuid == other.uuid);
+    }
+
+    bool operator>(const ENTITY& other) {
+        return (this->uuid > other.uuid);
+    }
+
+    bool operator<(const ENTITY& other) {
+        return (this->uuid < other.uuid);
+    }
+
+    bool operator<=(const ENTITY& other) {
+        return (this->uuid <= other.uuid);
+    }
+
+    bool operator>=(const ENTITY& other) {
+        return (this->uuid >= other.uuid);
+    }
+
+    bool operator!=(const ENTITY& other) {
+        return (this->uuid != other.uuid);
+    }
+
     ///////////
     //Getters
     ENTITYLOCATION getLocation();
     std::string getType();
+    unsigned long long getUUID();
     std::string getAttribute(const std::string& attribute);
     std::map<std::string, std::string> getAllAttributes();
     [[nodiscard]] bool isErrored() const;
     [[nodiscard]] bool isUntyped() const;
-
+    [[nodiscard]] bool hasUUID() const;
 
     //////////
     //Setters
     void setLocation(ENTITYLOCATION l);
     void setType(std::string type);
+    void setUUID(unsigned long long);
     void setAttribute(const std::string& dblob, const std::string& attribute);
     void setAttributes(std::map<std::string, std::string> * attributes);
 
@@ -80,24 +155,12 @@ public:
     //Modifiers
     bool removeAttribute(const std::string& attribute);
     bool hasAttribute(const std::string& attribute);
+    unsigned long long generateAndSetNewUUID();
 
     ////////////////
     //Serialization
     std::string serializeEntity();
     static ENTITY deserializeEntity(std::string entityString);
-
-    ////////////
-    //Operators
-    friend bool operator==(const ENTITY& lhs, const ENTITY& rhs)
-    {
-        //Must compare all attributes unless UUID as a attr is used
-        if (lhs.type != rhs.type) return false;
-        if ((lhs.attributes.find("uuid") == lhs.attributes.end()) && (rhs.attributes.find("uuid") == rhs.attributes.end())){
-            return (lhs.attributes.find("uuid") == rhs.attributes.find("uuid"));
-        }
-        //If they do not have a uuid then we cannot guarantee that they are equal.
-        return false;
-    }
 
     ////////////
     //Debuggers

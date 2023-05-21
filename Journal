@@ -368,3 +368,15 @@ Since everything on the screen may not comprise of everything loaded, we should 
 There should be a flag for certain entities that allows them to be exempt from this, unless we restrict the size of entities to a maximum allowable amount. We need to be able to find the size and expand it to double the dimensions
 
 I see no reason why we should not be able to make EVERY single collision box a rectangle i mean, why not?
+
+//////////////////////
+05-18-23
+
+I was defeated today
+Today marks the day that i have found no workarounds for the following problems:
+- static link everything for every platform
+- make SDL2 not freeze when moving the window or resizing
+
+These things are perilous and demotivating. I cant continue without them, however i am now forced to take what i have and run with it. This is soul crushing because i prioritize kino over everything else, and this is not kino. Factorio uses SDL2 and can move around but not resize and still render.
+If other games can do it, so can i. Maybe i should have a long term issue tracker of things i want to fix but simply cant right now. in the far future, i can ask a community of people how to do what i want. Ill provide bounties for these issues and give them things in return, in game.
+
