@@ -3,12 +3,12 @@
 //
 
 #include "map.h"
-#include "../noise/perlin.h"
+#include "../lib/noise/perlin.h"
 #include <iostream>
 #include <bitset>
 #include <array>
 #include <utility>
-#include "../hash/md5.h"
+#include "../lib/hash/md5.h"
 
 //////////////////////////
 //CLASSIFICATION BASIC RW
@@ -342,12 +342,11 @@ float MAP::getW3() const {
 
 void MAP::generate() {
     //Reinterpretation cast to integer from character array
-    using namespace std;
     int s1 = *(int*) (seed.c_str());
-    cout << "   #MAPGEN S1 " << s1 << endl;
+    std::cout << "   #MAPGEN S1 " << s1 << std::endl;
 
     int s2 = ((*(int*) seed.c_str()) << 1) + 16;
-    cout << "   #MAPGEN S2 " << s2 << endl << endl;
+    std::cout << "   #MAPGEN S2 " << s2 << std::endl << std::endl;
 
     const siv::PerlinNoise::seed_type pseed = s1;
     const siv::PerlinNoise perlin{ pseed };

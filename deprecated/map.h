@@ -7,7 +7,7 @@
 
 #include <array>
 #include <string>
-#include "worldcoord.h"
+#include "../lib/world/worldcoord.h"
 
 /**
 * 0:0, In the beginning, god said, let there be a platform, nothing more. All is up for interpretation, interpolation, and subjection;
@@ -78,6 +78,7 @@ public:
      * A special function to output the raw binary data to the console line by line.
      */
     void dump_map();
+
     /**
      * A special function to draw the map within console in greyscale unicode box characters. The algorithm used outputs 2 boxes per area, since unicode boxes usually occupy a ratio of 2:1 height to width.
      */
@@ -89,6 +90,7 @@ public:
      * @return The copy of the map
      */
     std::array<char, 1024>  copy_map();
+
     /**
      * Sets the passed map to this object, overriding the entire map
      * @param new_map The new map provided
@@ -101,6 +103,7 @@ public:
      * @return the duo at that place
      */
     char pick(int place);
+
     /**
      * Pack the duo passed into the place in the array.
      * @param place the place of the array from 0-4095
@@ -114,6 +117,7 @@ public:
      * @return the quad at that place containing 4 duos
      */
     char getRaw(int place);
+
     /**
      * Set a raw compressed quad into the array
      * @param place the place of the array from 0-1023

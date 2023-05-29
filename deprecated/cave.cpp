@@ -5,8 +5,8 @@
 #include "cave.h"
 #include <bit>
 #include <iostream>
-#include "../hash/md5.h"
-#include "../noise/perlin.h"
+#include "../lib/hash/md5.h"
+#include "../lib/noise/perlin.h"
 
 /**
  * AT LAST, the final sweep of faith, as all that exists shall be completed and seen. The underground shall weave intricate tunnels and spanning structures

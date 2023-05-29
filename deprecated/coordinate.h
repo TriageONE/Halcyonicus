@@ -16,7 +16,7 @@ protected:
 public:
 
     /**
-     * Creates a simple record capable of holding and X y and Z value
+     * Creates a simple record capable of holding and X, Y and Z values
      * @param x The NORTH/SOUTH component to the coordinate
      * @param y The EAST/WEST component to the coordinate
      * @param z The UP/DOWN component to the coordinate

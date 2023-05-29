@@ -6,9 +6,9 @@
 #define HALCYONICUS_LOCATION_H
 
 #include "coordinate.h"
-#include "worldcoord.h"
-#include "region.h"
-#include "regioncoord.h"
+#include "../lib/world/worldcoord.h"
+#include "../lib/world/region.h"
+#include "../lib/world/regioncoord.h"
 
 /**
  * A class dedicated to representing actual single tile locations around the world. They have a height, x, and z. Y levels
@@ -28,18 +28,18 @@ public:
      * @param y The vertical component of the coordinate, translating UP(+) and DOWN(-) or NORTH(+) and SOUTH(-)
      * @param z The depth component of the coordinate, translating UNDERGROUND(-) and ABOVEGROUND(+)
      */
-    LOCATION(int x, int y, int z) : COORDINATE(x, y, z)  {
+    [[deprecated]] LOCATION(int x, int y, int z) : COORDINATE(x, y, z)  {
         this->x = x;
         this->y = y;
         this->z = z;
     }
 
-    LOCATION() = default;
+    [[deprecated]] LOCATION() = default;
 
     /**
      * A relative coordinate that specifies itself as having a value strictly in-between 0 and 63, denoting the place within the current world shard this object exists at.
      */
-    struct RELATIVE{
+    struct [[deprecated]] RELATIVE{
         int x, z;
         RELATIVE(int x, int z){
             this->x=x;
@@ -57,7 +57,7 @@ public:
 
     //We need a way to get what world shard this is in
     /**
-     * Provides a way to determine what region a specific location is in
+     * Provides a way to determine what chunk a specific location is in
      * @return The worldcoord this exists in
      */
     [[nodiscard]] WORLDCOORD getWorldCoord() {
