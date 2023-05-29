@@ -3,10 +3,10 @@
 //
 #include <array>
 #include <vector>
-#include "map.h"
+#include "../../deprecated/map.h"
 #include "../hash/md5.h"
 #include "../entity/entity.h"
-#include "cave.h"
+#include "../../deprecated/cave.h"
 #include "worldcoord.h"
 
 #ifndef HALCYONICUS_WORLD_H
