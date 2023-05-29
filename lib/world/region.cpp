@@ -342,7 +342,7 @@ REGIONCOORD REGION::parseFnameToRegioncoord(const std::string& fname) {
 
 REGIONCOORD REGION::findRegioncoordFromWorldShard(WORLD *world) {
     WORLDCOORD l = world->getLocation();
-    return {l.getX() >> 4, l.getY() >> 4};
+    return {l.getX() >> 6, l.getZ() >> 6};
 
 }
 
@@ -356,12 +356,12 @@ int REGION::findChunkArrayOffset(WORLDCOORD chunkLocation) {
      */
 
     int x = chunkLocation.getX();
-    int y = chunkLocation.getY();
+    int z = chunkLocation.getZ();
 
-    int xoff = x & 15;
-    int yoff = y & 15;
+    int xoff = x & 63;
+    int zoff = z & 63;
 
-    return (yoff * 16) + xoff;
+    return (zoff * 64) + xoff;
 }
 
 //////////////////////////////////
