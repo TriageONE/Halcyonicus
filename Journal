@@ -380,3 +380,23 @@ Today marks the day that i have found no workarounds for the following problems:
 These things are perilous and demotivating. I cant continue without them, however i am now forced to take what i have and run with it. This is soul crushing because i prioritize kino over everything else, and this is not kino. Factorio uses SDL2 and can move around but not resize and still render.
 If other games can do it, so can i. Maybe i should have a long term issue tracker of things i want to fix but simply cant right now. in the far future, i can ask a community of people how to do what i want. Ill provide bounties for these issues and give them things in return, in game.
 
+//////////////////////
+05-28-23
+
+When minecraft stores its entity data, it separates the entities by location into region files within the /world/entities directory. Usually, saving an entity would work by taking all the entities in scope and serializing them to NBT, then emplacing them within the corresponding file, but there is one caveat:
+
+Imagine the following:
+
+1. Entity 1 is saved within region 0,0.mca
+2. Entity 1 now moves to region 1,0.mca
+3. Entity 1 is now saved within region 1,0.mca
+4. Upon loading regions 1,0 and 0,0, the entity is now duplicated since it moved
+
+
+It seems like the following options are off limits due to how world saving works or associated overhead:
+
+- You cannot remove the entity from the region save file it is exiting upon exit because if in the event the world failed to save, then closed, you would lose an entity because they moved across a region border
+- Its not feasible to save the world every time the entity moves from one region to another because that would queue blocking disk writes and reads every time the entity goes from region A to B
+- It isn't a good idea to completely overwrite the entire file every time we save, since that would result in massive disk thrashing if there are a lot of entities, and could result in large hangups, especially if we have a system of cascading
+
+I figure the only logical way to deal with this is attaching a tag to each entity called "lastSavedRegion" that denotes the area it existed within before, then go to that area and delete that entry. This of course would cause a lot of contention while loading, or would it?
