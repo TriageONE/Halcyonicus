@@ -8,8 +8,8 @@
 #include <string>
 #include <utility>
 #include <map>
-#include "../world/coordinate.h"
-#include "../world/location.h"
+#include "../../deprecated/coordinate.h"
+#include "../../deprecated/location.h"
 #include "../types/dynablob.h"
 #include "entitylocation.h"
 
@@ -31,7 +31,7 @@ class ENTITY {
     * They also must have the region they exist in, and this should be validated against its location
     */
     ENTITYLOCATION location;
-
+    ENTITYLOCATION lastSavedLocation;
     /**
     * All entities will be interpreted with a facing
     * If entities do not face in a direction, it is 0. It can never be negative and exceed 360
@@ -135,8 +135,10 @@ public:
     ///////////
     //Getters
     ENTITYLOCATION getLocation();
+    ENTITYLOCATION getLastSavedLocation();
     std::string getType();
     unsigned long long getUUID();
+    float getFacing();
     std::string getAttribute(const std::string& attribute);
     std::map<std::string, std::string> getAllAttributes();
     [[nodiscard]] bool isErrored() const;
@@ -146,8 +148,10 @@ public:
     //////////
     //Setters
     void setLocation(ENTITYLOCATION l);
+    void setLastSavedLocation(ENTITYLOCATION l);
     void setType(std::string type);
     void setUUID(unsigned long long);
+    void setFacing(float);
     void setAttribute(const std::string& dblob, const std::string& attribute);
     void setAttributes(std::map<std::string, std::string> * attributes);
 

@@ -212,3 +212,23 @@ unsigned long long ENTITY::generateAndSetNewUUID(){
     this->uuid = dist(engine);
     return uuid;
 }
+
+ENTITYLOCATION ENTITY::getLastSavedLocation() {
+    return this->lastSavedLocation;
+}
+
+void ENTITY::setLastSavedLocation(ENTITYLOCATION l) {
+    this->lastSavedLocation = l;
+}
+
+unsigned long long ENTITY::getUUID(){
+    return this->uuid;
+}
+
+void ENTITY::setFacing(float newFacing) {
+    this->facing = newFacing;
+}
+
+float ENTITY::getFacing() {
+    return this->facing;
+}

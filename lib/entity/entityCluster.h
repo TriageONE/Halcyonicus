@@ -22,7 +22,7 @@ class ENTITYCLUSTER{
 
     WORLDCOORD worldcoord;
 public:
-    std::array<std::vector<ENTITY>, 13> areas {std::vector<ENTITY>()};
+    std::map<unsigned long long, ENTITY> entities;
     /**
      * If we want to create an object ready to hold and work with entity data, we should first create a data structure that
      * defines how entities are stored, hence the bare 'areas' structure present, allowing for entities to be added in dynamically
@@ -31,34 +31,49 @@ public:
 
     WORLDCOORD getWorldcoord();
 
-    void addEntityToLayer(const ENTITY& e, int layer){
-        if (layer > 12 || layer < 0) return;
-        areas[layer].push_back(e);
+    void addEntity(ENTITY& e){
+        entities.erase(e.getUUID());
+        entities.insert({e.getUUID(), e});
     }
 
-    std::string serializeLayer(int layer){
-        if (this->areas[layer].empty()){
-            std::cout << "Serialization from layer " << layer << " failed, layer is empty." << std::endl;
-            return {""};
+    void removeEntity(unsigned long long uuid){
+        entities.erase(uuid);
+    }
+
+    ENTITY* getEntity(unsigned long long uuid){
+        auto it = entities.find(uuid);
+        if (it == entities.end())
+            return {};
+        else
+            return &it->second;
+    }
+
+    //FIXME: Needs testing
+    std::vector<char> serializeCluster(){
+        if (this->entities.empty()){
+            std::cout << "Serialization from chunk " << this->worldcoord.getX() << ", " << this->worldcoord.getZ() << " failed, chunk is empty." << std::endl;
+            return {};
         }
-        std::clamp(layer, 0, 12);
 
-        std::vector<std::string> types;
+        std::map<std::string, std::vector<ENTITY*>> types;
 
-        //Sort the types for the entities and bag them together eventually
-        for (ENTITY e : this->areas[layer]){
-            std::string type = e.getType();
-            if (std::find(types.begin(), types.end(), type) == types.end())
-                types.push_back(type);
+        //Sort the types for the entities and bag them together
+        for (auto e : entities){
+            std::string type = e.second.getType();
+            auto it = types.find(type);
+            if (it == types.end()){
+                types.insert({type, {}});
+                it = types.find(type);
+            }
+            it->second.push_back(&e.second);
+
         }
         //We should have put together all the types and now we can shuffle them into a sacrificial vector
 
-        std::vector<ENTITY> sev = std::vector<ENTITY>(this->areas[layer]);
+        std::vector<char> out;
 
-        std::stringstream ss;
-
-        for (const std::string& type : types){
-            unsigned long realLen = type.length();
+        for (auto type : types){
+            unsigned long realLen = type.first.length();
             auto tLen = (unsigned short) realLen;
             char length[2];
             ::memcpy(length, &tLen, 2);
@@ -67,9 +82,16 @@ public:
             // a variable amount of space. This can be statically reinterpreted later to give the length for verification
             // purposes
 
-            ss << "{" << length[0] << length[1] << type.substr(0, tLen );
-            std::cout << "Current SS: " << ss.str() << std::endl;
-            auto it = sev.begin();
+            out.push_back('{');
+            out.push_back(length[0]);
+            out.push_back(length[1]);
+            out.insert(out.end(), type.first.begin(), type.first.end());
+
+            for (ENTITY *e : type.second){
+                std::string entity = e->serializeEntity();
+                out.insert(out.end(), entity.begin(), entity.end());
+            }
+            /*auto it = sev.begin();
             while (it != sev.end()){
                 if (it->getType() == type){
                     std::cout << "Preparing to serialize new entity.. "<< std::endl;
@@ -80,33 +102,35 @@ public:
                     ss << entity;
                     sev.erase(it);
                 } else it++;
-            }
-            ss << '}';
+            }*/
+            out.push_back('}');
         }
-
-        return ss.str();
+        //TODO: Try to compress the results with /lib/tools/compressionTools.h
+        return out;
     }
 
-    void deserializeIntolayer(const std::string& data, int layer){
-        if (data.length() <= 2){
+    //FIXME: Needs testing
+    void deserializeIntoChunk(std::vector<char> &data){
+
+        //TODO: Try to uncompress the results with /lib/tools/compressionTools.h after implementing compression
+        if (data.size() <= 2){
             std::cout << "Layer is empty, no changes made." << std::endl;
             return;
         }
-        std::clamp(layer, 0, 12);
-        areas[layer].clear();
+        entities.clear();
         //Entities by format are defined by a variable length of characters, however they will always complete at least 2 {} iterations.
         // after the final static }}, we will be able to detect a \n, which if this does not exist, we should seek until we do see one and ignore everything after the }} until we do
 
         unsigned long position = 0;
         unsigned int bracketCoutner = 0;
         bool typeCounter;
-        unsigned long len = data.length();
+        unsigned long len = data.size();
 
         while (position < len-1){
             //start by finding the first token using a bracket counter
             while (data[position] != '{') {
                 if (position > len-1) {
-                    std::cerr << "WARN: Deserialization into layer " << layer << " completed because we could not find an opener \'{\', last character at position " << position << " was \'" << data[position] << '\'' << std::endl;
+                    std::cerr << "WARN: Deserialization into chunk completed because we could not find an opener \'{\', last character at position " << position << " was \'" << data[position] << '\'' << std::endl;
                     return;
                 }
                 position++;
@@ -155,7 +179,7 @@ public:
                     std::cout << "INFO: Found end of entity, emplacing into layer.." << std::endl;
                     ENTITY e = ENTITY::deserializeEntity(ent.str());
                     e.setType(type.str());
-                    areas[layer].push_back(e);
+                    entities.insert({e.getUUID(), e});
                     std::cout << "INFO: Pushed entity into layer: " << ent.str() << std::endl;
                     ent.str("");
                     ent.clear();
