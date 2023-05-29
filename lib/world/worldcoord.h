@@ -5,20 +5,19 @@
 #ifndef HALCYONICUS_WORLDCOORD_H
 #define HALCYONICUS_WORLDCOORD_H
 
-#include "coordinate.h"
+#include "../../deprecated/coordinate.h"
 #include "regioncoord.h"
 
 /**
  * A class dedicated to coordinates of specific collections of 64x64 world tiles. This is called a shard, or if you play minecraft, a chunk.
  *
  */
-class WORLDCOORD : public COORDINATE {
+class WORLDCOORD{
+    int x=0, z=0;
 public:
-    WORLDCOORD(int x1, int y1, int z1) : COORDINATE(x1, y1, z1) {
+    WORLDCOORD(int x1, int z1) {
         //The vertical component of the map
         this->x = x1;
-        //The horizontal component of the map
-        this->y = y1;
         //The height of the map
         this->z = z1;
     }
@@ -26,39 +25,48 @@ public:
 
     REGIONCOORD getRegionCoordinates(){
         //The region coordinate is 16 times smaller than a worldcoord, therefore divide by 16, but bit shift instead.
-        int x1, y1;
-        x1 = this->getX() >> 4;
-        y1 = this->getY() >> 4;
-        return {x1, y1};
+        int x1, z1;
+        x1 = this->x >> 4;
+        z1 = this->z >> 4;
+        return {x1, z1};
     };
 
+    int getX(){
+        return this->x;
+    }
+
+    int getZ(){
+        return this->z;
+    }
+
+    void setX(int newX){
+        this->x = newX;
+    }
+
+    void setZ(int newZ){
+        this->z = newZ;
+    }
+
     bool operator<(const WORLDCOORD& other) const {
-        if (this->getX() < other.getX())
+        if (this->x < other.x)
             return true;
-        if (this->getX() > other.getX())
+        if (this->x > other.x)
             return false;
 
-        if (this->getY() < other.getY())
-            return true;
-        if (this->getY() > other.getY())
-            return false;
-
-        return this->getZ() < other.getZ();
+        return this->z < other.z;
     }
 
     bool operator==(const WORLDCOORD& other) const{
         return (
-                other.getX() == this->getX() &&
-                other.getY() == this->getY() &&
-                other.getZ() == this->getZ()
+                other.x == this->x &&
+                other.z == this->z
                 );
     }
 
     bool operator!=(const WORLDCOORD& other) const{
         return (
-                other.getX() != this->getX() &&
-                other.getY() != this->getY() &&
-                other.getZ() != this->getZ()
+                other.x != this->x &&
+                other.z != this->z
         );
     }
 };
