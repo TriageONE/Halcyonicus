@@ -5,13 +5,13 @@
 #ifndef HALCYONICUS_REGIONCOORD_H
 #define HALCYONICUS_REGIONCOORD_H
 
-#include "coordinate.h"
+#include "../../deprecated/coordinate.h"
 
 class REGIONCOORD : public COORDINATE{
 public:
-    REGIONCOORD(int xInt, int yInt){
+    REGIONCOORD(int xInt, int zInt){
         this->x = xInt;
-        this->y = yInt;
+        this->z = zInt;
     }
 
 };
