@@ -11,16 +11,16 @@ if(WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
 endif()
 
+link_directories(./lib ./hsrv ./graphics ./)
 
-add_executable(Halcyonicus main.cpp lib/context/hcontext.h)
-
+add_executable(Halcyonicus main.cpp lib/world/chunk.cpp graphics/initOpengl.cpp graphics/texture.cpp lib/hdb/hdb.h lib/world/region.h lib/world/region.cpp lib/entity/entity.cpp lib/entity/entityCluster.cpp lib/tools/compressionTools.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
 endif()
 
 
-link_directories(/lib /ui /hsrv)
+
 
 # Set the source directory of your assets
 set(ASSETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/lib/assets)
@@ -35,8 +35,21 @@ add_custom_target(copy_assets ALL
         SOURCES ${ASSETS_SOURCE_DIR}
         )
 
+set(GRAPHICS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/graphics/shaders)
+
+# Set the destination directory for the assets in the build
+set(GRAPHICS_DEST_DIR ${CMAKE_BINARY_DIR}/graphics/shaders)
+
+# Create a custom target to copy the assets
+add_custom_target(copy_graphics ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${GRAPHICS_SOURCE_DIR} ${GRAPHICS_DEST_DIR}
+        COMMENT "Copying graphics to the build directory"
+        SOURCES ${GRAPHICS_SOURCE_DIR}
+        )
+
 # Add the custom target as a dependency for your executable or library
 add_dependencies(Halcyonicus copy_assets)
+add_dependencies(Halcyonicus copy_graphics)
 
 find_package(OpenSSL REQUIRED)
 target_link_libraries(Halcyonicus PRIVATE OpenSSL::SSL OpenSSL::Crypto)
