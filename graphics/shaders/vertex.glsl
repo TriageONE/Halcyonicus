@@ -7,6 +7,7 @@ layout(location = 3) in ivec3 cubeData; //Changed to only hold the cube XYZ and 
 layout(location = 4) in int typeIn;
 
 uniform float time;
+uniform mat4 modelMatrix;
 uniform mat4 cameraViewMatrix;
 uniform mat4 cameraProjectionMatrix;
 uniform vec3 cameraPosition;
@@ -28,8 +29,8 @@ void main()
 
     type = typeIn;
     uv = vertexUVs;
-    normal = vertexNormal;
+    normal = (modelMatrix * vec4(vertexNormal,0.0)).xyz;
 
     vec3 worldPos = vertexPosition + cubeData + vec3(chunkX*16.0,0.0,chunkZ*16.0);//Should be ok, i hope. not much has changed other than ive
-    gl_Position = cameraProjectionMatrix * cameraViewMatrix * vec4(worldPos,1.0);
+    gl_Position = cameraProjectionMatrix * cameraViewMatrix * modelMatrix * vec4(worldPos,1.0);
 }

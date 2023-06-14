@@ -155,9 +155,9 @@ GLuint createProgram(std::string vertexCode,std::string fragmentCode)
     return program;
 }
 
-GLuint loadDefaultShaders()
+GLuint loadDefaultShaders(std::string vertexShaderPath,std::string fragmentShaderPath)
 {
-    std::ifstream vertShader("graphics/shaders/vertex.glsl",std::ios::ate | std::ios::binary);
+    std::ifstream vertShader(vertexShaderPath.c_str(),std::ios::ate | std::ios::binary);
     if(!vertShader.is_open())
     {
         std::cout<<"Error, could not open vertex shader!\n";
@@ -180,7 +180,7 @@ GLuint loadDefaultShaders()
     vertShader.close();
 
     //Frag shader
-    std::ifstream fragShader("graphics/shaders/fragment.glsl",std::ios::ate | std::ios::binary);
+    std::ifstream fragShader(fragmentShaderPath.c_str(),std::ios::ate | std::ios::binary);
     if(!fragShader.is_open())
     {
         std::cout<<"Error, could not open fragment shader!\n";
