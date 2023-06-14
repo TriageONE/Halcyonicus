@@ -44,6 +44,26 @@ int serializeBlock(cube_traits traits){
     return traits.type + (traits.y << 16) + (xz << 24);
 }
 
+unsigned short keyBlock(unsigned char x, unsigned char y, unsigned char z){
+    unsigned char xz = (x << 4) + z;
+    return y + (((int)(xz)) << 8);
+}
+
+unsigned short keyBlock(cube_traits traits){
+    unsigned char xz = (traits.x << 4) + traits.z;
+    return traits.y + (((int)(xz)) << 8);
+}
+
+cube_traits unkeyBlock(int block){
+    unsigned char x, y, z;
+
+    y = (block) & 0x00FF;
+    x = (block >> 8) & 0x000F;
+    z = (block >> 12) & 0x000F;
+
+    return {x, y, z, 0};
+}
+
 cube_traits deserializeBlock(int block){
     unsigned char x, y, z;
     unsigned short type = block & 65535;
@@ -191,7 +211,7 @@ void chunk::deserialize2(std::vector<int> data){
 
 const cube chunk::getCube(unsigned char x,unsigned char y,unsigned char z)
 {
-    unsigned short key = (x<<4) | (y<<8) | z;
+    unsigned short key = keyBlock(x,y,z);//(x<<4) | (y<<8) | z;
     auto it = cubeMap.find(key);
     if (it == cubeMap.end()){
         //We diddnt find one, so its air
@@ -213,35 +233,43 @@ void chunk::changeCube(cube *tmp,unsigned char type,bool skipCompile)
     glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
-//TODO: ensure that changeCube() removes entries upon seeing a zero in type
 void chunk::changeCube(unsigned char x,unsigned char y,unsigned char z,unsigned short type,bool skipCompile)
 {
-    unsigned short key = (x<<4) | (y<<8) | z;
+    unsigned short key = keyBlock(x,y,z);//(x<<4) | (y<<8) | z;
 
     auto it = cubeMap.find(key);
 
     if (it == cubeMap.end()){
-        //We diddnt find a cube..
-        if (type != 0) {
-            cube newCube(x,y,z,type);
-            cubeMap.insert({key, newCube});
+        //We didnt find a cube..
+        if (type != 0)
+        {
+            cubeMap.insert({key, cube{x,y,z,type}});
+            it = cubeMap.find(key);
+
             if(skipCompile)
                 return;
         }
-    } else {
+        else
+        {
+            //TODO: ensure that changeCube() removes entries upon seeing a zero in type
+
+        }
+    }
+    else
+    {
         it->second.type = type;
         if(skipCompile)
             return;
 
-        if(cubes.size() + 1 >= allocatedCubeSpaces)
+        if(cubeMap.size() + 1 >= allocatedCubeSpaces)
         {
             recompileAll();
             return;
         }
-
     }
+
     glBindBuffer(GL_ARRAY_BUFFER,typeData);
-    glBufferSubData(GL_ARRAY_BUFFER,it->second.bufferOffset,1,&type);
+    glBufferSubData(GL_ARRAY_BUFFER,it->second.bufferOffset,2,&type);
     glBindBuffer(GL_ARRAY_BUFFER,0);
 
     glBindBuffer(GL_ARRAY_BUFFER,cubeData);
@@ -302,9 +330,7 @@ void chunk::changeCube(unsigned char x,unsigned char y,unsigned char z,unsigned 
 void chunk::recompileAll()
 {
 
-    puts("Begin air erase...");
     //Erase all air blocks from memory
-    std::cout << "SizeOf cubemap: " << cubeMap.size() << std::endl;
     for(auto it = cubeMap.begin(); it != cubeMap.end();)
     {
         if(it->second.type == 0)
@@ -315,7 +341,6 @@ void chunk::recompileAll()
     std::vector<cube_location> locations;
     std::vector<short> types;
     int tracker = 0;
-    puts("setting buffer offsets...");
     for(auto it : cubeMap)
     {
         it.second.bufferOffset = tracker;
@@ -329,17 +354,17 @@ void chunk::recompileAll()
         //locations.push_back({0,0,0});
 
     //Bind array buffer for the cube location data
-    puts("Preparing buffer bindings...");
+
     allocatedCubeSpaces = locations.size();
     glBindBuffer(GL_ARRAY_BUFFER,cubeData); //Following line can also maybe be changed to dynamic draw:
     glBufferData(GL_ARRAY_BUFFER, 3 * locations.size(), locations.data(), GL_STREAM_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER,0);
-    puts("Preparing buffer bindings phase 2...");
+
     //Bind array buffer for the cube location data
     glBindBuffer(GL_ARRAY_BUFFER,typeData); //Following line can also maybe be changed to dynamic draw:
-    glBufferData(GL_ARRAY_BUFFER, types.size(), types.data(), GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 2 * types.size(), types.data(), GL_STREAM_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER,0);
-    puts("Buffer bindings finished");
+
 }
 
 void chunk::render()
@@ -395,7 +420,7 @@ chunk::chunk(GLuint program,int x,int z)
     //Configure the cubeData buffer's use further:
     glEnableVertexAttribArray(layout_chunk_cubeData);
     glVertexAttribDivisor(layout_chunk_cubeData,1);
-    glVertexAttribIPointer(layout_chunk_cubeData,4,GL_UNSIGNED_BYTE,0,0);
+    glVertexAttribIPointer(layout_chunk_cubeData,3,GL_UNSIGNED_BYTE,0,0);
 
     //What about types now? i made another layout for the type, not a uniform
     //Now we also create the chunk-specific list of data for all of the chunk's cubes:
@@ -407,7 +432,7 @@ chunk::chunk(GLuint program,int x,int z)
     //Configure the cubeData buffer's use further:
     glEnableVertexAttribArray(layout_chunk_typeData);
     glVertexAttribDivisor(layout_chunk_typeData,1);
-    glVertexAttribIPointer(layout_chunk_typeData,1,GL_UNSIGNED_BYTE,0,0);
+    glVertexAttribIPointer(layout_chunk_typeData,1,GL_UNSIGNED_SHORT,0,0);
 }
 
 chunk::~chunk()
@@ -539,19 +564,19 @@ void chunk::createStaticBuffers(GLuint program)
         cubeNormals.push_back(glm::vec3(0.0,0.0,-1.0));
 
     //Bottom
-    cubeVerts.push_back(glm::vec3(0.0,0.0,0.0));
+    cubeVerts.push_back(glm::vec3(1.0,0.0,1.0));
     cubeVerts.push_back(glm::vec3(1.0,0.0,0.0));
-    cubeVerts.push_back(glm::vec3(1.0,0.0,1.0));
-    cubeVerts.push_back(glm::vec3(1.0,0.0,1.0));
-    cubeVerts.push_back(glm::vec3(0.0,0.0,1.0));
     cubeVerts.push_back(glm::vec3(0.0,0.0,0.0));
+    cubeVerts.push_back(glm::vec3(0.0,0.0,0.0));
+    cubeVerts.push_back(glm::vec3(0.0,0.0,1.0));
+    cubeVerts.push_back(glm::vec3(1.0,0.0,1.0));
 
-    cubeUVs.push_back(glm::vec2(0.0,0.0));
+    cubeUVs.push_back(glm::vec2(1.0,1.0));
     cubeUVs.push_back(glm::vec2(1.0,0.0));
-    cubeUVs.push_back(glm::vec2(1.0,1.0));
-    cubeUVs.push_back(glm::vec2(1.0,1.0));
-    cubeUVs.push_back(glm::vec2(0.0,1.0));
     cubeUVs.push_back(glm::vec2(0.0,0.0));
+    cubeUVs.push_back(glm::vec2(0.0,0.0));
+    cubeUVs.push_back(glm::vec2(0.0,1.0));
+    cubeUVs.push_back(glm::vec2(1.0,1.0));
 
     for(int a = 0; a<6; a++)
         cubeNormals.push_back(glm::vec3(0.0,-1.0,0.0));

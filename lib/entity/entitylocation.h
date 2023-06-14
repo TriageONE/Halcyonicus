@@ -57,10 +57,10 @@ public:
 
     WORLDCOORD getWorldCoordinates(){
         //The region coordinate is 64 times smaller than a worldcoord, therefore divide by 64, but bit shift instead.
-        int x1, y1;
+        int x1, z1;
         x1 = this->getX().toInt() >> 6;
-        y1 = this->getY().toInt() >> 6;
-        return {x1, y1, this->getZ().toInt()};
+        z1 = this->getZ().toInt() >> 6;
+        return {x1, z1};
     };
 };
 #endif //HALCYONICUS_ENTITYLOCATION_H

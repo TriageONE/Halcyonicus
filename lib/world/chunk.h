@@ -21,6 +21,8 @@
 
 struct chunk;
 
+//TODO: 29may2023 note: make sure order is preserved when declaring vars on same line
+//Also take packing bytes into account
 struct cube_location{unsigned char a,b,c;};
 
 //TODO: IM GONNA https://www.youtube.com/watch?v=GAfAer_sjaE
@@ -72,7 +74,7 @@ struct chunk
 
     //Why do we need 2 types of cube maps? wouldnt it be easier to have a map of cubes if we dont really need a vector?
     std::map<unsigned short, cube> cubeMap;
-    std::vector<cube*> cubes;
+
     chunk(GLuint program, int x, int z);
     ~chunk();
 
@@ -88,6 +90,8 @@ struct chunk
     std::vector<int> serialize2();
 
     void deserialize2(std::vector<int> data);
+
+    void changeCubes(std::map<unsigned short, cube> *newCubes);
 };
 
 #endif //HALCYONICUS_CHUNK_H

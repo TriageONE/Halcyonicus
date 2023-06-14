@@ -51,7 +51,7 @@ struct camera
     {
         const Uint8 *states = SDL_GetKeyboardState(NULL);
 
-        float speed = 0.03;
+        float speed = 0.2;
 
         if(states[SDL_SCANCODE_LCTRL])
             speed *= 5.0;

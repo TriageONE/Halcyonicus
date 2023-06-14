@@ -62,9 +62,8 @@ public:
      */
     [[nodiscard]] WORLDCOORD getWorldCoord() {
         int x2 = this->x >> 5;
-        int y2 = this->y >> 5;
         int z2 = this->z >> 5;
-        return {x2,y2,z2};
+        return {x2,z2};
     }
 
     //We need a way to get what region this is in

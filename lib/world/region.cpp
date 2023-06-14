@@ -54,7 +54,7 @@ bool REGION::writeChunk(WORLD* world) {
         if (hash == hash2) return true;
 
         //Write the world data
-        std::cout << "Writing world data for " << world->getLocation().getX() << ", " << world->getLocation().getY() << std::endl;
+        std::cout << "Writing world data for " << world->getLocation().getX() << ", " << world->getLocation().getZ() << std::endl;
         writeWorldData(arrayOffset, &regionFile, world);
 
         //We will always want to update the timestamp, but this should likely occur after the world write
@@ -92,7 +92,7 @@ bool REGION::readChunk(WORLD* world) {
         //We have exactly one world that we want to Read from the region.
         //Make sure it exists and go for it
         //Read the world data
-        std::cout << "Reading " << world->getLocation().getX() << ", " << world->getLocation().getY() << std::endl;
+        std::cout << "Reading " << world->getLocation().getX() << ", " << world->getLocation().getZ() << std::endl;
         readWorldData(arrayOffset, &regionFile, world);
     } else return false;
     regionFile.close();
