@@ -13,7 +13,7 @@ endif()
 
 link_directories(./lib ./hsrv ./graphics ./)
 
-add_executable(Halcyonicus main.cpp lib/world/chunk.cpp graphics/initOpengl.cpp graphics/texture.cpp lib/hdb/hdb.h lib/entity/entity.cpp lib/entity/entityCluster.cpp lib/tools/compressionTools.h)
+add_executable(Halcyonicus main.cpp lib/world/chunk.cpp graphics/initOpengl.cpp graphics/texture.cpp lib/hdb/hdb.h lib/entity/entity.cpp lib/entity/entityCluster.cpp lib/tools/compressionTools.h lib/world/chunk2.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
