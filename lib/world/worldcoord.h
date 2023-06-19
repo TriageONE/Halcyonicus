@@ -9,7 +9,7 @@
 #include "regioncoord.h"
 
 /**
- * A class dedicated to coordinates of specific collections of 64x64 world tiles. This is called a shard, or if you play minecraft, a chunk.
+ * A class dedicated to coordinates of specific collections of 16x16 world tiles. This is called a shard, or if you play minecraft, a chunk.
  *
  */
 class WORLDCOORD{
