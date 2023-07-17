@@ -1,93 +1,80 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
-#include <math.h>
 #include <iostream>
-#include <vector>
-#include <thread>
-#include <bitset>
-#include <glm/glm.hpp>
+
+#include "assimp/Importer.hpp"
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include "graphics/initOpengl.h"
 #include "graphics/camera.h"
-#include "graphics/texture.h"
 #include "lib/world/chunk.h"
-#include "lib/world/generator.h"
 
 int SCREEN_WIDTH = 1920;
 int SCREEN_HEIGHT = 1080;
 
 int main(int argc, char* argv[])
 {
-
     std::cout << "Starting..." << std::endl;
     bool quit = false;
     // Initialize SDL2 and create a window and renderer
     SDL_Window *window = initOpenGL(SCREEN_WIDTH,SCREEN_HEIGHT);
 
     GLuint basicCubeShader = loadDefaultShaders("graphics/shaders/vertex.glsl", "graphics/shaders/fragment.glsl");
-    //GLuint shadowCubeShader = loadDefaultShaders("graphics/shaders/shadowVertex.glsl", "graphics/shaders/shadowFragment.glsl");
-
-    std::vector<chunk*> chunks;
-
-    for (int x = -4; x < 4; x++){
-        for (int z = -4; z < 4; z++){
-            // For 4 total chunks,
-            chunk * temp = new chunk(basicCubeShader, x, z);
-            GENERATOR::applyPhase1({}, temp);
-            temp->recompileAll();
-            chunks.push_back(temp);
-        }
-    }
-
-    /*std::thread progressiveBuilder( [&chunks, &program] () {
-        //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-        GENERATOR::applyPhase1({}, &myChunk);
-        chunk chunkTwo(program,0,3);
-        chunks.push_back(&chunkTwo);
-        auto data = chunks[0]->serialize2();
-        std::cout<<"Chunk1 serial size: "<< data.size() <<"\n";
-        chunkTwo.deserialize2(data);
-        //return;
-    //});*/
-
-    //Report all locations of current chunk data in chunk 1
-    int tracker = 0;
-    //for (auto c : chunks.at(0)->cubeMap){
-        //std::cout << "Block: " << tracker << "\n\tTYPE: " << c.second.type << "\n\tX: " << (int)c.second.offsetX << "\n\tY: " << (int)c.second.offsetY << "\n\tZ: " << (int)c.second.offsetZ << std::endl;
-        //tracker++;
-   // }/
 
     unsigned long long frequency = SDL_GetPerformanceFrequency();
     unsigned long long startTime = SDL_GetPerformanceCounter();
-    unsigned long long originTime = SDL_GetPerformanceCounter();
     int screenWidth = SCREEN_WIDTH, screenHeight = SCREEN_HEIGHT;
 
     bool mouseLocked = true;
 
     camera me(basicCubeShader);
     me.setAspectRatio(SCREEN_WIDTH,SCREEN_HEIGHT);
-    SDL_SetRelativeMouseMode(mouseLocked ? SDL_TRUE : SDL_FALSE);
 
-    GLint atlasRows = glGetUniformLocation(basicCubeShader, "atlasRows");
-    GLint atlasColumns = glGetUniformLocation(basicCubeShader, "atlasColumns");
-
-    /*atlas test(2,2,32);
-    test.addFile("assets/grass.png");
-    test.addFile("assets/stone.png");
-    test.addFile("assets/water.png");
-    test.compile();*/
-    textureArray test;
-    test.addFile("assets/grass.png");
-    test.addFile("assets/dirt.png");
-    test.addFile("assets/stone.png");
-    test.addFile("assets/water.png");
-
-    test.compile();
-
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_FRONT);
     glActiveTexture(GL_TEXTURE0);
+
+    // Load model:
+
+    Assimp::Importer importer;
+    const aiScene *scene = importer.ReadFile("lib/assets/blockOfAheago.fbx",aiProcess_Triangulate);
+    if(!scene)
+        std::cout<<"Could not load model!\n";
+    else
+    {
+        std::cout<<"Loaded model!\n";
+    }
+
+    // Build the triangle mesh
+
+    // Decide the size of the triangle
+    float vertices[] = {
+            0.0f,  0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f
+    };
+
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+    glBindVertexArray(0);
+
 
     // Enter the main loop
 
@@ -138,45 +125,14 @@ int main(int argc, char* argv[])
         glViewport(0,0,screenWidth,screenHeight);
         glBindFramebuffer(GL_FRAMEBUFFER,0);
 
+        glm::mat4 identity = glm::mat4(1.0);
+        glUniformMatrix4fv(glGetUniformLocation(basicCubeShader,"modelMatrix"),1,GL_FALSE,&identity[0][0]);
+
         glUseProgram(basicCubeShader);
         me.render();
-        GLint timePassed = glGetUniformLocation(basicCubeShader, "time");
-        glUniform1f(timePassed, ((float)SDL_GetTicks()) * 0.01);
 
-        /*glUniform1i(atlasRows,test.atlasRows);
-        glUniform1i(atlasColumns,test.atlasColumns);*/
-        glUniform1i(glGetUniformLocation(basicCubeShader, "myAtlas"), 0);
-        glBindTexture(GL_TEXTURE_2D,test.handle);
-
-        for(int a = 0; a<chunks.size(); a++)
-        {
-            float time = SDL_GetTicks()*0.0001;
-            time *= (float)a;
-            time = fmod(time,3.1415 * 2.0);
-            glm::mat4 modelMatrix = glm::mat4(1.0);
-            //modelMatrix = glm::rotate(modelMatrix,(float)(time * ((float)a*0.1)),glm::vec3(0,1,0));
-            modelMatrix = glm::scale(glm::vec3(1,2 * sin(time),1));
-            glUniformMatrix4fv(glGetUniformLocation(basicCubeShader,"modelMatrix"),1,GL_FALSE,&modelMatrix[0][0]);
-
-            glm::vec3 chunkPos = glm::vec3(chunks[a]->location.getX()*16 + 8,0,chunks[a]->location.getZ()*16 + 8);
-            glm::vec3 camPos = glm::vec3(me.position.x,0,me.position.z);
-            glm::vec3 chunkDir = chunkPos-camPos;
-            glm::vec3 camDir = glm::vec3(me.direction.x,0.0f,me.direction.z);
-
-            if(glm::length(chunkDir) < 56)
-            {
-                chunks[a]->render();
-                continue;
-            }
-
-            camDir = glm::normalize(camDir);
-            chunkDir = glm::normalize(chunkDir);
-
-            float angle = glm::dot(camDir,chunkDir);
-
-            if(angle > 0)
-                chunks[a]->render();
-        }
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         SDL_GL_SwapWindow(window);
     }

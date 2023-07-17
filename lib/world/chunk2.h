@@ -5,8 +5,9 @@
 #ifndef HALCYONICUS_CHUNK2_H
 #define HALCYONICUS_CHUNK2_H
 
+#include <string>
 #include "worldcoord.h"
-
+#include "stdio.h"
 /**
  * Defines the new chunk format for representing individual columns of heights with no concavity
  *
@@ -165,9 +166,6 @@ public:
         }
     }
 
-    //Operators
-
-    void generate()
 
 };
 

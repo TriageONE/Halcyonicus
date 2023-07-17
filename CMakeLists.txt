@@ -20,8 +20,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 
-
-
 # Set the source directory of your assets
 set(ASSETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/lib/assets)
 
@@ -51,33 +49,42 @@ add_custom_target(copy_graphics ALL
 add_dependencies(Halcyonicus copy_assets)
 add_dependencies(Halcyonicus copy_graphics)
 
+find_package(ZLIB REQUIRED)
+target_link_libraries(Halcyonicus  ZLIB::ZLIB)
+
 find_package(OpenSSL REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(Halcyonicus  OpenSSL::SSL OpenSSL::Crypto)
 
 find_package(unofficial-sodium CONFIG REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE unofficial-sodium::sodium)
+target_link_libraries(Halcyonicus  unofficial-sodium::sodium)
 
 find_package(unofficial-enet CONFIG REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE unofficial::enet::enet)
+target_link_libraries(Halcyonicus  unofficial::enet::enet)
 
 find_package(ZLIB REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE ZLIB::ZLIB)
+target_link_libraries(Halcyonicus  ZLIB::ZLIB)
 
 find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(Halcyonicus
-        PRIVATE
+
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
         )
 
 find_package(SDL2_image CONFIG REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
+target_link_libraries(Halcyonicus  $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
 
 find_package(sdl2-gfx CONFIG REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE SDL2::SDL2_gfx)
+target_link_libraries(Halcyonicus SDL2::SDL2_gfx)
 
 find_package(GLEW REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE GLEW::GLEW)
+target_link_libraries(Halcyonicus GLEW::GLEW)
 
 find_package(glm CONFIG REQUIRED)
-target_link_libraries(Halcyonicus PRIVATE glm::glm)
+target_link_libraries(Halcyonicus glm::glm)
+
+find_package(FreeGLUT CONFIG REQUIRED)
+target_link_libraries(Halcyonicus $<IF:$<TARGET_EXISTS:FreeGLUT::freeglut>,FreeGLUT::freeglut,FreeGLUT::freeglut_static>)
+
+find_package(assimp CONFIG REQUIRED)
+target_link_libraries(Halcyonicus assimp::assimp)
