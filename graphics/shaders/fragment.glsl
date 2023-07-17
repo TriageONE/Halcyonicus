@@ -13,7 +13,9 @@ in vec2 uv;
 
 void main()
 {
-    if(type == 0)
+    color = vec4(1,0.5,0.2,1.0);
+
+    /*if(type == 0)
         discard;
 
     color = texture(myAtlas,vec3(uv,type-1));
@@ -24,7 +26,7 @@ void main()
     cosTheta = clamp(cosTheta,0.0,1.0);
 
     color.rgb = cosTheta * color.rgb;
-    color.a = 1.0;
+    color.a = 1.0;*/
 
     //Tone maping
     //color.rgb = color.rgb / (color.rgb + vec3(1.0));

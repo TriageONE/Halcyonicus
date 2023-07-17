@@ -21,7 +21,7 @@ flat out int type;
 
 void main()
 {
-    if(typeIn == 0)
+    /*if(typeIn == 0)
     {
         gl_Position = vec4(0, 0, 0, 0);
         return;
@@ -29,8 +29,9 @@ void main()
 
     type = typeIn;
     uv = vertexUVs;
-    normal = (modelMatrix * vec4(vertexNormal,0.0)).xyz;
+    normal = (modelMatrix * vec4(vertexNormal,0.0)).xyz;*/
 
-    vec3 worldPos = vertexPosition + cubeData + vec3(chunkX*16.0,0.0,chunkZ*16.0);//Should be ok, i hope. not much has changed other than ive
-    gl_Position = cameraProjectionMatrix * cameraViewMatrix * modelMatrix * vec4(worldPos,1.0);
+    //vec3 worldPos = vertexPosition + cubeData + vec3(chunkX*16.0,0.0,chunkZ*16.0);//Should be ok, i hope. not much has changed other than ive
+    vec4 worldPos = modelMatrix * vec4(vertexPosition,1.0);
+    gl_Position = cameraProjectionMatrix * cameraViewMatrix * modelMatrix * worldPos;
 }
