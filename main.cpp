@@ -1,14 +1,8 @@
 #define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
-#include <iostream>
-
-#include "assimp/Importer.hpp"
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include "halcyonicus.h"
 
 #include "graphics/initOpengl.h"
 #include "graphics/camera.h"
-#include "lib/world/chunk.h"
 
 int SCREEN_WIDTH = 1920;
 int SCREEN_HEIGHT = 1080;
@@ -39,7 +33,7 @@ int main(int argc, char* argv[])
     // Load model:
 
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile("lib/assets/blockOfAheago.fbx",aiProcess_Triangulate);
+    const aiScene *scene = importer.ReadFile("assets/blockOfAheago.fbx",aiProcess_Triangulate);
     if(!scene)
         std::cout<<"Could not load model!\n";
     else
@@ -47,6 +41,28 @@ int main(int argc, char* argv[])
         std::cout<<"Loaded model!\n";
     }
 
+    std::cout << "Model has following attributes: " << std::endl <<
+        "HasAnimations: " << scene->HasAnimations() << std::endl <<
+        "HasCameras(): " << scene->HasCameras() << std::endl <<
+        "HasLights(): " << scene->HasLights() << std::endl <<
+        "HasMaterials(): " << scene->HasMaterials() << std::endl <<
+        "HasMeshes(): " << scene->HasMeshes() << std::endl <<
+        "HasTextures(): " << scene->HasTextures() << std::endl;
+
+    /*
+     * I worry about not seeing a mesh on my FBX file, likely due to export settings within blender
+     * I should only allow FBX files to render, as FBX files contain a material, a mesh, a texture hopefully too
+     *
+     * Do or should we care about lights? Im not sure.. We would want to allow for cool effects on things but i just dont know if lights are the way to do this
+     *
+     * First thing to ensure is that the mesh is wound properly, and i would only assume that we would already have the mesh wound properly by the way that blender exports it and assimp parses it
+     * If thats not the case.. then we have a pretty big problem
+     *
+     * Objects should be a collection of meshes and moved as one, never separated
+     *
+     * how would you make a planet with a moon? that would have to be an animation and contain keyframes, which i can do later
+     * 
+     */
     // Build the triangle mesh
 
     // Decide the size of the triangle

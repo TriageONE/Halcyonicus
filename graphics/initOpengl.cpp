@@ -1,7 +1,8 @@
 //
 // Created by Triage on 5/25/2023.
 //
-#include "initOpengl.h"
+
+#include "../halcyonicus.h"
 
 SDL_Window *initOpenGL(int resX,int resY)
 {

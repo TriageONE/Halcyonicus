@@ -5,7 +5,7 @@
 #ifndef HALCYONICUS_ENTITYLOCATION_H
 #define HALCYONICUS_ENTITYLOCATION_H
 
-#include "../types/cfloat.h"
+#include "../../deprecated/cfloat.h"
 #include "../world/worldcoord.h"
 
 class ENTITYLOCATION{

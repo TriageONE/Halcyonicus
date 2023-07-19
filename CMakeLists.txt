@@ -7,13 +7,10 @@ endif()
 project(Halcyonicus)
 
 set(CMAKE_CXX_STANDARD 23)
-if(WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS "-static")
-endif()
 
-link_directories(./lib ./hsrv ./graphics ./)
+link_directories(./lib ./hsrv ./graphics)
 
-add_executable(Halcyonicus main.cpp lib/world/chunk.cpp graphics/initOpengl.cpp graphics/texture.cpp lib/hdb/hdb.h lib/entity/entity.cpp lib/entity/entityCluster.cpp lib/tools/compressionTools.h lib/world/chunk2.h)
+add_executable(Halcyonicus main.cpp halcyonicus.h graphics/initOpengl.cpp)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
@@ -50,19 +47,16 @@ add_dependencies(Halcyonicus copy_assets)
 add_dependencies(Halcyonicus copy_graphics)
 
 find_package(ZLIB REQUIRED)
-target_link_libraries(Halcyonicus  ZLIB::ZLIB)
+target_link_libraries(Halcyonicus ZLIB::ZLIB)
 
 find_package(OpenSSL REQUIRED)
-target_link_libraries(Halcyonicus  OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(Halcyonicus OpenSSL::SSL OpenSSL::Crypto)
 
 find_package(unofficial-sodium CONFIG REQUIRED)
 target_link_libraries(Halcyonicus  unofficial-sodium::sodium)
 
 find_package(unofficial-enet CONFIG REQUIRED)
 target_link_libraries(Halcyonicus  unofficial::enet::enet)
-
-find_package(ZLIB REQUIRED)
-target_link_libraries(Halcyonicus  ZLIB::ZLIB)
 
 find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(Halcyonicus
@@ -82,9 +76,6 @@ target_link_libraries(Halcyonicus GLEW::GLEW)
 
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(Halcyonicus glm::glm)
-
-find_package(FreeGLUT CONFIG REQUIRED)
-target_link_libraries(Halcyonicus $<IF:$<TARGET_EXISTS:FreeGLUT::freeglut>,FreeGLUT::freeglut,FreeGLUT::freeglut_static>)
 
 find_package(assimp CONFIG REQUIRED)
 target_link_libraries(Halcyonicus assimp::assimp)

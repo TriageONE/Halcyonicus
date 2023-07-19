@@ -5,11 +5,8 @@
 #ifndef HALCYONICUS_CAMERA_H
 #define HALCYONICUS_CAMERA_H
 
-#include <glm/vec3.hpp>
-#include <GL/glew.h>
-#include <SDL_events.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
+#include "halcyonicus.h"
+
 
 struct camera
 {

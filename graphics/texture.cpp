@@ -510,7 +510,7 @@ renderTarget::renderTarget(renderTargetSettings &frameBufferPrefs)
 
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout<<"Framebuffer creation error: " << std::to_string(glCheckFramebufferStatus(GL_FRAMEBUFFER)) << " : " << std::to_string(glGetError())<<"\n";
+        std::cout<<"Framebuffer creation error: " << (glCheckFramebufferStatus(GL_FRAMEBUFFER)) << " : " << (glGetError())<<"\n";
         //error("Framebuffer creation error: " + std::to_string(glCheckFramebufferStatus(GL_FRAMEBUFFER)) + " : " + std::to_string(glGetError()));
     /*else
         debug("Framebuffer created!");*/
