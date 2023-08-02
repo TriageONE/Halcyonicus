@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 link_directories(./lib ./hsrv ./graphics)
 
-add_executable(Halcyonicus main.cpp halcyonicus.h graphics/initOpengl.cpp)
+add_executable(Halcyonicus main.cpp halcyonicus.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
@@ -47,35 +47,44 @@ add_dependencies(Halcyonicus copy_assets)
 add_dependencies(Halcyonicus copy_graphics)
 
 find_package(ZLIB REQUIRED)
-target_link_libraries(Halcyonicus ZLIB::ZLIB)
+target_link_libraries(Halcyonicus PRIVATE ZLIB::ZLIB)
 
 find_package(OpenSSL REQUIRED)
-target_link_libraries(Halcyonicus OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(Halcyonicus PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
 find_package(unofficial-sodium CONFIG REQUIRED)
-target_link_libraries(Halcyonicus  unofficial-sodium::sodium)
+target_link_libraries(Halcyonicus PRIVATE unofficial-sodium::sodium)
 
 find_package(unofficial-enet CONFIG REQUIRED)
-target_link_libraries(Halcyonicus  unofficial::enet::enet)
+target_link_libraries(Halcyonicus PRIVATE unofficial::enet::enet)
 
-find_package(SDL2 CONFIG REQUIRED)
-target_link_libraries(Halcyonicus
+#find_package(SDL2 CONFIG REQUIRED)
+#target_link_libraries(Halcyonicus
 
-        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
-        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-        )
+#        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+#        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+#        )
 
-find_package(SDL2_image CONFIG REQUIRED)
-target_link_libraries(Halcyonicus  $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
+#find_package(SDL2_image CONFIG REQUIRED)
+#target_link_libraries(Halcyonicus  $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)
 
-find_package(sdl2-gfx CONFIG REQUIRED)
-target_link_libraries(Halcyonicus SDL2::SDL2_gfx)
+#find_package(sdl2-gfx CONFIG REQUIRED)
+#target_link_libraries(Halcyonicus SDL2::SDL2_gfx)
 
-find_package(GLEW REQUIRED)
-target_link_libraries(Halcyonicus GLEW::GLEW)
+#find_package(GLEW REQUIRED)
+#target_link_libraries(Halcyonicus GLEW::GLEW)
 
 find_package(glm CONFIG REQUIRED)
-target_link_libraries(Halcyonicus glm::glm)
+target_link_libraries(Halcyonicus PRIVATE glm::glm)
 
 find_package(assimp CONFIG REQUIRED)
-target_link_libraries(Halcyonicus assimp::assimp)
+target_link_libraries(Halcyonicus PRIVATE assimp::assimp)
+
+find_package(glfw3 CONFIG REQUIRED)
+target_link_libraries(Halcyonicus PRIVATE  glfw)
+
+find_package(glad CONFIG REQUIRED)
+target_link_libraries(Halcyonicus PRIVATE glad::glad)
+
+find_package(Stb REQUIRED)
+target_include_directories(Halcyonicus PRIVATE ${Stb_INCLUDE_DIR})

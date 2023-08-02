@@ -1,161 +1,240 @@
 #define SDL_MAIN_HANDLED
-#include "halcyonicus.h"
 
-#include "graphics/initOpengl.h"
-#include "graphics/camera.h"
+#include "graphics/Camera.h"
+#include "graphics/Shader.h"
+#include "graphics/Model.h"
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
-int SCREEN_WIDTH = 1920;
-int SCREEN_HEIGHT = 1080;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow *window);
+
+
+// settings
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
+// camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
+
+// timing
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+Model ourModel("assets/ahe.fbx");
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Starting..." << std::endl;
-    bool quit = false;
-    // Initialize SDL2 and create a window and renderer
-    SDL_Window *window = initOpenGL(SCREEN_WIDTH,SCREEN_HEIGHT);
 
-    GLuint basicCubeShader = loadDefaultShaders("graphics/shaders/vertex.glsl", "graphics/shaders/fragment.glsl");
+    // glfw: initialize and configure
+    // ------------------------------
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    unsigned long long frequency = SDL_GetPerformanceFrequency();
-    unsigned long long startTime = SDL_GetPerformanceCounter();
-    int screenWidth = SCREEN_WIDTH, screenHeight = SCREEN_HEIGHT;
+    #ifdef __APPLE__
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #endif
 
-    bool mouseLocked = true;
 
-    camera me(basicCubeShader);
-    me.setAspectRatio(SCREEN_WIDTH,SCREEN_HEIGHT);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
 
-    glDisable(GL_CULL_FACE);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+
+    // tell GLFW to capture our mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
+    stbi_set_flip_vertically_on_load(true);
+
+    // configure global opengl state
+    // -----------------------------
     glEnable(GL_DEPTH_TEST);
-    glCullFace(GL_FRONT);
-    glActiveTexture(GL_TEXTURE0);
 
-    // Load model:
+    // build and compile shaders
+    // -------------------------
+    Shader ourShader("graphics/shaders/1.model_loading.vs", "graphics/shaders/1.model_loading.fs");
 
-    Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile("assets/blockOfAheago.fbx",aiProcess_Triangulate);
-    if(!scene)
-        std::cout<<"Could not load model!\n";
-    else
+    // load models
+    // -----------
+    ourModel.Load();
+
+
+    std::vector<glm::mat4> modelMatricies;
+    std::vector<glm::vec3> greenishness;
+    for(int a = 0; a<100; a++)
     {
-        std::cout<<"Loaded model!\n";
+        modelMatricies.push_back(glm::translate(glm::vec3(rand() % 100,rand() % 100,rand() % 100)));
+        float greenish = rand() % 100;
+        greenish /= 100.0;
+        greenishness.push_back(glm::vec3(0.5,greenish,0.5));
     }
 
-    std::cout << "Model has following attributes: " << std::endl <<
-        "HasAnimations: " << scene->HasAnimations() << std::endl <<
-        "HasCameras(): " << scene->HasCameras() << std::endl <<
-        "HasLights(): " << scene->HasLights() << std::endl <<
-        "HasMaterials(): " << scene->HasMaterials() << std::endl <<
-        "HasMeshes(): " << scene->HasMeshes() << std::endl <<
-        "HasTextures(): " << scene->HasTextures() << std::endl;
 
-    /*
-     * I worry about not seeing a mesh on my FBX file, likely due to export settings within blender
-     * I should only allow FBX files to render, as FBX files contain a material, a mesh, a texture hopefully too
-     *
-     * Do or should we care about lights? Im not sure.. We would want to allow for cool effects on things but i just dont know if lights are the way to do this
-     *
-     * First thing to ensure is that the mesh is wound properly, and i would only assume that we would already have the mesh wound properly by the way that blender exports it and assimp parses it
-     * If thats not the case.. then we have a pretty big problem
-     *
-     * Objects should be a collection of meshes and moved as one, never separated
-     *
-     * how would you make a planet with a moon? that would have to be an animation and contain keyframes, which i can do later
-     * 
-     */
-    // Build the triangle mesh
+    // draw in wireframe
+   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    // Decide the size of the triangle
-    float vertices[] = {
-            0.0f,  0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f
-    };
-
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
-
-
-    // Enter the main loop
-
-    while (!quit)
+    // render loop
+    // -----------
+    while (!glfwWindowShouldClose(window))
     {
-        Uint64 currentTime = SDL_GetPerformanceCounter();
-        double delta = ((double)(currentTime - startTime) / frequency) * 100;
-        //double sinceStart = ((double)(currentTime - originTime) / frequency);
-        startTime = currentTime;
-        // Handle events
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-            switch (event.type)
-            {
-                case SDL_QUIT:
-                    quit = true;
-                    break;
-                case SDL_WINDOWEVENT:
-                    if (event.window.event == SDL_WINDOWEVENT_RESIZED)
-                    {
-                        SDL_GetWindowSize(window, &screenWidth, &screenHeight);
-                        std::cout << "NEW SIZE: " << screenWidth << "x" << screenHeight << std::endl;
-                        me.setAspectRatio(screenWidth,screenHeight);
-                    }
-                    break;
-                case SDL_MOUSEMOTION:
-                    if(mouseLocked)
-                        me.takeMouseInput(event.motion.xrel * 2 ,event.motion.yrel * 2);
-                    break;
-                case SDL_KEYDOWN:
-                    if(event.key.keysym.sym == SDLK_m)
-                    {
-                        mouseLocked = !mouseLocked;
-                        SDL_SetRelativeMouseMode(mouseLocked ? SDL_TRUE : SDL_FALSE);
-                    }
-                    break;
-            }
-        }
+        // per-frame time logic
+        // --------------------
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
-        me.moveAround(delta);
+        // input
+        // -----
+        processInput(window);
 
-        //What color do we want to clear with RGBA
-        glClearColor(0.21,0.66,1,0);
-        //You can choose to clear only the color data, or the depth data, or both:
-        //I.e. if you don't clear depth data, fragments will only render if they're in front of everything from last frame
+        // render
+        // ------
+        glClearColor(0.3f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0,0,screenWidth,screenHeight);
-        glBindFramebuffer(GL_FRAMEBUFFER,0);
 
-        glm::mat4 identity = glm::mat4(1.0);
-        glUniformMatrix4fv(glGetUniformLocation(basicCubeShader,"modelMatrix"),1,GL_FALSE,&identity[0][0]);
+        // don't forget to enable shader before setting uniforms
+        ourShader.use();
 
-        glUseProgram(basicCubeShader);
-        me.render();
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
 
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // render the loaded model
+       /* glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+        model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model;
+        model = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)) * model; // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
 
-        SDL_GL_SwapWindow(window);
+        ourModel.Draw(ourShader);
+
+        // render the loaded model
+        model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+        model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model;
+        model = glm::translate(glm::vec3(0.0f, 5.0f, 0.0f)) * model; // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+
+        ourModel.Draw(ourShader);*/
+
+       for(int a = 0; a<modelMatricies.size(); a++)
+       {
+
+           ourShader.setVec3("greenish",greenishness[a]);
+           ourShader.setMat4("model",modelMatricies[a]);
+           ourModel.Draw(ourShader);
+       }
+
+
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    //progressiveBuilder.join();
+    // glfw: terminate, clearing all previously allocated GLFW resources.
+    // ------------------------------------------------------------------
+    glfwTerminate();
     return 0;
+}
+
+// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void processInput(GLFWwindow *window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        camera.ProcessKeyboard(CTRLDOWN, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
+        camera.ProcessKeyboard(CTRLUP, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        camera.ProcessKeyboard(SHIFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        camera.ProcessKeyboard(SPACE, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+        ourModel.OffsetMove({0.02, 0.0, 0.0});
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+        ourModel.OffsetMove({0.0, 0.02, 0.0});
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+        ourModel.OffsetMove({-0.02, 0.0, 0.0});
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+        ourModel.OffsetMove({0.0, -0.02, 0.0});
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+// ---------------------------------------------------------------------------------------------
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
+}
+
+// glfw: whenever the mouse moves, this callback is called
+// -------------------------------------------------------
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+// ----------------------------------------------------------------------
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
