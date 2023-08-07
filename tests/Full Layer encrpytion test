@@ -7,7 +7,7 @@
 
 using namespace std;
 
-std::string stringToHex(const std::string& input) {
+std::string stringToHexV2(const std::string& input) {
     std::stringstream stream;
     stream << std::hex << std::setfill('0');
     for (char i : input) {

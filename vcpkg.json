@@ -6,27 +6,12 @@
     "name" : "vcpkg-cmake-get-vars",
     "version>=" : "2023-03-02"
   }, {
-    "name" : "openssl",
-    "version>=" : "3.1.1#1"
-  }, {
     "name" : "enet",
     "version>=" : "1.3.17#2",
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(unofficial-enet CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE unofficial::enet::enet)\n"
   }, {
     "name" : "zlib",
     "version>=" : "1.2.13"
-  }, {
-    "name" : "sdl2",
-    "version>=" : "2.26.5",
-    "$comment" : "    find_package(SDL2 CONFIG REQUIRED)\n\n    target_link_libraries(main\n\n        PRIVATE\n\n        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>\n\n        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>\n\n    )\n"
-  }, {
-    "name" : "sdl2-gfx",
-    "version>=" : "1.0.4#10",
-    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(sdl2-gfx CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE SDL2::SDL2_gfx)\n"
-  }, {
-    "name" : "sdl2-image",
-    "version>=" : "2.6.3",
-    "$comment" : "    find_package(SDL2_image CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>)\n"
   }, {
     "name" : "libsodium",
     "version>=" : "1.0.18#8",
@@ -39,10 +24,6 @@
     "name" : "assimp",
     "version>=" : "5.2.5",
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(assimp CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE assimp::assimp)\n"
-  }, {
-    "name" : "freeglut",
-    "version>=" : "3.4.0",
-    "$comment" : "    find_package(FreeGLUT CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE $<IF:$<TARGET_EXISTS:FreeGLUT::freeglut>,FreeGLUT::freeglut,FreeGLUT::freeglut_static>)\n"
   }, {
     "name" : "glew",
     "version>=" : "2.2.0#3"
@@ -58,5 +39,8 @@
     "name" : "stb",
     "version>=" : "2023-04-11#1",
     "$comment" : "    find_package(Stb REQUIRED)\n\n    target_include_directories(main PRIVATE ${Stb_INCLUDE_DIR})\n"
+  }, {
+    "name" : "openssl",
+    "version>=" : "3.1.1#1"
   } ]
 }

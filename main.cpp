@@ -3,9 +3,9 @@
 #include "graphics/Camera.h"
 #include "graphics/Shader.h"
 #include "graphics/Model.h"
-#include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-
+#include "halcyonicus.h"
+#include "lib/crypto/ecdh.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -29,8 +29,13 @@ float lastFrame = 0.0f;
 
 Model ourModel("assets/ahe.fbx");
 
+float rx = 0, ry = 0, rz = 0;
+
+
+
 int main(int argc, char* argv[])
 {
+
 
     // glfw: initialize and configure
     // ------------------------------
@@ -99,7 +104,7 @@ int main(int argc, char* argv[])
 
     // draw in wireframe
    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+    float rotation = 0;
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -129,28 +134,34 @@ int main(int argc, char* argv[])
         ourShader.setMat4("view", view);
 
         // render the loaded model
-       /* glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+        /*
+        glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
         model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model;
         model = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)) * model; // translate it down so it's at the center of the scene
         ourShader.setMat4("model", model);
 
         ourModel.Draw(ourShader);
-
+        */
         // render the loaded model
-        model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-        model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model;
-        model = glm::translate(glm::vec3(0.0f, 5.0f, 0.0f)) * model; // translate it down so it's at the center of the scene
+        rotation += deltaTime;
+
+        glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+
+        model = glm::toMat4(glm::quat(glm::vec3(rx, ry, rz))) * model;
+
+
+
+        model = glm::translate(glm::vec3(0.0f, 5.0f, 0.0F)) * model; // translate it down so it's at the center of the scene
         ourShader.setMat4("model", model);
 
-        ourModel.Draw(ourShader);*/
+        ourModel.Draw(ourShader);
 
-       for(int a = 0; a<modelMatricies.size(); a++)
-       {
-
-           ourShader.setVec3("greenish",greenishness[a]);
-           ourShader.setMat4("model",modelMatricies[a]);
-           ourModel.Draw(ourShader);
-       }
+        for(int a = 0; a<modelMatricies.size(); a++)
+        {
+            ourShader.setVec3("greenish",greenishness[a]);
+            ourShader.setMat4("model",modelMatricies[a]);
+            ourModel.Draw(ourShader);
+        }
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -190,14 +201,24 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         camera.ProcessKeyboard(SPACE, deltaTime);
 
-    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
-        ourModel.OffsetMove({0.02, 0.0, 0.0});
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
-        ourModel.OffsetMove({0.0, 0.02, 0.0});
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-        ourModel.OffsetMove({-0.02, 0.0, 0.0});
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-        ourModel.OffsetMove({0.0, -0.02, 0.0});
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) // affects the vertical look direction
+        rx += deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) // affects the rolling look direction
+        rz -= deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) // affects the vertical look direction
+        rx -= deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) // affects the rolling look direction
+        rz += deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) // affects the horizontal look direction
+        ry += deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) // affects the horizontal look direction
+        ry -= deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS){
+        ry = 0;
+        rx = 0;
+        rz = 0;
+    }
+
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

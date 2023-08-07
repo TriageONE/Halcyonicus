@@ -6,7 +6,7 @@
 
 using namespace std;
 
-std::string stringToHex(const std::string& input) {
+std::string stringToHexV2(const std::string& input) {
     std::stringstream stream;
     stream << std::hex << std::setfill('0');
     for (char i : input) {
@@ -30,12 +30,12 @@ int main() {
     alice.createNewKey();
     bob.createNewKey();
 
-    string aEC = alice.extractECPOINT();
-    string bEC = bob.extractECPOINT();
+    auto aEC = alice.getPublicKey();
+    auto bEC = bob.getPublicKey();
 
     //You can wrap each string in stringToHex() if they pose issues with formatting
-    cout << stringToHex(aEC) << endl << stringToHex(bEC) << endl;
-    cout << stringToHex(alice.getSecretFromOthersKey(bEC)) << endl << stringToHex(bob.getSecretFromOthersKey(aEC)) << endl;
+    cout << stringToHexV2(aEC) << endl << stringToHexV2(bEC) << endl;
+    cout << "APEX: " << stringToHexV2(alice.getPrivateKey(bEC)) << endl << "BPEX: " << stringToHexV2(bob.getPrivateKey(aEC)) << endl;
 
     return 0;
 

@@ -35,8 +35,9 @@ class ENTITY {
     /**
     * All entities will be interpreted with a facing
     * If entities do not face in a direction, it is 0. It can never be negative and exceed 360
+     * float facing = 0; was the old way of doing this, but i need a 32 bit number to represent 3 angles, X Y and Z
     */
-    float facing = 0;
+
 
     /**
      * The entity should also have a fully qualified type identifier that follows convention of strings similar to minecrafts way of creating a system of naming objects and things

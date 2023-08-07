@@ -5,21 +5,7 @@
 #ifndef HALCYONICUS_ECDH_H
 #define HALCYONICUS_ECDH_H
 
-#include <openssl/err.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/ecdh.h>
-
-#include <iostream>
-#include <string>
-#include <cassert>
-#include <cstdio>
-#include <vector>
-#include <iomanip>
-
-#include "../tools/streamtools.h"
-
+#include "../../halcyonicus.h"
 
 class ECDH{
     /*
@@ -110,13 +96,13 @@ public:
             stringToHex(publicKey);
             return std::string{""};
         }
-        const char * secret = get_secret(ec_point);
-        return std::string{secret};
+        auto secret = get_secret(ec_point);
+        return secret;
     }
 
 private:
 
-    const char *get_secret(const EC_POINT *peer_pub_key){
+    std::string get_secret(const EC_POINT *peer_pub_key){
         int field_size;
         void *secret;
 
@@ -125,17 +111,16 @@ private:
 
         if (nullptr == (secret = OPENSSL_malloc((field_size + 7) / 8))) {
             printf("Failed to allocate memory for secret");
-            return nullptr;
+            return {};
         }
-
-        secret_len = ECDH_compute_key(secret, secret_len,
-                                      peer_pub_key, key, nullptr);
+        std::string secret_string(secret_len, '\0');
+        secret_len = ECDH_compute_key(secret_string.data(), secret_len,peer_pub_key, key, nullptr);
 
         if (secret_len <= 0) {
             OPENSSL_free(secret);
-            return nullptr;
+            return {};
         }
-        return (const char*) (secret);
+        return secret_string;
     }
 };
 

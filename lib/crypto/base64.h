@@ -5,9 +5,7 @@
 #ifndef HALCYONICUS_BASE64_H
 #define HALCYONICUS_BASE64_H
 
-#include <string>
-#include <sodium.h>
-#include <iostream>
+#include "../../halcyonicus.h"
 
 class BASE64{
 public:

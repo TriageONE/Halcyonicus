@@ -53,20 +53,6 @@ public:
 
     }
 
-    void OffsetMove(glm::vec3 locationOffset){
-        this->locationOffset += locationOffset;
-        for (Mesh m : meshes){
-            m.locationOffset += locationOffset;
-        }
-    }
-
-    void Move(glm::vec3 locationOffset){
-        this->locationOffset = locationOffset;
-        for (Mesh m : meshes){
-            m.locationOffset = locationOffset;
-        }
-    }
-
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(std::string const &path)
@@ -187,7 +173,7 @@ private:
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, textures, this->locationOffset, this->rotation);
+        return Mesh(vertices, indices, textures);
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.

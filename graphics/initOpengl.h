@@ -5,7 +5,7 @@
 #ifndef HALCYONICUS_INITOPENGL_H
 #define HALCYONICUS_INITOPENGL_H
 
-#include "halcyonicus.h"
+#include "../halcyonicus.h"
 
 SDL_Window *initOpenGL(int resX,int resY);
 //Takes two strings, you could load these from files if you want

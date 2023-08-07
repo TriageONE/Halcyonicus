@@ -5,9 +5,7 @@
 #ifndef HALCYONICUS_CC20_H
 #define HALCYONICUS_CC20_H
 
-#include <sodium.h>
-#include <iostream>
-
+#include "../../halcyonicus.h"
 
 class CC20{
     /**

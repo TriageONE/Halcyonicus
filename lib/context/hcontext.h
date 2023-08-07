@@ -4,7 +4,8 @@
 
 #ifndef HALCYONICUS_HCONTEXT_H
 #define HALCYONICUS_HCONTEXT_H
-#include "../world/world.h"
+#include "../world/chunk2.h"
+#include "../entity/entity.h"
 #include <map>
 #include <mutex>
 #include <set>
@@ -28,7 +29,7 @@
 class HCONTEXT{
 
     // We want to store a world, but not just one we want a variable amount
-    std::map<WORLDCOORD, WORLD> worldShards{};
+    std::map<WORLDCOORD, CHUNK2> chunks{};
     std::mutex worldMutex {};
 
     //Selective rendering occurs by knowledge of the whereabouts entites are, and when we render these entities, we have to know where they exist in the world before we query them so we dont loop through all of them while working with the data
@@ -74,37 +75,37 @@ public:
      * Whatever is in this area can and will be rendered.
      * @param world
      */
-    void insertWorldShard(WORLD* world){
+    void insertWorldShard(CHUNK2 world){
         worldMutex.lock();
-        worldShards.insert({world->getLocation(), *world});
+        chunks.insert({world.getLocation(), world});
         worldMutex.unlock();
     }
 
-    void overrideWorldShard(WORLD world){
+    void overrideWorldShard(CHUNK2 world){
         worldMutex.lock();
-        auto it = worldShards.find(world.getLocation());
-        if (it != worldShards.end()) {
+        auto it = chunks.find(world.getLocation());
+        if (it != chunks.end()) {
             // Item found, erase it from the set
-            worldShards.erase(it);
+            chunks.erase(it);
         }
-        worldShards.insert({world.getLocation(), world});
+        chunks.insert({world.getLocation(), world});
         worldMutex.unlock();
     }
 
     void deleteWorldShardIfExists(WORLDCOORD worldcoord){
         worldMutex.lock();
-        auto it = worldShards.find(worldcoord);
-        if (it != worldShards.end()) {
+        auto it = chunks.find(worldcoord);
+        if (it != chunks.end()) {
             // Item found, erase it from the set
-            worldShards.erase(it);
+            chunks.erase(it);
         }
         worldMutex.unlock();
     }
 
-    WORLD * getWorldByLocation(WORLDCOORD worldcoord){
+    CHUNK2 * getWorldByLocation(WORLDCOORD worldcoord){
         worldMutex.lock();
-        auto it = worldShards.find(worldcoord);
-        if (it != worldShards.end()) {
+        auto it = chunks.find(worldcoord);
+        if (it != chunks.end()) {
             // Item found, erase it from the set
             return &it->second;
         }
@@ -112,9 +113,9 @@ public:
         return nullptr;
     }
 
-    void deleteAllWorldShards(){
+    void deleteAllchunks(){
         worldMutex.lock();
-        worldShards.clear();
+        chunks.clear();
         worldMutex.unlock();
     }
 

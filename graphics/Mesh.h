@@ -41,17 +41,13 @@ public:
     unsigned int VAO;
 
     //World data
-    glm::vec3 locationOffset;
-    glm::vec3 rotation;
 
     // constructor
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures, glm::vec3 locationOffset, glm::vec3 rotation)
+    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
     {
         this->vertices = vertices;
         this->indices = indices;
         this->textures = textures;
-        this->locationOffset = locationOffset;
-        this->rotation = rotation;
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
     }
@@ -94,9 +90,6 @@ public:
         glActiveTexture(GL_TEXTURE0);
     }
 
-    void Move(glm::vec3 newLocationOffset){
-        this->locationOffset = newLocationOffset;
-    }
 
 private:
     // render data 
