@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 link_directories(./lib ./hsrv ./graphics)
 
-add_executable(Halcyonicus main.cpp halcyonicus.h lib/object/iobject3d.h lib/crypto/cc20.h)
+add_executable(Halcyonicus main.cpp halcyonicus.h lib/object/iobject3d.h lib/crypto/cc20.h lib/world/coordinate.h lib/entity/entity.cpp)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)

@@ -5,13 +5,12 @@
 #ifndef HALCYONICUS_ENTITY_H
 #define HALCYONICUS_ENTITY_H
 
-#include <string>
 #include <utility>
-#include <map>
-#include "../../deprecated/coordinate.h"
-#include "../../deprecated/location.h"
+
+#include "../world/coordinate.h"
 #include "../types/dynablob.h"
-#include "entitylocation.h"
+#include "map"
+
 
 /**
  * 3:2, And so god said the world would then be filled with more than earth, finally branching out and calling itself something more than a boring structure of static life.
@@ -30,8 +29,9 @@ class ENTITY {
     * All entities will be interpreted with a location
     * They also must have the region they exist in, and this should be validated against its location
     */
-    ENTITYLOCATION location;
-    ENTITYLOCATION lastSavedLocation;
+    COORDINATE location;
+    COORDINATE lastSavedLocation;
+    float facing;
     /**
     * All entities will be interpreted with a facing
     * If entities do not face in a direction, it is 0. It can never be negative and exceed 360
@@ -55,29 +55,43 @@ class ENTITY {
 
 public:
 
-    ENTITY(ENTITYLOCATION location, std::string type, unsigned long long uuid) {
+    ENTITY(COORDINATE location, float facing, std::string type, unsigned long long uuid) {
         this->location = location;
         this->type = std::move(type);
+        this->facing = facing;
         this->uuid = uuid;
     }
 
-    ENTITY(ENTITYLOCATION location, unsigned long long uuid) {
+    ENTITY(COORDINATE location, float facing, std::string type) {
         this->location = location;
+        this->facing = facing;
+        this->type = std::move(type);
+        generateAndSetNewUUID();
+    }
+
+    ENTITY(COORDINATE location, float facing, unsigned long long uuid) {
+        this->location = location;
+        this->facing = facing;
         this->uuid = uuid;
     }
 
     ENTITY() {
         this->errored = true;
         this->missingType = true;
+        generateAndSetNewUUID();
     }
 
-    ENTITY(ENTITYLOCATION location) {
+    ENTITY(COORDINATE location, float facing) {
         this->location = location;
+        this->facing = facing;
         this->missingType = true;
+        generateAndSetNewUUID();
     }
 
     ENTITY(std::string type) {
-        this->location = ENTITYLOCATION(0,0,0);
+        this->location = COORDINATE(0,0,0);
+        this->type = std::move(type);
+        generateAndSetNewUUID();
     }
 
     //////////////
@@ -109,34 +123,34 @@ public:
     //////////////////////////
     // Comparators, extended
 
-    bool operator==(const ENTITY& other) {
+    bool operator==(const ENTITY& other) const {
         return (this->uuid == other.uuid);
     }
 
-    bool operator>(const ENTITY& other) {
+    bool operator>(const ENTITY& other) const {
         return (this->uuid > other.uuid);
     }
 
-    bool operator<(const ENTITY& other) {
+    bool operator<(const ENTITY& other) const {
         return (this->uuid < other.uuid);
     }
 
-    bool operator<=(const ENTITY& other) {
+    bool operator<=(const ENTITY& other) const {
         return (this->uuid <= other.uuid);
     }
 
-    bool operator>=(const ENTITY& other) {
+    bool operator>=(const ENTITY& other) const {
         return (this->uuid >= other.uuid);
     }
 
-    bool operator!=(const ENTITY& other) {
+    bool operator!=(const ENTITY& other) const {
         return (this->uuid != other.uuid);
     }
 
     ///////////
     //Getters
-    ENTITYLOCATION getLocation();
-    ENTITYLOCATION getLastSavedLocation();
+    COORDINATE getLocation();
+    COORDINATE getLastSavedLocation();
     std::string getType();
     unsigned long long getUUID();
     float getFacing();
@@ -148,8 +162,8 @@ public:
 
     //////////
     //Setters
-    void setLocation(ENTITYLOCATION l);
-    void setLastSavedLocation(ENTITYLOCATION l);
+    void setLocation(COORDINATE l);
+    void setLastSavedLocation(COORDINATE l);
     void setType(std::string type);
     void setUUID(unsigned long long);
     void setFacing(float);

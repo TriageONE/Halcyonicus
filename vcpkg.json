@@ -14,7 +14,7 @@
     "version>=" : "1.2.13"
   }, {
     "name" : "libsodium",
-    "version>=" : "1.0.18#8",
+    "version>=" : "1.0.18#9",
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(unofficial-sodium CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE unofficial-sodium::sodium)\n"
   }, {
     "name" : "glm",
@@ -41,6 +41,6 @@
     "$comment" : "    find_package(Stb REQUIRED)\n\n    target_include_directories(main PRIVATE ${Stb_INCLUDE_DIR})\n"
   }, {
     "name" : "openssl",
-    "version>=" : "3.1.1#1"
+    "version>=" : "3.1.2#1"
   } ]
 }

@@ -5,40 +5,49 @@
 #ifndef HALCYONICUS_ENTITYLOCATION_H
 #define HALCYONICUS_ENTITYLOCATION_H
 
-#include "../../deprecated/cfloat.h"
-#include "../world/worldcoord.h"
-
 class ENTITYLOCATION{
 
     //Floats will not work due to errors in handling their location
-    // we should find the
-    cfloat x = 0.0f , y = 0.0f , z = 0.0f;
-
+    /*
+     * Z value, height, should not be a cFloat and instead can be a char since the earth is flat, but has layers like an onion
+     */
 public:
+    float x = 0.0f ,y = 0.0f, facing = 0.0f;
+    char z = 0.0f;
+
+
     ENTITYLOCATION() = default;
 
-    cfloat getX(){
+    float getX(){
         return this->x;
     }
 
-    cfloat getY(){
+    float getY(){
         return this->y;
     }
 
-    cfloat getZ(){
+    char getZ(){
         return this->z;
     }
 
-    void setX(cfloat newX){
+    char getFacing(){
+        return this->facing;
+    }
+
+    void setX(float newX){
         this->x = newX;
     }
 
-    void setY(cfloat newY){
+    void setY(float newY){
         this->y = newY;
     }
 
-    void setZ(cfloat newZ){
+    void setZ(char newZ){
         this->z = newZ;
+    }
+
+    void setFacing(char newFacing){
+        this->facing = newFacing;
     }
 
     /**
@@ -49,18 +58,12 @@ public:
      * @param y The vertical component of the coordinate, translating UP(+) and DOWN(-) or NORTH(+) and SOUTH(-)
      * @param z The depth component of the coordinate, translating UNDERGROUND(-) and ABOVEGROUND(+)
      */
-    ENTITYLOCATION(cfloat x, cfloat y, cfloat z) {
+    ENTITYLOCATION(float x, float y, char z, float facing) {
         this->x = x;
         this->y = y;
         this->z = z;
+        this->facing = facing;
     }
 
-    WORLDCOORD getWorldCoordinates(){
-        //The region coordinate is 64 times smaller than a worldcoord, therefore divide by 64, but bit shift instead.
-        int x1, z1;
-        x1 = this->getX().toInt() >> 6;
-        z1 = this->getZ().toInt() >> 6;
-        return {x1, z1};
-    };
 };
 #endif //HALCYONICUS_ENTITYLOCATION_H

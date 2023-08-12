@@ -5,7 +5,7 @@
 #include "graphics/Model.h"
 #include <glm/gtx/quaternion.hpp>
 #include "halcyonicus.h"
-#include "lib/crypto/ecdh.h"
+#include "lib/entity/entityCluster.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -35,6 +35,98 @@ float rx = 0, ry = 0, rz = 0;
 
 int main(int argc, char* argv[])
 {
+
+    puts("Creating floats");
+    float x(9555.22), y(1232.333), z(2), f(50.22);
+    float x2(155.5552), y2(-2732.0), z2(-10), f2(504.22);
+    float x3(15.552), y3(8292.9823), z3(-133), f3(50122.22);
+
+    puts("Creating coords");
+    COORDINATE el = COORDINATE(x,y,z);
+    COORDINATE el2 = COORDINATE(x2,y2,z2);
+    COORDINATE el3 = COORDINATE(x3,y3,z3);
+
+    puts("Creating types");
+    string type = "base.tree";
+    string type2 = "base.machine";
+
+    puts("Creating entities");
+    ENTITY e = ENTITY(el, f, type);
+    ENTITY e1 = ENTITY(el2, f2, type);
+    ENTITY e2 = ENTITY(el3, f3, type2);
+
+    puts("Creating dynblobs");
+    DYNABLOB d1 = DYNABLOB(string("a lot"));
+    DYNABLOB d2 = DYNABLOB(float(1209031.203), DYNABLOB::FLOAT);
+    DYNABLOB d3 = DYNABLOB('1', DYNABLOB::CHAR);
+    DYNABLOB d4 = DYNABLOB(50023, DYNABLOB::SHORT);
+    DYNABLOB d5 = DYNABLOB(5.00231, DYNABLOB::FLOAT);
+
+    puts("Serializing into strings");
+    string d1s = d1.serialize();
+    cout << "Result 1: " << d1s << endl;
+
+    string d2s = d2.serialize();
+    cout << "Result 2: " << d2s << endl;
+
+    string d3s = d3.serialize();
+    cout << "Result 3: " << d3s << endl;
+
+    string d4s = d4.serialize();
+    cout << "Result 4: " << d4s << endl;
+
+    string d5s = d5.serialize();
+    cout << "Result 5: " << d5s << endl;
+
+
+    puts("Setting attrs");
+    e.setAttribute(d1s, "hp");
+    e.setAttribute(d2s, "age");
+    e1.setAttribute(d3s, "dead");
+    e2.setAttribute(d4s, "halScale");
+    e2.setAttribute(d5s, "eFactor" );
+
+    cout << "e0 has this many attrs: " << e.getAllAttributes().size() << endl;
+    cout << "e1 has this many attrs: " << e1.getAllAttributes().size() << endl;
+    cout << "e2 has this many attrs: " << e2.getAllAttributes().size() << endl;
+
+    puts("Entities so far");
+    e.out();
+    e1.out();
+    e2.out();
+
+    //Time to create a cluster
+    puts("Creating the worldcoord");
+    COORDINATE::WORLDCOORD wc(0,0);
+
+    puts("Creating the cluster");
+    ENTITYCLUSTER ec = ENTITYCLUSTER(wc);
+
+    puts("Adding Entities");
+    ec.addEntity(e);
+    ec.addEntity(e1);
+    ec.addEntity(e2);
+
+    puts("Serializing clusters");
+    auto levelSerial0 = ec.serializeCluster();
+
+    cout << "LEVEL SERIALIZATION RESULT: " << endl;
+    for (char c : levelSerial0) {
+        std::cout << c;
+    }
+    cout << endl << "LEVEL SERIALIZATION END" << endl;
+
+    ENTITYCLUSTER ec2 = ENTITYCLUSTER(wc);
+
+    ec2.deserializeIntoChunk(levelSerial0);
+
+    cout << "BEGIN OUTPUT FOR ENTITIES IN EC2: " << endl;
+
+    for (auto ex : ec2.entities) {
+        ex.second.out();
+    }
+
+    cout << "END OUTPUT FOR ENTITIES IN EC2" << endl;
 
 
     // glfw: initialize and configure

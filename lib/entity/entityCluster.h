@@ -5,13 +5,9 @@
 #ifndef HALCYONICUS_ENTITYCLUSTER_H
 #define HALCYONICUS_ENTITYCLUSTER_H
 
-#include <utility>
-#include <vector>
-#include <algorithm>
-#include <fstream>
+#include "../world/coordinate.h"
 #include "entity.h"
-#include "../world/world.h"
-#include "../world/region.h"
+
 
 /**
  * Active shards are areas of the world that are already loaded and contain entities. They are entire shards, with all 13 layers
@@ -20,18 +16,19 @@
 class ENTITYCLUSTER{
     // There should be separate levels for each area, where 0-11 are the caves and then 12 is the overworld
 
-    WORLDCOORD worldcoord;
+    COORDINATE::WORLDCOORD worldcoord;
 public:
     std::map<unsigned long long, ENTITY> entities;
     /**
      * If we want to create an object ready to hold and work with entity data, we should first create a data structure that
      * defines how entities are stored, hence the bare 'areas' structure present, allowing for entities to be added in dynamically
      */
-    explicit ENTITYCLUSTER(WORLDCOORD w);
+    ENTITYCLUSTER(COORDINATE::WORLDCOORD worldcoord){
+        this->worldcoord = worldcoord;
+    };
 
-    WORLDCOORD getWorldcoord();
 
-    void addEntity(ENTITY& e){
+    void addEntity(ENTITY e){
         entities.erase(e.getUUID());
         entities.insert({e.getUUID(), e});
     }
@@ -51,12 +48,13 @@ public:
     //FIXME: Needs testing
     std::vector<char> serializeCluster(){
         if (this->entities.empty()){
-            std::cout << "Serialization from chunk " << this->worldcoord.getX() << ", " << this->worldcoord.getZ() << " failed, chunk is empty." << std::endl;
+            std::cout << "Serialization from chunk " << this->worldcoord.x << ", " << this->worldcoord.y << " failed, chunk is empty." << std::endl;
             return {};
         }
+        std::cout << "\tSERIAL: " << "Starting up, creating types map.." << std::endl;
 
         std::map<std::string, std::vector<ENTITY*>> types;
-
+        std::cout << "\tSERIAL: " << "Sorting entities" << std::endl;
         //Sort the types for the entities and bag them together
         for (auto e : entities){
             std::string type = e.second.getType();
@@ -69,15 +67,16 @@ public:
 
         }
         //We should have put together all the types and now we can shuffle them into a sacrificial vector
-
+        std::cout << "\tSERIAL: " << "Creating the vector of chars" << std::endl;
         std::vector<char> out;
 
         for (auto type : types){
+            std::cout << "\tSERIAL: " << "Trying length detection" << std::endl;
             unsigned long realLen = type.first.length();
             auto tLen = (unsigned short) realLen;
             char length[2];
             ::memcpy(length, &tLen, 2);
-
+            std::cout << "\tSERIAL: " << "Implement initial datatype length push" << std::endl;
             //This should in theory copy the value of the short in question to an array of 2 chars instead of taking up
             // a variable amount of space. This can be statically reinterpreted later to give the length for verification
             // purposes
@@ -85,9 +84,11 @@ public:
             out.push_back('{');
             out.push_back(length[0]);
             out.push_back(length[1]);
+            std::cout << "\tSERIAL: " << "Insert type append" << std::endl;
             out.insert(out.end(), type.first.begin(), type.first.end());
-
+            std::cout << "\tSERIAL: " << "Start serialization of entities" << std::endl;
             for (ENTITY *e : type.second){
+                std::cout << "\tSERIAL: " << "Entitity serial of UUID " << e->getUUID() << std::endl;
                 std::string entity = e->serializeEntity();
                 out.insert(out.end(), entity.begin(), entity.end());
             }
@@ -103,9 +104,11 @@ public:
                     sev.erase(it);
                 } else it++;
             }*/
+            std::cout << "\tSERIAL: " << "Finalize type \"" << type.first << "\"" << std::endl;
             out.push_back('}');
         }
         //TODO: Try to compress the results with /lib/tools/compressionTools.h
+        std::cout << "\tSERIAL: " << "Finished, return the result" << std::endl;
         return out;
     }
 

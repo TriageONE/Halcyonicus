@@ -1,4 +1,4 @@
-#include "lib/types/cfloat.h"
+#include "lib/types/float.h"
 #include "lib/entity/entitylocation.h"
 #include "lib/entity/entity.h"
 #include "lib/entity/entityCluster.h"
@@ -17,9 +17,9 @@ int main() {
     // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
     setvbuf(stdout, nullptr, _IOFBF, 2000);
 #endif
-    cfloat x(9555.22), y(1232.333), z(2);
-    cfloat x2(155.5552), y2(-2732.0), z2(-10);
-    cfloat x3(15.552), y3(8292.9823), z3(-133);
+    float x(9555.22), y(1232.333), z(2);
+    float x2(155.5552), y2(-2732.0), z2(-10);
+    float x3(15.552), y3(8292.9823), z3(-133);
 
     ENTITYLOCATION el = ENTITYLOCATION(x,y,z);
     ENTITYLOCATION el2 = ENTITYLOCATION(x2,y2,z2);
@@ -33,7 +33,7 @@ int main() {
     ENTITY e2 = ENTITY(el3, type2);
 
     DYNABLOB d1 = DYNABLOB(string("a lot"));
-    DYNABLOB d2 = DYNABLOB(cfloat(1209031.203), DYNABLOB::CFLOAT );
+    DYNABLOB d2 = DYNABLOB(float(1209031.203), DYNABLOB::float );
     DYNABLOB d3 = DYNABLOB('1', DYNABLOB::CHAR);
     DYNABLOB d4 = DYNABLOB(50023, DYNABLOB::SHORT);
     DYNABLOB d5 = DYNABLOB(5.00231, DYNABLOB::FLOAT);

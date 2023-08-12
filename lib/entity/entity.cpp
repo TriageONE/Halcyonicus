@@ -6,7 +6,7 @@
 #include <sstream>
 #include <random>
 
-ENTITYLOCATION ENTITY::getLocation() {
+COORDINATE ENTITY::getLocation() {
     return this->location;
 }
 
@@ -15,7 +15,7 @@ std::string ENTITY::getType() {
 }
 
 
-void ENTITY::setLocation(ENTITYLOCATION l) {
+void ENTITY::setLocation(COORDINATE l) {
     this->location = l;
 }
 
@@ -62,33 +62,48 @@ std::map<std::string, std::string> ENTITY::getAllAttributes() {
 
 std::string ENTITY::serializeEntity(){
     // Ignore the type, just worry about extraneous data and location
-
-    ENTITYLOCATION el = this->getLocation();
-    cfloat x(0), y(0), z(0);
-
-    x = el.getX();
-    y = el.getY();
-    z = el.getZ();
+    std::cout << "\t\tE-SERIAL: " << "Starting entity serialization" << std::endl;
+    COORDINATE el = this->getLocation();
 
     std::stringstream ss;
 
+    //Set up UID components
     char uid[8] {'\0'};
     ::memcpy(uid, &this->uuid, 8);
-    std::string xs = x.serialize(), ys = y.serialize(), zs = z.serialize();
+    std::cout << "\t\tE-SERIAL: " << "Set up UID: " << uid << std::endl;
+
+    //Set up the X and Y components
+    char xs[4]{'\0'}, ys[4]{'\0'};
+    ::memcpy(xs, &el.x, 4);
+    ::memcpy(ys, &el.y, 4);
+    std::cout << "\t\tE-SERIAL: " << "Set up X: " << xs << ", \"" << el.x << "\" and Y: " << ys << ", \"" << el.y << "\"" << std::endl;
+
+    //Set up facing component
+    char fs[4] {'\0'};
+    ::memcpy(fs, &this->facing, 4);
+    std::cout << "\t\tE-SERIAL: " << "Set up facing: " << fs << std::endl;
+    std::cout << "\t\tE-SERIAL: " << "Start stream compile," << std::endl;
 
     ss <<
         '{' <<  //0
-        xs <<   //1-6
-        ys <<   //7-12
-        zs <<   //13-18
-        uid <<  //19-26
-        '{';    //27
-
-    for (std::pair<std::string, std::string> p : this->attributes){
+        xs <<   //1-4
+        ys <<   //5-8
+        el.z << //8-9
+        fs <<   //10-14
+        uid <<  //15-22
+        '{';    //23?
+    std::cout << "\t\tE-SERIAL: " << "Stream compiled, start attribute compile. So far: \n" << ss.str() << std::endl;
+    int i = 0 ;
+    for (auto p : this->attributes){
+        std::cout << "\t\tE-SERIAL: Pair " << i << '[' << p.first << p.second << ']' << std::endl;
         ss << '[' << p.first << p.second << ']';
+        i++;
     }
+    std::cout << "\t\tE-SERIAL: " << "attribute compile complete, apply end cap" << std::endl;
 
     ss << "}}";
+    std::cout << "\t\tE-SERIAL: " << "Finished " << this->uuid << std::endl;
+
     return ss.str();
 
 }
@@ -115,28 +130,33 @@ ENTITY ENTITY::deserializeEntity(std::string entityString){
     }
 
 
-    ENTITYLOCATION el;
-    cfloat x(0), y(0), z(0);
+    COORDINATE el;
+    float x, y, f;
+    char z;
 
-    std::string substr = entityString.substr(1,6);
-    x = cfloat::deserializeToNewCFloat(substr);
+    std::string substr = entityString.substr(1,4);
+    x = *(float*) substr.data();
 
-    substr = entityString.substr(7,6);
-    y = cfloat::deserializeToNewCFloat(substr);
+    substr = entityString.substr(5,4);
+    y = *(float*) substr.data();
 
-    substr = entityString.substr(13,6);
-    z = cfloat::deserializeToNewCFloat(substr);
+    //TODO: format changed to char, update method
+    //substr = entityString.substr(9,1);
+    z = entityString[9];
 
-    el.setX(x);
-    el.setY(y);
-    el.setZ(z);
+    substr = entityString.substr(10,4);
+    f = *(float*) substr.data();
 
-    substr = entityString.substr(19, 8);
+    el.x = x;
+    el.y = y;
+    el.z = z;
+
+    substr = entityString.substr(14, 8);
     unsigned long long uid = *(unsigned long long*) substr.c_str();
 
-    ENTITY e = ENTITY(el, uid);
+    ENTITY e = ENTITY(el, f, uid);
 
-    int place = 28; // Start on the first char of the first attribute.
+    int place = 22; // Start on the first char of the first attribute.
     if (place >= len-2) return e;
 
     std::map<std::string, std::string> attributes;
@@ -183,9 +203,9 @@ ENTITY ENTITY::deserializeEntity(std::string entityString){
 void ENTITY::out(){
     std::cout << "ENTITY OUTPUT:" << std::endl << "\tTYPE: \"" << this->type << "\"" << std::endl;
     std::cout << "\tERRORED: " << ((this->errored)? "TRUE" : "FALSE") << std::endl;
-    std::cout << "\tX: " << this->getLocation().getX().asString()  << std::endl;
-    std::cout << "\tY: " << this->getLocation().getY().asString()  << std::endl;
-    std::cout << "\tZ: " << this->getLocation().getZ().asString() << std::endl;
+    std::cout << "\tX: " << this->getLocation().x  << std::endl;
+    std::cout << "\tY: " << this->getLocation().y  << std::endl;
+    std::cout << "\tZ: " << (int) this->getLocation().z << std::endl;
 
     std::cout << "ATTRIBUTES: {" << std::endl;
     for (std::pair<std::string, std::string> p : this->attributes){
@@ -213,11 +233,11 @@ unsigned long long ENTITY::generateAndSetNewUUID(){
     return uuid;
 }
 
-ENTITYLOCATION ENTITY::getLastSavedLocation() {
+COORDINATE ENTITY::getLastSavedLocation() {
     return this->lastSavedLocation;
 }
 
-void ENTITY::setLastSavedLocation(ENTITYLOCATION l) {
+void ENTITY::setLastSavedLocation(COORDINATE l) {
     this->lastSavedLocation = l;
 }
 

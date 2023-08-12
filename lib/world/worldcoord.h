@@ -5,7 +5,6 @@
 #ifndef HALCYONICUS_WORLDCOORD_H
 #define HALCYONICUS_WORLDCOORD_H
 
-#include "../../deprecated/coordinate.h"
 #include "regioncoord.h"
 
 /**
@@ -13,22 +12,22 @@
  *
  */
 class WORLDCOORD{
-    int x=0, z=0;
+    int x=0, y=0;
 public:
-    WORLDCOORD(int x1, int z1) {
+    WORLDCOORD(int x1, int y1) {
         //The vertical component of the map
         this->x = x1;
         //The height of the map
-        this->z = z1;
+        this->y = y1;
     }
     WORLDCOORD()=default;
 
-    REGIONCOORD getRegionCoordinates(){
+    COORDINATE getRegionCoordinates(){
         //The region coordinate is 16 times smaller than a worldcoord, therefore divide by 16, but bit shift instead.
-        int x1, z1;
+        int x1, y1;
         x1 = this->x >> 4;
-        z1 = this->z >> 4;
-        return {x1, z1};
+        y1 = this->y >> 4;
+        return {x1, y1};
     };
 
     int getX(){
@@ -36,7 +35,7 @@ public:
     }
 
     int getZ(){
-        return this->z;
+        return this->y;
     }
 
     void setX(int newX){
@@ -44,7 +43,7 @@ public:
     }
 
     void setZ(int newZ){
-        this->z = newZ;
+        this->y = newZ;
     }
 
     bool operator<(const WORLDCOORD& other) const {
@@ -53,20 +52,20 @@ public:
         if (this->x > other.x)
             return false;
 
-        return this->z < other.z;
+        return this->y < other.y;
     }
 
     bool operator==(const WORLDCOORD& other) const{
         return (
                 other.x == this->x &&
-                other.z == this->z
+                other.y == this->y
                 );
     }
 
     bool operator!=(const WORLDCOORD& other) const{
         return (
                 other.x != this->x &&
-                other.z != this->z
+                other.y != this->y
         );
     }
 };
