@@ -4,7 +4,7 @@
 
 #ifndef HALCYONICUS_HCONTEXT_H
 #define HALCYONICUS_HCONTEXT_H
-#include "../world/chunk2.h"
+#include "../depricated/chunk-a.h"
 #include "../entity/entity.h"
 #include <map>
 #include <mutex>

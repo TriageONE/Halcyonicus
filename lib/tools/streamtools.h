@@ -5,9 +5,7 @@
 #ifndef HALCYONICUS_STREAMTOOLS_H
 #define HALCYONICUS_STREAMTOOLS_H
 
-#include <string>
-#include <ios>
-#include <iomanip>
+#include "../../halcyonicus.h"
 
 std::string stringToHex(const std::string& input) {
     std::stringstream ss;

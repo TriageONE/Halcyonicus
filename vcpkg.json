@@ -32,15 +32,18 @@
     "version>=" : "3.3.8#2",
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(glfw3 CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE glfw)\n"
   }, {
-    "name" : "glad",
-    "version>=" : "0.1.36",
-    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(glad CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE glad::glad)\n"
-  }, {
     "name" : "stb",
     "version>=" : "2023-04-11#1",
     "$comment" : "    find_package(Stb REQUIRED)\n\n    target_include_directories(main PRIVATE ${Stb_INCLUDE_DIR})\n"
   }, {
     "name" : "openssl",
     "version>=" : "3.1.2#1"
+  }, {
+    "name" : "termcolor",
+    "version>=" : "2.1.0"
+  }, {
+    "name" : "glad",
+    "version>=" : "0.1.36",
+    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(glad CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE glad::glad)\n"
   } ]
 }

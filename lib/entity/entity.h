@@ -5,11 +5,10 @@
 #ifndef HALCYONICUS_ENTITY_H
 #define HALCYONICUS_ENTITY_H
 
-#include <utility>
-
+#include <map>
 #include "../world/coordinate.h"
 #include "../types/dynablob.h"
-#include "map"
+#include "../tools/timetools.h"
 
 
 /**
@@ -29,8 +28,9 @@ class ENTITY {
     * All entities will be interpreted with a location
     * They also must have the region they exist in, and this should be validated against its location
     */
-    COORDINATE location;
-    COORDINATE lastSavedLocation;
+    COORDINATE::ENTITYCOORD location;
+    COORDINATE::ENTITYCOORD lastSavedLocation;
+    unsigned long long timeLastSaved;
     float facing;
     /**
     * All entities will be interpreted with a facing
@@ -55,24 +55,18 @@ class ENTITY {
 
 public:
 
-    ENTITY(COORDINATE location, float facing, std::string type, unsigned long long uuid) {
+    ENTITY(COORDINATE::ENTITYCOORD location, float facing, std::string type, unsigned long long uuid) {
         this->location = location;
         this->type = std::move(type);
         this->facing = facing;
         this->uuid = uuid;
     }
 
-    ENTITY(COORDINATE location, float facing, std::string type) {
+    ENTITY(COORDINATE::ENTITYCOORD location, float facing, std::string type) {
         this->location = location;
         this->facing = facing;
         this->type = std::move(type);
         generateAndSetNewUUID();
-    }
-
-    ENTITY(COORDINATE location, float facing, unsigned long long uuid) {
-        this->location = location;
-        this->facing = facing;
-        this->uuid = uuid;
     }
 
     ENTITY() {
@@ -81,15 +75,8 @@ public:
         generateAndSetNewUUID();
     }
 
-    ENTITY(COORDINATE location, float facing) {
-        this->location = location;
-        this->facing = facing;
-        this->missingType = true;
-        generateAndSetNewUUID();
-    }
-
     ENTITY(std::string type) {
-        this->location = COORDINATE(0,0,0);
+        this->location = COORDINATE::ENTITYCOORD();
         this->type = std::move(type);
         generateAndSetNewUUID();
     }
@@ -149,8 +136,8 @@ public:
 
     ///////////
     //Getters
-    COORDINATE getLocation();
-    COORDINATE getLastSavedLocation();
+    COORDINATE::ENTITYCOORD getLocation();
+    COORDINATE::ENTITYCOORD getLastSavedLocation();
     std::string getType();
     unsigned long long getUUID();
     float getFacing();
@@ -162,8 +149,8 @@ public:
 
     //////////
     //Setters
-    void setLocation(COORDINATE l);
-    void setLastSavedLocation(COORDINATE l);
+    void setLocation(COORDINATE::ENTITYCOORD l);
+    void setLastSavedLocation(COORDINATE::ENTITYCOORD l);
     void setType(std::string type);
     void setUUID(unsigned long long);
     void setFacing(float);
@@ -175,15 +162,18 @@ public:
     bool removeAttribute(const std::string& attribute);
     bool hasAttribute(const std::string& attribute);
     unsigned long long generateAndSetNewUUID();
+    void updateTimestamp();
+    void updateTimestamp(long long time);
 
     ////////////////
     //Serialization
-    std::string serializeEntity();
-    static ENTITY deserializeEntity(std::string entityString);
+    void serializeEntity(std::vector<char> * serialOut);
+    void decodeEntityData(std::string entityString);
 
     ////////////
     //Debuggers
     void out();
+
 
 
 };

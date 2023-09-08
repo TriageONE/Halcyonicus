@@ -8,11 +8,11 @@
       <jdbc-url>jdbc:sqlite:C:\Users\aronm\CLionProjects\Halcyonicus\cmake-build-debug\test.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="rge_0_0" uuid="7998f106-a198-4e4e-b6b8-80547a23871f">
+    <data-source source="LOCAL" name="rge_0_0 [2]" uuid="068d9a26-ff15-4dcc-988f-a33095a8eab6">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/cmake-build-debug/world/entities/rge_0_0.hdb</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\aronm\CLionProjects\Halcyonicus\cmake-build-release-dynamic\world\entities\rge_0_0.hdb</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

@@ -17,37 +17,85 @@ public:
 
         REGIONCOORD()= default;
 
+        friend bool operator!=(const REGIONCOORD& lhs, const REGIONCOORD& rhs) {
+            return !(lhs == rhs);
+        }
+
+        friend bool operator==(const REGIONCOORD& lhs, const REGIONCOORD& rhs) {
+            return (lhs.x == rhs.x) && (lhs.y == rhs.y);
+        }
+
+        friend bool operator<(const REGIONCOORD& lhs, const REGIONCOORD& rhs) {
+            return (lhs.x < rhs.x) && (lhs.y < rhs.y);
+        }
+
     };
 
     /**
-     * Defines an area in the world as a chunk, a 16x16 area of tiles
+     * Defines an area in the world as a chunk, a 64x64 area of tiles
      */
     class WORLDCOORD{
     public:
         int x=0, y=0;
 
-        WORLDCOORD(int x, int y){
-            this->x = x;
-            this->y = y;
-        }
+        WORLDCOORD(int x, int y) : x{x}, y{y} {}
 
         WORLDCOORD()= default;
 
-        REGIONCOORD getWorldcoord(){
-            int x1 = this->x >> 4;
-            int y1 = this->y >> 4;
+        REGIONCOORD getRegioncoord(){
+            int x1 = this->x >> 6;
+            int y1 = this->y >> 6;
             return {x1, y1};
+        }
+
+        friend bool operator!=(const WORLDCOORD& lhs, const WORLDCOORD& rhs) {
+            return !(lhs == rhs);
+        }
+
+        friend bool operator==(const WORLDCOORD& lhs, const WORLDCOORD& rhs) {
+            return (lhs.x == rhs.x) && (lhs.y == rhs.y);
+        }
+    };
+
+    /**
+     * Defines an exact area in which an entity resides in the world using fixed point location data
+     */
+    class ENTITYCOORD{
+    public:
+        long long x=0, y=0;
+        int z=0;
+
+        ENTITYCOORD(long long x, long long y, int z) : x{x}, y{y}, z{z} {}
+
+        ENTITYCOORD() = default;
+
+        WORLDCOORD getWorldcoord(){
+            int x1 = ( this->x/1000 ) >> 6;
+            int y1 = ( this->y/1000 ) >> 6;
+            return {x1, y1};
+        }
+
+        REGIONCOORD getRegioncoord(){
+            return getWorldcoord().getRegioncoord();
+        }
+
+        friend bool operator!=(const ENTITYCOORD& lhs, const ENTITYCOORD& rhs) {
+            return !(lhs == rhs);
+        }
+
+        friend bool operator==(const ENTITYCOORD& lhs, const ENTITYCOORD& rhs) {
+            return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z);
         }
     };
 
 
     /**
-     * Defines an area in the world that entities have as an attribute
+     * Defines an area in the world that blocks have as an attribute
      */
-    float x=0, y=0;
-    char z=0;
+    int x=0, y=0;
+    short z=0;
 
-    COORDINATE(float x, float y, char z){
+    COORDINATE(int x, int y, short z){
         this->x = x;
         this->y = y;
         this->z = z;
@@ -56,9 +104,21 @@ public:
     COORDINATE()= default;
 
     WORLDCOORD getWorldcoord(){
-        int x1 = ( (int) this->x ) >> 4;
-        int y1 = ( (int) this->y ) >> 4;
+        int x1 = ( (int) this->x ) >> 6;
+        int y1 = ( (int) this->y ) >> 6;
         return {x1, y1};
+    }
+
+    REGIONCOORD getRegioncoord(){
+        return getWorldcoord().getRegioncoord();
+    }
+
+    friend bool operator!=(const COORDINATE& lhs, const COORDINATE& rhs) {
+        return !(lhs == rhs);
+    }
+
+    friend bool operator==(const COORDINATE& lhs, const COORDINATE& rhs) {
+        return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z);
     }
 };
 

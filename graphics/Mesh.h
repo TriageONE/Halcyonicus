@@ -1,8 +1,9 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "../halcyonicus.h"
+//#include "../halcyonicus.h"
 
+#include <vector>
 #include "Shader.h"
 
 using namespace std;

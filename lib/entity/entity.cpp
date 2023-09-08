@@ -1,12 +1,11 @@
 //
 // Created by Triage on 2/5/2023.
 //
-#include "entity.h"
-#include <utility>
-#include <sstream>
-#include <random>
 
-COORDINATE ENTITY::getLocation() {
+#include <random>
+#include "entity.h"
+
+COORDINATE::ENTITYCOORD ENTITY::getLocation() {
     return this->location;
 }
 
@@ -15,7 +14,7 @@ std::string ENTITY::getType() {
 }
 
 
-void ENTITY::setLocation(COORDINATE l) {
+void ENTITY::setLocation(COORDINATE::ENTITYCOORD  l) {
     this->location = l;
 }
 
@@ -45,6 +44,7 @@ bool ENTITY::hasUUID() const{
 
 void ENTITY::setAttribute(const std::string& dblob, const std::string& attribute) {
     attributes.erase(attribute);
+    std::cout << "Setting attribute on entity " << this->uuid << " as attr class \"" << attribute << "\" and data " << dblob << std::endl;
     attributes.insert( std::pair<std::string, std::string>(attribute, dblob) );
 }
 
@@ -60,106 +60,97 @@ std::map<std::string, std::string> ENTITY::getAllAttributes() {
     return this->attributes;
 }
 
-std::string ENTITY::serializeEntity(){
-    // Ignore the type, just worry about extraneous data and location
-    std::cout << "\t\tE-SERIAL: " << "Starting entity serialization" << std::endl;
-    COORDINATE el = this->getLocation();
-
-    std::stringstream ss;
-
-    //Set up UID components
-    char uid[8] {'\0'};
-    ::memcpy(uid, &this->uuid, 8);
-    std::cout << "\t\tE-SERIAL: " << "Set up UID: " << uid << std::endl;
-
-    //Set up the X and Y components
-    char xs[4]{'\0'}, ys[4]{'\0'};
-    ::memcpy(xs, &el.x, 4);
-    ::memcpy(ys, &el.y, 4);
-    std::cout << "\t\tE-SERIAL: " << "Set up X: " << xs << ", \"" << el.x << "\" and Y: " << ys << ", \"" << el.y << "\"" << std::endl;
-
-    //Set up facing component
-    char fs[4] {'\0'};
-    ::memcpy(fs, &this->facing, 4);
-    std::cout << "\t\tE-SERIAL: " << "Set up facing: " << fs << std::endl;
-    std::cout << "\t\tE-SERIAL: " << "Start stream compile," << std::endl;
-
-    ss <<
-        '{' <<  //0
-        xs <<   //1-4
-        ys <<   //5-8
-        el.z << //8-9
-        fs <<   //10-14
-        uid <<  //15-22
-        '{';    //23?
-    std::cout << "\t\tE-SERIAL: " << "Stream compiled, start attribute compile. So far: \n" << ss.str() << std::endl;
-    int i = 0 ;
-    for (auto p : this->attributes){
-        std::cout << "\t\tE-SERIAL: Pair " << i << '[' << p.first << p.second << ']' << std::endl;
-        ss << '[' << p.first << p.second << ']';
-        i++;
-    }
-    std::cout << "\t\tE-SERIAL: " << "attribute compile complete, apply end cap" << std::endl;
-
-    ss << "}}";
-    std::cout << "\t\tE-SERIAL: " << "Finished " << this->uuid << std::endl;
-
-    return ss.str();
-
+void ENTITY::updateTimestamp(){
+    this->timeLastSaved = TIMETOOLS::getCurrentEpochTime();
 }
 
-ENTITY ENTITY::deserializeEntity(std::string entityString){
+void ENTITY::updateTimestamp(long long time){
+    this->timeLastSaved = time;
+}
+
+/*
+ * Serialization is changing, based on how entities were stored.
+ * the original idea was that we would organize our entities into layers, then serialize them all at once and store them in a database of layers sorted by chunks instead
+ * The new idea is that entities are now part of a lookable database, able to be sorted and found by UUID in a flat manner only holding data regarding their location, ID, and attributes.
+ * The type should be another column as a string only and can be whatever you want
+ *
+ * The new database schema looks like this
+ *
+ * UUID(Long long 8) -- X(LONG LONG) -- Y(LONG LONG) -- DATA(Blob)
+ *
+ * Data should include some non-redundant aspects that matter to the entity such as
+ * Facing, Layer, last saved time then Attributes
+ */
+void ENTITY::serializeEntity(std::vector<char> * serialOut){
+    // Ignore the type, just worry about extraneous data and location
+    serialOut->clear();
+    serialOut->reserve(32);
+
+    //Z aspect, type int
+    char zc[4] {'\0'};
+    ::memcpy(&zc, &this->location.z, 4);
+
+    //float
+    char fs[4] {'\0'};
+    ::memcpy(fs, &facing, 4);
+
+    //Time saved as now, 8 bytes
+    auto time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    char ts[8] {'\0'};
+    ::memcpy(fs, &time, 4);
+
+    serialOut->push_back('{');
+    for (char c : zc) serialOut->push_back(c);
+    for (char c : fs) serialOut->push_back(c);
+    for (char c : ts) serialOut->push_back(c);
+    serialOut->push_back('{');
+
+    for (std::pair<std::string, std::string> p : this->attributes){
+        serialOut->push_back('[');
+        for (char c : p.first) serialOut->push_back(c);
+        for (char c : p.second) serialOut->push_back(c);
+        serialOut->push_back(']');
+    }
+
+    serialOut->push_back('}');
+    serialOut->push_back('}');
+    return;
+}
+
+void ENTITY::decodeEntityData(std::string entityString){
 
     if (entityString[0] != '{'){
-        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on first char, expected \'{\', got " << entityString[0] << std::endl;
-        return ENTITY();
+        std::cerr << "Attempted to deserializeEntity a malformed entity String, stuck on first char, expected \'{\', got " << entityString[0] << std::endl;
+        return;
     }
-    if (entityString[27] != '{'){
-        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section initializer, expected \'{\', got " << entityString[19] << std::endl;
-        return ENTITY();
+    if (entityString[17] != '{'){
+        std::cerr << "Attempted to deserializeEntity a malformed entity String, stuck on attribute section initializer, expected \'{\', got " << entityString[15] << std::endl;
+        return;
     }
 
     unsigned long long len = entityString.length();
     if (entityString[len-1] != '}'){
-        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on last char escape, expected \'}\', got " << entityString[len-1] << std::endl;
-        return ENTITY();
+        std::cerr << "Attempted to deserializeEntity a malformed entity String, stuck on last char escape, expected \'}\', got " << entityString[len-1] << std::endl;
+        return;
     }
     if (entityString[len-2] != '}'){
-        std::cerr << "Attempted to deserializeEntity a malformed entityString, stuck on attribute section escape, expected \'}\', got " << entityString[len-2] << std::endl;
-        return ENTITY();
+        std::cerr << "Attempted to deserializeEntity a malformed entity String, stuck on attribute section escape, expected \'}\', got " << entityString[len-2] << std::endl;
+        return;
     }
 
-
-    COORDINATE el;
-    float x, y, f;
-    char z;
-
     std::string substr = entityString.substr(1,4);
-    x = *(float*) substr.data();
+    ::memcpy(&this->location.z, substr.c_str(), 2);
 
     substr = entityString.substr(5,4);
-    y = *(float*) substr.data();
+    ::memcpy(&this->facing, substr.c_str(), 4);
 
-    //TODO: format changed to char, update method
-    //substr = entityString.substr(9,1);
-    z = entityString[9];
+    substr = entityString.substr(9,8);
+    ::memcpy(&this->timeLastSaved, substr.c_str(), 8);
 
-    substr = entityString.substr(10,4);
-    f = *(float*) substr.data();
+    int place = 17; // Start on the first char of the first attribute.
+    if (place >= len-2) return;
 
-    el.x = x;
-    el.y = y;
-    el.z = z;
-
-    substr = entityString.substr(14, 8);
-    unsigned long long uid = *(unsigned long long*) substr.c_str();
-
-    ENTITY e = ENTITY(el, f, uid);
-
-    int place = 22; // Start on the first char of the first attribute.
-    if (place >= len-2) return e;
-
-    std::map<std::string, std::string> attributes;
+    std::map<std::string, std::string> attrs;
     //Loop through until we find a bracket, however if we reach len-2 then we are done
 
     while (place < len - 1){
@@ -170,7 +161,7 @@ ENTITY ENTITY::deserializeEntity(std::string entityString){
             while(entityString[place] != '{'){
                 if (place >= len-2){
                     std::cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << std::endl;
-                    return e;
+                    return;
                 }
                 ss << entityString[place];
                 place++;
@@ -182,8 +173,8 @@ ENTITY ENTITY::deserializeEntity(std::string entityString){
             place++;
             while (entityString[place] != '}'){
                 if (place >= len-2){
-                    std::cerr << "WARN: Entity type deserialization failed, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << std::endl;
-                    return e;
+                    std::cerr << "WARN: Entity type deserialization early terminate, end of stream reached while in the middle of creating attribute, place " << place << ", last char: " << entityString[place] << " With full length at " << entityString.length() << std::endl;
+                    return;
                 }
                 ss << entityString[place];
                 place++;
@@ -191,28 +182,27 @@ ENTITY ENTITY::deserializeEntity(std::string entityString){
             ss << entityString[place];
             place++;
             //Should now be at the end of the attribute
-            attributes.insert({attrName, ss.str()});
+            this->attributes.insert({attrName, ss.str()});
         } else {
             place++;
         }
     }
-    e.setAttributes(&attributes);
-    return e;
+    return;
 }
 
 void ENTITY::out(){
     std::cout << "ENTITY OUTPUT:" << std::endl << "\tTYPE: \"" << this->type << "\"" << std::endl;
     std::cout << "\tERRORED: " << ((this->errored)? "TRUE" : "FALSE") << std::endl;
-    std::cout << "\tX: " << this->getLocation().x  << std::endl;
-    std::cout << "\tY: " << this->getLocation().y  << std::endl;
-    std::cout << "\tZ: " << (int) this->getLocation().z << std::endl;
+    std::cout << "\tUID: " << this->uuid << std::endl;
+    std::cout << "\tX: " << this->getLocation().x << std::endl;
+    std::cout << "\tY: " << this->getLocation().y << std::endl;
+    std::cout << "\tZ: " << this->getLocation().z << std::endl;
 
     std::cout << "ATTRIBUTES: {" << std::endl;
     for (std::pair<std::string, std::string> p : this->attributes){
         std::cout << "\t\t" << p.first << " : " << p.second << std::endl;
     }
     std::cout << "}\n\rEND ENTITY OUTPUT" << std::endl;
-
 }
 
 bool ENTITY::removeAttribute(const std::string& attribute) {
@@ -233,11 +223,11 @@ unsigned long long ENTITY::generateAndSetNewUUID(){
     return uuid;
 }
 
-COORDINATE ENTITY::getLastSavedLocation() {
+COORDINATE::ENTITYCOORD ENTITY::getLastSavedLocation() {
     return this->lastSavedLocation;
 }
 
-void ENTITY::setLastSavedLocation(COORDINATE l) {
+void ENTITY::setLastSavedLocation(COORDINATE::ENTITYCOORD  l) {
     this->lastSavedLocation = l;
 }
 

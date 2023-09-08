@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 link_directories(./lib ./hsrv ./graphics)
 
-add_executable(Halcyonicus main.cpp halcyonicus.h lib/object/iobject3d.h lib/crypto/cc20.h lib/world/coordinate.h lib/entity/entity.cpp)
+add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
@@ -72,3 +72,6 @@ target_link_libraries(Halcyonicus glad::glad)
 
 find_package(Stb REQUIRED)
 target_include_directories(Halcyonicus PRIVATE ${Stb_INCLUDE_DIR})
+
+find_path(TERMCOLOR_INCLUDE_DIRS "termcolor/termcolor.hpp")
+target_include_directories(Halcyonicus PRIVATE ${TERMCOLOR_INCLUDE_DIRS})

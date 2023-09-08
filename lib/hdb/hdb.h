@@ -5,12 +5,13 @@
 #ifndef HALCYONICUS_HDB_H
 #define HALCYONICUS_HDB_H
 
-#include "../world/regioncoord.h"
-#include "../world/region.h"
+
+#include <set>
 #include "../sqlite/sqlite3.h"
-#include "../entity/entityCluster.h"
-#include "iostream"
-#include "../world/chunk.h"
+#include "../world/coordinate.h"
+#include "../tools/filetools.h"
+#include "../entity/entity.h"
+#include "../logging/hlogger.h"
 
 /**
  * The point of this class is to abstract all of the database functions
@@ -21,403 +22,405 @@
  * as this will provide a relatively simple and safe way to work with
  * file based databases
  */
+using namespace hlogger;
+
 class HDB{
 public:
 
-    static long long getCurrentEpochTime() {
-        auto currentTime = std::chrono::system_clock::now().time_since_epoch();
-        return std::chrono::duration_cast<std::chrono::seconds>(currentTime).count();
-    }
+    static bool fixDBStructure() {
+        si;
+        if (FTOOLS::checkForDirectoryStructure()){
+            info << "Directory structure found as present, perhaps there is a permission node missing?" << std::endl;
+            so;
+            return false;
+        } else {
+            info << "Partial/missing directory structure, rebuilding.." << nl;
+            if (FTOOLS::createDirectories()){
+                info << "Created directory structure" << nl;
+                so;
+                return true;
+            } else {
+                err << "Could not create directory structure" << nl;
+                so;
+                return false;
+            }
+        }
 
-    /////////////////
-    // ENTITY SECTION
-    /////////////////
+    }
 
     /**
      * Creates a new entity database using the region coordinates specified
      * @param regioncoord The region to create the database for
+     * @param type the type of database to create
      * @return the SQL integer return code
      */
-    int createNewEntityDatabase(REGIONCOORD regioncoord){
+    int createNewDatabase(COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type){
         sqlite3 *db;
         std::string sql;
         sqlite3_stmt *stmt;
         int rc;
+        si;
 
-        std::string path = REGION::prependEntityDir(REGION::parseRegioncoordToEname(regioncoord));
+        std::string t;
+
+        switch (type) {
+            case FTOOLS::TYPE::TERRAIN:
+                t = "world";
+                break;
+            case FTOOLS::TYPE::ENTITY:
+                t = "entities";
+                break;
+            case FTOOLS::TYPE::BLOCK:
+                t = "blocks";
+                break;
+            case FTOOLS::TYPE::DATA:
+                t = "data";
+                break;
+        }
+        info << "Creating new database: " << t << nl;
+
+        std::string path = FTOOLS::prependDirectory(FTOOLS::parseRegioncoordToFilename(regioncoord, type), type);
         rc = sqlite3_open(path.c_str(), &db);
 
         if(rc) {
-            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+            if (!fixDBStructure()){
+                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                so;
+                return(rc);
+            } else {
+                info << "Fixed database structure, continuing.." << nl;
+                rc = sqlite3_open(path.c_str(), &db);
+                if(rc) {
+                    err << "Tried opening database but could not open after fix :'(" << nl;
+                    so;
+                    return rc;
+                }
+            }
+        }
+
+        info << "Database " << t << " created, trying database construction.." << nl;
+
+        switch (type) {
+            case FTOOLS::TYPE::TERRAIN:
+                sql = "CREATE TABLE IF NOT EXISTS TERRAIN("
+                      "OFFSET SMALLINT NOT NULL PRIMARY KEY, "
+                      "LAYER CHAR NOT NULL, "
+                      "DATA TINYBLOB NOT NULL);";
+                break;
+            case FTOOLS::TYPE::ENTITY:
+                sql = "CREATE TABLE IF NOT EXISTS ENTITIES("
+                      "ID BIGINT NOT NULL PRIMARY KEY, "
+                      "X BIGINT NOT NULL, "
+                      "Y BIGINT NOT NULL, "
+                      "Z INT NOT NULL, "
+                      "DATA BLOB);";
+                break;
+            case FTOOLS::TYPE::BLOCK:
+                //TODO: Find how the fuck im gonna do this
+                break;
+            case FTOOLS::TYPE::DATA:
+                goto skip;
+        }
+
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing " << t << " database persistence section creation statement for path: "<< path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_close(db);
+            so;
             return(rc);
         }
 
-        sql = "CREATE TABLE CHUNKS("
-              "LAST_SAVED BIGINT NOT NULL"
-              "RELATIVE_POSITION SMALLINT NOT NULL, "
-              "ENTITIES BLOB);";
+
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error executing " << t << " database persistence section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+        info << "Successful database table creation, creating data table.." << nl;
+
+        skip:
+        sql = "CREATE TABLE IF NOT EXISTS HALDATA("
+              "KEY STRING NOT NULL, "
+              "VALUE STRING NOT NULL);";
 
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            std::cerr << "Error preparing entityDatabase creation statement for path: "<< path << std::endl;
+            err << "Error preparing " << t << " database data section creation statement for path: "<< path << ", error code " << rc << "\"" << sqlite3_errmsg(db) << "\"" << nl;
             sqlite3_close(db);
+            so;
             return(rc);
         }
 
         rc = sqlite3_step(stmt);
         if (!rc){
-            std::cerr << "Error executing entityDatabase creation sql statement, but passed preparation for path: " << path << std::endl;
+            err << "Error executing " << t << " database data section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << "\"" << sqlite3_errmsg(db) << "\"" << nl;
             sqlite3_close(db);
+            so;
             return(rc);
         }
-
-        sql = "INSERT INTO CHUNKS VALUES(?, ?, NULL);";
-
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            std::cerr << "Error preparing entityDatabase creation statement for path: "<< path << std::endl;
-            sqlite3_close(db);
-            return(rc);
-        }
-
-        long long currentTime = getCurrentEpochTime();
-        sqlite3_bind_int(stmt, 1, currentTime);
-
-        for (short pos = 0; pos < 16384; pos++){
-
-            sqlite3_bind_int(stmt, 2, pos);
-
-            sqlite3_step(stmt);
-
-            sqlite3_reset(stmt);
-
-        }
-
         rc = sqlite3_finalize(stmt);
-        std::cout << "INFO: Database primer finished, created 16384 shell records in region \'" << regioncoord.getX() << ", " << regioncoord.getZ() << "\'" << std::endl;
 
+        if (rc){
+            err << "Error finalizing " << t << " database data section creation sql statement, but passed stepping for path: " << path << ", error code " << rc << "\"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        info << "Successful database data table creation, database finalized." << nl;
+
+        so;
         return (rc);
     }
 
-    /**
-     * Reads the entire shard's entity data from the chunk specified into the entity cluser
-     * @param cluster
-     * FIXME: FIXED, UNTESTED
-     */
-    static int readEntityData(ENTITYCLUSTER *cluster) {
+    //TODO: Try this out, i have no idea if this works properly or not
+    static int saveEntitiesToDatabase(std::vector<ENTITY> * entities, COORDINATE::REGIONCOORD regionToSaveTo){
         sqlite3 *db;
         std::string sql;
         sqlite3_stmt *stmt;
         int rc;
-
-        std::string path = REGION::prependEntityDir(
-                REGION::parseRegioncoordToEname(cluster->getWorldcoord().getRegionCoordinates()));
-        rc = sqlite3_open(path.c_str(), &db);
-
-        if (rc) {
-            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-            return rc;
-        }
-
-        int pos = REGION::findChunkArrayOffset(cluster->getWorldcoord());
-
-        /*
-         * "CREATE TABLE CHUNKS("
-              "LAST_SAVED BIGINT NOT NULL"
-              "RELATIVE_POSITION SMALLINT NOT NULL, "
-              "ENTITIES BLOB);"
-         */
-
-        sql = "SELECT ENTITIES FROM CHUNKS WHERE RELATIVE_POSITION = ?;";
-        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-
-        rc = sqlite3_bind_int(stmt, 1, pos);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-        rc = sqlite3_step(stmt);
-        if (rc == SQLITE_ROW){
-            const void* data = sqlite3_column_blob(stmt, 0);
-            int blobSize = sqlite3_column_bytes(stmt, 0);
-            std::vector<char> blobVec(static_cast<const char*>(data), static_cast<const char*>(data) + blobSize);
-            cluster->deserializeIntoChunk(blobVec);
-        } else {
-            std::cout << "ERROR: Nothing was found for the chunk " << pos << " (" << cluster->getWorldcoord().getX() << "x, " << cluster->getWorldcoord().getZ() << "z)" << std::endl;
-        }
-        return rc;
-    }
-
-    /**
-     * Will write the entire chunk to the database.
-     * @param cluster The entity cluster that holds the data you want to write
-     * @return The output status code of the SQL ran
-     * FIXME: FINISHED, UNTESTED
-     */
-    static int writeEntityData(ENTITYCLUSTER *cluster){
-        sqlite3 *db;
-        std::string sql;
-        sqlite3_stmt *stmt = nullptr;
-        int rc;
-
-        std::string path = REGION::prependEntityDir(
-                REGION::parseRegioncoordToEname(cluster->getWorldcoord().getRegionCoordinates()));
-        rc = sqlite3_open(path.c_str(), &db);
-
-        if (rc) {
-            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-            return rc;
-        }
-
-        int pos = REGION::findChunkArrayOffset(cluster->getWorldcoord());
-
-        /*"CREATE TABLE CHUNKS("
-             "LAST_SAVED BIGINT NOT NULL"
-             "RELATIVE_POSITION SMALLINT NOT NULL, "
-             "ENTITIES BLOB);"
-             */
-
-        long long currentTime = getCurrentEpochTime();
-
-        sql = "UPDATE CHUNKS SET LAST_SAVED = ?, DATA = ? WHERE POSITION = ?;";
-
-        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-
-        auto data = cluster->serializeCluster();
-        sqlite3_bind_int(stmt, 3, pos);
-        sqlite3_bind_int(stmt, 1, currentTime);
-        sqlite3_bind_blob(stmt, 2, data.data(), data.size(), SQLITE_STATIC);
-
-        rc = sqlite3_step(stmt);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return rc;
-    }
-
-    /**
-     * Will write one level specified by LEVEL to the database from the entityCluster. Does not discriminate against same
-     * layers and will perform the write anyways.
-     * @param cluster The entity cluster that holds the data you want to write
-     * @param level The level within this cluster to write to the database
-     * @return The status code of the SQL ran
-     * FIXME: NOT FINISHED, NO LONGER NEEDED?
-     */
-    [[deprecated]] static int writeShardEntityData(ENTITYCLUSTER *cluster, int level){
-        sqlite3 *db;
-        std::string sql;
-        sqlite3_stmt *stmt;
-        int rc;
-
-        std::string path = REGION::prependEntityDir(
-                REGION::parseRegioncoordToEname(cluster->getWorldcoord().getRegionCoordinates()));
-        rc = sqlite3_open(path.c_str(), &db);
-
-        if (rc) {
-            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-            return rc;
-        }
-
-        int pos = REGION::findChunkArrayOffset(cluster->getWorldcoord());
-        sql = "INSERT INTO LAYERS VALUES(?, ?, ?);";
-
-        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-
-
-    }
-
-    /////////////////
-    // CHUNK SECTION
-    /////////////////
-
-    int createNewChunkDatabase(REGIONCOORD regioncoord){
-        sqlite3 *db;
-        std::string sql;
-        sqlite3_stmt *stmt;
-        int rc;
-
-        std::string path = REGION::prependWorldDir(REGION::parseRegioncoordToFname(regioncoord));
+        si;
+        std::string path = FTOOLS::parseFullPathFromRegionCoord(regionToSaveTo, FTOOLS::TYPE::ENTITY);
         rc = sqlite3_open(path.c_str(), &db);
 
         if(rc) {
-            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-            return(rc);
+            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+            if (!fixDBStructure()){
+                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                so;
+                return(rc);
+            } else {
+                info << "Fixed database structure, continuing.." << nl;
+                rc = sqlite3_open(path.c_str(), &db);
+                if(rc) {
+                    err << "Tried opening database but could not open after fix :'(" << nl;
+                    so;
+                    return rc;
+                }
+            }
         }
+        /*
+         * Scan each entity and compare the regioncoord it was in to the one its currently in now
+         * If there is a difference, mark the UUID for special handling
+         */
 
-        sql = "CREATE TABLE CHUNKS("
-              "LAST_SAVED BIGINT NOT NULL"
-              "RELATIVE_POSITION SMALLINT NOT NULL, "
-              "BLOCKS BLOB);";
+        std::map<long long, COORDINATE::REGIONCOORD> movedUUIDs;
+        std::set<long long> toIgnore;
+        //Unmoved entities should be implicitly allowable to scope of saving, negating this idea
+        //std::map<long long, COORDINATE::REGIONCOORD> unmovedUUIDs;
+
+        for (ENTITY e : *entities){
+
+            //Ensure validity of the regioncoords these entities are in, we dont want to accidentally save something that shouldnt be a part of this database
+            if (regionToSaveTo != e.getLocation().getRegioncoord()) toIgnore.insert(e.getUUID());
+            //If the regioncoords are not the same, indicating the entity has changed location,
+            if (e.getLastSavedLocation().getRegioncoord() != e.getLocation().getRegioncoord()){
+                movedUUIDs.insert({e.getUUID(), e.getLastSavedLocation().getRegioncoord()});
+            } /*else {
+                unmovedUUIDs.insert(std::make_pair(e.getUUID(), e.getLastSavedLocation().getRegioncoord()));
+            }*/
+
+        }
+        info << "Saving " << entities->size() << " entities to region " << regionToSaveTo.x << ", " << regionToSaveTo.y << nl;
+        //Rather have a duplicate than no entity, therefore load the entities as entries into the database using one transaction:
+
+        sql = "BEGIN TRANSACTION;";
 
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            std::cerr << "Error preparing entityDatabase creation statement for path: "<< path << std::endl;
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
             sqlite3_close(db);
+            so;
             return(rc);
         }
 
         rc = sqlite3_step(stmt);
         if (!rc){
-            std::cerr << "Error executing entityDatabase creation sql statement, but passed preparation for path: " << path << std::endl;
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
             sqlite3_close(db);
+            so;
             return(rc);
         }
 
-        sql = "INSERT INTO CHUNKS VALUES(?, ?, NULL);";
+        long long currentTime = TIMETOOLS::getCurrentEpochTime();
+        std::vector<char> data;
 
+        sql = "INSERT INTO ENTITIES(ID, X, Y, Z, DATA) VALUES(?,?,?,?,?) "
+              "ON CONFLICT(ID) DO "
+              "UPDATE SET X=?, Y=?, Z=?, DATA=?;";
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            std::cerr << "Error preparing entityDatabase creation statement for path: "<< path << std::endl;
+            err << "Error preparing: "<< sql << "\", code " << rc << "; Skipping this statement. \n" << sqlite3_errmsg(db) << std::endl;
             sqlite3_close(db);
+            so;
             return(rc);
         }
 
-        long long currentTime = getCurrentEpochTime();
-        sqlite3_bind_int(stmt, 1, currentTime);
+        sw sw;
 
-        for (short pos = 0; pos < 16384; pos++){
+        for (ENTITY e : *entities){
+            if (toIgnore.contains(e.getUUID())) continue;
+            //Perform work on the entitiy so we can have all data handled when we start binding data
+            e.updateTimestamp(currentTime);
+            e.serializeEntity(&data);
 
-            sqlite3_bind_int(stmt, 2, pos);
+            //Bind all of our data
+            sqlite3_bind_int64(stmt, 1, e.getUUID());
+            sqlite3_bind_int64(stmt, 2, e.getLocation().x);
+            sqlite3_bind_int64(stmt, 3, e.getLocation().y);
+            sqlite3_bind_int(stmt, 4, e.getLocation().z);
+            sqlite3_bind_blob(stmt, 5, data.data(), data.size(), SQLITE_STATIC);
 
+            //Second half of the statement
+            sqlite3_bind_int64(stmt, 6, e.getLocation().x);
+            sqlite3_bind_int64(stmt, 7, e.getLocation().y);
+            sqlite3_bind_int(stmt, 8, e.getLocation().z);
+            sqlite3_bind_blob(stmt, 9, data.data(), data.size(), SQLITE_STATIC);
+
+            //Step through after data binds are complete to
             sqlite3_step(stmt);
-
             sqlite3_reset(stmt);
+            sw.lap();
 
+        }
+        sw.laprs();
+        info << "Transacting entities.." << nl;
+
+        sql = "END TRANSACTION;";
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made.\n" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_close(db);
+            so;
+            return(rc);
         }
 
         rc = sqlite3_finalize(stmt);
-        std::cout << "INFO: Database primer finished, created 16384 shell records in region \'" << regioncoord.getX() << ", " << regioncoord.getZ() << "\'" << std::endl;
-
-        return (rc);
-    }
-
-/**
-     * Reads the chunk data from the database and overwrites the chunk given with the new dataset
-     * FIXME: FINISHED, UNTESTED
-     */
-    static int readChunkData(chunk * c) {
-        sqlite3 *db;
-        std::string sql;
-        sqlite3_stmt *stmt;
-        int rc;
-
-        std::string path = REGION::prependWorldDir(
-                REGION::parseRegioncoordToFname(c->location.getRegionCoordinates()));
-        rc = sqlite3_open(path.c_str(), &db);
-
-        if (rc) {
-            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-            return rc;
-        }
-
-        int pos = REGION::findChunkArrayOffset(c->location);
-
-        /*
-         * "CREATE TABLE CHUNKS("
-              "LAST_SAVED BIGINT NOT NULL"
-              "RELATIVE_POSITION SMALLINT NOT NULL, "
-              "BLOCKS BLOB);";
-         */
-
-        sql = "SELECT BLOCKS FROM CHUNKS WHERE RELATIVE_POSITION = ?;";
-        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
+        if (rc){
+            err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made" << sqlite3_errmsg(db) << std::endl;
             sqlite3_close(db);
-            return rc;
+            so;
+            return(rc);
         }
-
-        rc = sqlite3_bind_int(stmt, 1, pos);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-
-        rc = sqlite3_step(stmt);
-        if (rc == SQLITE_ROW){
-            const void* data = sqlite3_column_blob(stmt, 0);
-            int blobSize = sqlite3_column_bytes(stmt, 0);
-            std::vector<int> blobVec(static_cast<const int*>(data), static_cast<const int*>(data) + blobSize);
-            c->deserialize2(blobVec);
-        } else {
-            std::cout << "ERROR: Nothing was found for the chunk " << pos << " (" << c->location.getX() << "x, " << c->location.getZ() << "z)" << std::endl;
-        }
-        return rc;
-    }
-
-    /**
-     * Will write the entire chunk to the database.
-     * @param cluster The entity cluster that holds the data you want to write
-     * @return The output status code of the SQL ran
-     * FIXME: FINISHED, UNTESTED
-     */
-    static int writeChunkData(chunk * c){
-        sqlite3 *db;
-        std::string sql;
-        sqlite3_stmt *stmt = nullptr;
-        int rc;
-
-        std::string path = REGION::prependWorldDir(
-                REGION::parseRegioncoordToFname(c->location.getRegionCoordinates()));
-        rc = sqlite3_open(path.c_str(), &db);
-
-        if (rc) {
-            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-            return rc;
-        }
-
-        int pos = REGION::findChunkArrayOffset(c->location);
-
-        /*"CREATE TABLE CHUNKS("
-             "LAST_SAVED BIGINT NOT NULL"
-             "RELATIVE_POSITION SMALLINT NOT NULL, "
-             "ENTITIES BLOB);"
-             */
-
-        long long currentTime = getCurrentEpochTime();
-
-        sql = "UPDATE CHUNKS SET LAST_SAVED = ?, DATA = ? WHERE POSITION = ?;";
-
-        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-
-        auto data = c->serialize2();
-        sqlite3_bind_int(stmt, 3, pos);
-        sqlite3_bind_int(stmt, 1, currentTime);
-        sqlite3_bind_blob(stmt, 2, data.data(), data.size(), SQLITE_STATIC);
-
-        rc = sqlite3_step(stmt);
-        if (rc) {
-            printf("PrepError executing sql statement\n");
-            sqlite3_close(db);
-            return rc;
-        }
-
-        sqlite3_finalize(stmt);
         sqlite3_close(db);
-        return rc;
+        sw.lap();
+        info << "Finished transaction" << nl;
+
+        //We can assume now that the call to the entity database is finished and we dont have to worry about it anymore.
+        // Now we have to handle all the records that we know overlap with another region. All we have to do is organize the areas to delete UUIDS from
+        if (movedUUIDs.empty()){
+            info << "Entity saving finished" << nl;
+            so;
+            return 0;
+        }
+
+        COORDINATE::REGIONCOORD currentRegionCoord = movedUUIDs[0];
+        std::set<COORDINATE::REGIONCOORD> handled;
+        std::vector<long long> toDelete;
+        long long numDuplicates = movedUUIDs.size();
+        long long currentCount = 0;
+
+        while(currentCount < numDuplicates) {
+            //Organize the ones we want to work on now into a nice vector
+            for (auto e: movedUUIDs) {
+                if (e.second == currentRegionCoord) {
+                    toDelete.push_back(e.first);
+                    currentCount++;
+                }
+            }
+
+            //instead of reducing the size of the vector, count the amount of elements in the movedUUIDs and whileloop until we hit that number
+
+            //Get the database that we want to manipulate here
+            path = FTOOLS::parseFullPathFromRegionCoord(currentRegionCoord, FTOOLS::TYPE::ENTITY);
+            rc = sqlite3_open(path.c_str(), &db);
+
+            if(rc) {
+                info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+                if (!fixDBStructure()){
+                    err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                    so;
+                    return(rc);
+                } else {
+                    info << "Fixed database structure, continuing.." << nl;
+                    rc = sqlite3_open(path.c_str(), &db);
+                    if(rc) {
+                        err << "Tried opening database but could not open after fix :'(" << nl;
+                        so;
+                        return rc;
+                    }
+                }
+            }
+            sql = "BEGIN TRANSACTION;";
+
+            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)) {
+                err << "Error preparing: " << sql << "\", code " << rc
+                          << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db)
+                          << std::endl;
+                sqlite3_close(db);
+                so;
+                return (rc);
+            }
+
+            rc = sqlite3_step(stmt);
+            if (!rc) {
+                err << "Error stepping: \"" << sql << "\", code " << rc
+                          << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db)
+                          << std::endl;
+                sqlite3_close(db);
+                so;
+                return (rc);
+            }
+
+            sql = "DELETE FROM ENTITIES WHERE UUID=?;";
+
+            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)) {
+                err << "Error preparing: " << sql << "\", code " << rc << ";\n" << sqlite3_errmsg(db)
+                          << std::endl;
+                sqlite3_close(db);
+                so;
+                return (rc);
+            }
+
+            for (auto i: toDelete) {
+                sqlite3_bind_int64(stmt, 1, i);
+                sqlite3_step(stmt);
+                sqlite3_reset(stmt);
+            }
+
+            rc = sqlite3_finalize(stmt);
+            if (!rc) {
+                err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made"
+                          << std::endl << sqlite3_errmsg(db) << std::endl;
+                sqlite3_close(db);
+                so;
+                return (rc);
+            }
+            sqlite3_close(db);
+
+            //Cleanup and mark this sector as done
+            handled.insert(currentRegionCoord);
+            toDelete.clear();
+
+            //Select another coordinate not handled
+            for (auto it: movedUUIDs) {
+                if (handled.contains(it.second)){
+                    continue;
+                } else {
+                    currentRegionCoord = it.second;
+                }
+
+            }
+        }
+        info << "Entity deduplication finished" << nl;
+        so;
+        return 0;
     }
 };
 #endif //HALCYONICUS_HDB_H
