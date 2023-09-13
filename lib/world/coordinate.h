@@ -42,10 +42,14 @@ public:
 
         WORLDCOORD()= default;
 
-        REGIONCOORD getRegioncoord(){
+        [[nodiscard]] REGIONCOORD getRegioncoord() const{
             int x1 = this->x >> 6;
             int y1 = this->y >> 6;
             return {x1, y1};
+        }
+
+        COORDINATE getCoordinate() const{
+            return { this->x << 6, this->y << 6, 0};
         }
 
         friend bool operator!=(const WORLDCOORD& lhs, const WORLDCOORD& rhs) {
@@ -69,13 +73,13 @@ public:
 
         ENTITYCOORD() = default;
 
-        WORLDCOORD getWorldcoord(){
-            int x1 = ( this->x/1000 ) >> 6;
-            int y1 = ( this->y/1000 ) >> 6;
-            return {x1, y1};
+        [[nodiscard]] WORLDCOORD getWorldcoord() const{
+            long long x1 = ( this->x/1000 ) >> 6;
+            long long y1 = ( this->y/1000 ) >> 6;
+            return {(int) x1, (int) y1};
         }
 
-        REGIONCOORD getRegioncoord(){
+        [[nodiscard]] REGIONCOORD getRegioncoord() const{
             return getWorldcoord().getRegioncoord();
         }
 
@@ -103,7 +107,7 @@ public:
 
     COORDINATE()= default;
 
-    WORLDCOORD getWorldcoord(){
+    [[nodiscard]] WORLDCOORD getWorldcoord() const{
         int x1 = ( (int) this->x ) >> 6;
         int y1 = ( (int) this->y ) >> 6;
         return {x1, y1};

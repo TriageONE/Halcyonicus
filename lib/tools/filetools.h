@@ -6,6 +6,8 @@
 #define HALCYONICUS_FILETOOLS_H
 #ifdef WIN32
 #include <windows.h>
+#else
+#include <sys/stat.h>
 #endif
 #include "../logging/hlogger.h"
 #include "../world/coordinate.h"
@@ -19,7 +21,7 @@ class FTOOLS{
 #if(WIN32)
     static constexpr auto dirs = {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data", "\\world\\blocks", "\\world\\data"};
 #else
-    const std::array<std::filesystem::path, 4> dirs {"./world", "./world/entities", "./world/players", "./world/data", "./world/blocks", "./world/data"};
+    static constexpr auto dirs = {"./world", "./world/entities", "./world/players", "./world/data", "./world/blocks", "./world/data"};
 #endif
 
 public:
@@ -47,7 +49,7 @@ public:
         struct stat s{};
 
         for (const std::filesystem::path& path : dirs){
-            std::cout << "Checking for " << path << std::endl;
+            info << "Checking for " << path << std::endl;
             stat(path.c_str(), &s);
 
             if (!S_ISDIR(s.st_mode)){
@@ -91,10 +93,10 @@ public:
         #else
         struct stat s{};
         for (const std::filesystem::path& path : dirs){
-            cout << "Checking for " << path.c_str()  << endl;
+            info << "Checking for " << path.c_str()  << std::endl;
             stat(path.c_str(), &s);
             if (!S_ISDIR(s.st_mode)){
-                cout << "Path of " << path  << " does not exist!" << endl;
+                warn << "Path of " << path  << " does not exist!" << std::endl;
                 so;
                 return false;
             }
@@ -151,7 +153,7 @@ public:
         #if defined(WIN32)
         ss << ".\\world\\" << t << "\\" << in;
         #else
-        ss << "./" << t << "/" << in;
+        ss << "./world/" << t << "/" << in;
         #endif
         return ss.str();
     }

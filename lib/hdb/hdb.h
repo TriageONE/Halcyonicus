@@ -54,7 +54,7 @@ public:
      * @param type the type of database to create
      * @return the SQL integer return code
      */
-    int createNewDatabase(COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type){
+    static int createNewDatabase(COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type){
         sqlite3 *db;
         std::string sql;
         sqlite3_stmt *stmt;
@@ -217,18 +217,16 @@ public:
             //If the regioncoords are not the same, indicating the entity has changed location,
             if (e.getLastSavedLocation().getRegioncoord() != e.getLocation().getRegioncoord()){
                 movedUUIDs.insert({e.getUUID(), e.getLastSavedLocation().getRegioncoord()});
-            } /*else {
-                unmovedUUIDs.insert(std::make_pair(e.getUUID(), e.getLastSavedLocation().getRegioncoord()));
-            }*/
-
+            }
         }
         info << "Saving " << entities->size() << " entities to region " << regionToSaveTo.x << ", " << regionToSaveTo.y << nl;
         //Rather have a duplicate than no entity, therefore load the entities as entries into the database using one transaction:
 
         sql = "BEGIN TRANSACTION;";
 
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
             err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -237,6 +235,7 @@ public:
         rc = sqlite3_step(stmt);
         if (!rc){
             err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -250,6 +249,7 @@ public:
               "UPDATE SET X=?, Y=?, Z=?, DATA=?;";
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
             err << "Error preparing: "<< sql << "\", code " << rc << "; Skipping this statement. \n" << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -288,6 +288,7 @@ public:
         sql = "END TRANSACTION;";
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
             err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made.\n" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -296,6 +297,7 @@ public:
         rc = sqlite3_step(stmt);
         if (!rc){
             err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -304,6 +306,7 @@ public:
         rc = sqlite3_finalize(stmt);
         if (rc){
             err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made" << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -323,7 +326,7 @@ public:
         COORDINATE::REGIONCOORD currentRegionCoord = movedUUIDs[0];
         std::set<COORDINATE::REGIONCOORD> handled;
         std::vector<long long> toDelete;
-        long long numDuplicates = movedUUIDs.size();
+        unsigned long numDuplicates = movedUUIDs.size();
         long long currentCount = 0;
 
         while(currentCount < numDuplicates) {
@@ -363,6 +366,7 @@ public:
                 err << "Error preparing: " << sql << "\", code " << rc
                           << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db)
                           << std::endl;
+                sqlite3_finalize(stmt);
                 sqlite3_close(db);
                 so;
                 return (rc);
@@ -373,6 +377,7 @@ public:
                 err << "Error stepping: \"" << sql << "\", code " << rc
                           << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db)
                           << std::endl;
+                sqlite3_finalize(stmt);
                 sqlite3_close(db);
                 so;
                 return (rc);
@@ -383,6 +388,7 @@ public:
             if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)) {
                 err << "Error preparing: " << sql << "\", code " << rc << ";\n" << sqlite3_errmsg(db)
                           << std::endl;
+                sqlite3_finalize(stmt);
                 sqlite3_close(db);
                 so;
                 return (rc);
@@ -421,6 +427,192 @@ public:
         info << "Entity deduplication finished" << nl;
         so;
         return 0;
+    }
+
+    static int deleteEntitiesByUUID(std::vector<ENTITY> * entities, COORDINATE::REGIONCOORD regionToDeleteFrom){
+        sqlite3 *db;
+        std::string sql;
+        sqlite3_stmt *stmt;
+        int rc;
+
+        si;
+
+        std::string path = FTOOLS::parseFullPathFromRegionCoord(regionToDeleteFrom, FTOOLS::TYPE::ENTITY);
+        rc = sqlite3_open(path.c_str(), &db);
+
+        if(rc) {
+            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+            if (!fixDBStructure()){
+                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                so;
+                return(rc);
+            } else {
+                info << "Fixed database structure, continuing.." << nl;
+                rc = sqlite3_open(path.c_str(), &db);
+                if(rc) {
+                    err << "Tried opening database but could not open after fix :'(" << nl;
+                    so;
+                    return rc;
+                }
+            }
+        }
+
+        std::vector<unsigned long long> toDelete;
+
+        for (ENTITY e : *entities){
+
+            //Ensure validity of the regioncoords these entities are in, we dont want to accidentally save something that shouldnt be a part of this database
+            if (regionToDeleteFrom == e.getLocation().getRegioncoord()) toDelete.push_back(e.getUUID());
+        }
+
+        info << "Deleting " << entities->size() << " entities to region " << regionToDeleteFrom.x << ", " << regionToDeleteFrom.y << nl;
+
+        sql = "BEGIN TRANSACTION;";
+
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        sql = "DELETE FROM ENTITIES WHERE UUID=?;";
+
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; Skipping this statement. \n" << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        sw sw;
+
+        for (auto u : toDelete){
+            sqlite3_bind_int64(stmt, 1, u);
+            sqlite3_step(stmt);
+            sqlite3_reset(stmt);
+            sw.lap();
+        }
+
+        sw.laprs();
+        info << "Transacting entities.." << nl;
+
+
+        sql = "END TRANSACTION;";
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made.\n" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        rc = sqlite3_finalize(stmt);
+        if (rc){
+            err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made" << sqlite3_errmsg(db) << std::endl;
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+        sqlite3_close(db);
+        sw.lap();
+        info << "Finished transaction" << nl;
+        so;
+        return rc;
+
+    }
+
+    /**
+     * The intended behavior of this is to be able to recall entire chunks at once.
+     * recalling entities assumes that the current data within the entity vector shall treat
+     * all data pulled from the database as older, therefore if there is a conflict and the
+     * vector contains an entity by UUID that happens to be currently within the database, the
+     * entity will not be overridden and the entity within the vector shall not be touched.
+     *
+     * The reasoning behind this is that any entity in play is assumed to have more relevant,
+     * newer data than that of persistent storage, so subsequent reads to a vector that contains
+     * duplicate entires shall not be honored.
+     * @param entities
+     * @param squareStart
+     * @param squareEnd
+     * @return
+     */
+    static int recallEntitiesFromRange(std::vector<ENTITY> * entities, COORDINATE::WORLDCOORD chunk){
+
+        sqlite3 *db;
+        std::string sql;
+        sqlite3_stmt *stmt;
+        int rc;
+
+        si;
+
+        std::string path = FTOOLS::parseFullPathFromRegionCoord(chunk.getRegioncoord(), FTOOLS::TYPE::ENTITY);
+        rc = sqlite3_open(path.c_str(), &db);
+
+        if(rc) {
+            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+            if (!fixDBStructure()){
+                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                so;
+                return(rc);
+            } else {
+                info << "Fixed database structure, continuing.." << nl;
+                rc = sqlite3_open(path.c_str(), &db);
+                if(rc) {
+                    err << "Tried opening database but could not open after fix :'(" << nl;
+                    so;
+                    return rc;
+                }
+            }
+        }
+
+        info << "Deleting " << entities->size() << " entities to region " << chunk.getRegioncoord().x << ", " << chunk.getRegioncoord().y << nl;
+
+        sql = "BEGIN TRANSACTION;";
+
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        COORDINATE upperExtent, lowerExtent;
+
+        upperExtent.
+
+        sql = "SELECT (ID, X, Y, Z, DATA) FROM ENTITIES WHERE "
+
     }
 };
 #endif //HALCYONICUS_HDB_H

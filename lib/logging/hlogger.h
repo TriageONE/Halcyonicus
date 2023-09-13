@@ -11,6 +11,8 @@
 #include <fstream>
 #include <stack>
 #include <chrono>
+#include <thread>
+#include <chrono>
 
 #define nl std::endl
 
@@ -226,14 +228,14 @@ namespace hlogger{
             const auto finish = std::chrono::high_resolution_clock::now();
             const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
             start = std::chrono::high_resolution_clock::now();
-            chron << "FIN, LAP " << delta/1000 << "ms"<< nl;
+            chron << "FIN, LAP " << ((double)delta)/1000000.0 << "ms"<< nl;
         }
 
         void lap(){
             const auto finish = std::chrono::high_resolution_clock::now();
             const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
             start = std::chrono::high_resolution_clock::now();
-            chron << "LAP " << delta/1000 << "ms" << nl;
+            chron << "LAP " << ((double)delta)/1000000.0 << "ms" << nl;
         }
     };
 
