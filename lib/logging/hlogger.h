@@ -213,6 +213,7 @@ namespace hlogger{
 
     class sw{
         std::chrono::steady_clock::time_point start;
+        std::chrono::steady_clock::time_point now;
     public:
         sw(){
             start = std::chrono::high_resolution_clock::now();
@@ -226,16 +227,18 @@ namespace hlogger{
 
         void laprs(){
             const auto finish = std::chrono::high_resolution_clock::now();
-            const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-            start = std::chrono::high_resolution_clock::now();
-            chron << "FIN, LAP " << ((double)delta)/1000000.0 << "ms"<< nl;
+            const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-now).count();
+            const auto total = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+            now = finish;
+            start = now;
+            chron << "FIN: " << ((double)total)/1000000.0 << "ms; LAP: " << ((double)delta)/1000000.0 << "ms"<< nl;
         }
 
         void lap(){
             const auto finish = std::chrono::high_resolution_clock::now();
-            const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-            start = std::chrono::high_resolution_clock::now();
-            chron << "LAP " << ((double)delta)/1000000.0 << "ms" << nl;
+            const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-now).count();
+            now = finish;
+            chron << "LAP: " << ((double)delta)/1000000.0 << "ms" << nl;
         }
     };
 

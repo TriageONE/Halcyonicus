@@ -2,29 +2,26 @@
 
 #include <vector>
 #include "lib/entity/entity.h"
-#include "lib/hdb/hdb.h"
-
+#include "lib/world/block.h"
 
 
 int main(int argc, char* argv[])
 {
 
-    using namespace hlogger;
-    ENTITY e2({1626, 10, 91234519}, 100, "basic");
-    ENTITY e1({152, 19, 8885584}, 90, "another type");
-    ENTITY e3({600, 50, 959}, 80, "third");
+    std::cout << "beginning block construction" << std::endl;
+    BLOCK b1;
+    b1.type=60291;
+    b1.orientation = BLOCK::ORIENTATION::EAST;
+    b1.location = {123, 525, 2333};
 
-    std::vector<ENTITY> ve {e1, e2, e3};
+    char blk[9];
 
-    HDB h;
-    h.createNewDatabase({0,0}, FTOOLS::TYPE::ENTITY);
+    b1.serialize(blk);
 
-    h.saveEntitiesToDatabase(&ve, {0,0});
-
-    si;
-    info << "lole" << nl;
-    so;
-
+    BLOCK b2;
+    b2.deserialize(blk);
+    b1.out();
+    b2.out();
 
 
     return 0;

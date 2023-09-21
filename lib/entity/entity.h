@@ -55,16 +55,16 @@ class ENTITY {
 
 public:
 
-    ENTITY(COORDINATE::ENTITYCOORD location, float facing, std::string type, unsigned long long uuid) {
+    ENTITY(COORDINATE::ENTITYCOORD location, std::string type, unsigned long long uuid) {
         this->location = location;
         this->type = std::move(type);
-        this->facing = facing;
+        this->facing = 0;
         this->uuid = uuid;
     }
 
-    ENTITY(COORDINATE::ENTITYCOORD location, float facing, std::string type) {
+    ENTITY(COORDINATE::ENTITYCOORD location, std::string type) {
         this->location = location;
-        this->facing = facing;
+        this->facing = 0;
         this->type = std::move(type);
         generateAndSetNewUUID();
     }
@@ -72,12 +72,6 @@ public:
     ENTITY() {
         this->errored = true;
         this->missingType = true;
-        generateAndSetNewUUID();
-    }
-
-    ENTITY(std::string type) {
-        this->location = COORDINATE::ENTITYCOORD();
-        this->type = std::move(type);
         generateAndSetNewUUID();
     }
 

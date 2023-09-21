@@ -4,6 +4,9 @@
 
 #ifndef HALCYONICUS_COORDINATE_H
 #define HALCYONICUS_COORDINATE_H
+#include <iostream>
+#include <sstream>
+
 class COORDINATE {
 public:
     class REGIONCOORD{
@@ -50,6 +53,15 @@ public:
 
         COORDINATE getCoordinate() const{
             return { this->x << 6, this->y << 6, 0};
+        }
+
+        short getOffset() const{
+            return (((x % 64) * 64) + y % 64);
+        }
+
+        void setFromOffset(short offset) {
+            x = offset / 64;
+            y = offset % 64;
         }
 
         friend bool operator!=(const WORLDCOORD& lhs, const WORLDCOORD& rhs) {
@@ -107,10 +119,30 @@ public:
 
     COORDINATE()= default;
 
+    int getChunkOffset() {
+        // Ensure X and Y are within the range 0-63
+        x = std::max(0, std::min(63, x));
+        y = std::max(0, std::min(63, y));
+        // Combine X, Y, and Z into a single integer
+        return ((x % 64) << 22) | ((y % 64) << 16) | z;
+    }
+
+    void setFromOffset(int encodedValue) {
+        x = (encodedValue >> 22) & 0x3F;  // Extract the first 6 bits
+        y = (encodedValue >> 16) & 0x3F;  // Extract the next 6 bits
+        z = encodedValue & 0xFFFF;        // Extract the last 16 bits
+    }
+
     [[nodiscard]] WORLDCOORD getWorldcoord() const{
         int x1 = ( (int) this->x ) >> 6;
         int y1 = ( (int) this->y ) >> 6;
         return {x1, y1};
+    }
+
+    std::string getString(){
+        std::stringstream ss;
+        ss << "X:" << x << ", Y:" << y << ", Z:" << z;
+        return ss.str();
     }
 
     REGIONCOORD getRegioncoord(){

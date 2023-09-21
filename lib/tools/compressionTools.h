@@ -7,13 +7,11 @@
 #include <iostream>
 #include <vector>
 #include <zlib.h>
-class COMPRESSION_TOOLS{
 
-
-    //I had ChatGPT generate these, so its worth testing first to see if it just works or now
-
+class CTOOLS{
+public:
     //FIXME: Needs testing
-    static std::vector<char> decompressData(const std::vector<char>& compressedData, std::size_t uncompressedSize) {
+    static std::vector<char> decompressDataV1(const std::vector<char>& compressedData, std::size_t uncompressedSize) {
         std::vector<char> decompressedData;
 
         z_stream stream;
@@ -58,7 +56,7 @@ class COMPRESSION_TOOLS{
     }
 
     //FIXME: Needs testing
-    static std::vector<char> compressData(const std::vector<char>& input) {
+    static std::vector<char> compressDataV1(const std::vector<char>& input) {
         std::vector<char> compressedData;
 
         z_stream stream;
@@ -100,6 +98,58 @@ class COMPRESSION_TOOLS{
         deflateEnd(&stream);
 
         return compressedData;
+    }
+
+    static void compress(std::vector<char>* input, std::vector<char>* output) {
+        z_stream zs;
+        memset(&zs, 0, sizeof(zs));
+
+        if (deflateInit(&zs, Z_BEST_COMPRESSION) != Z_OK) {
+            std::cerr << "deflateInit failed" << std::endl;
+            return;
+        }
+
+        zs.next_in = reinterpret_cast<Bytef*>(&(*input)[0]);
+        zs.avail_in = input->size();
+        zs.next_out = reinterpret_cast<Bytef*>(&(*output)[0]);
+        zs.avail_out = output->size();
+
+        if (deflate(&zs, Z_FINISH) != Z_STREAM_END) {
+            deflateEnd(&zs);
+            std::cerr << "deflate failed" << std::endl;
+            return;
+        }
+
+        deflateEnd(&zs);
+
+        // Resize the output vector to the actual compressed data size
+        output->resize(output->size() - zs.avail_out);
+    }
+
+    static void decompress(std::vector<char>* input, std::vector<char>* output) {
+        z_stream zs;
+        memset(&zs, 0, sizeof(zs));
+
+        if (inflateInit(&zs) != Z_OK) {
+            std::cerr << "inflateInit failed" << std::endl;
+            return;
+        }
+
+        zs.next_in = reinterpret_cast<Bytef*>(&(*input)[0]);
+        zs.avail_in = input->size();
+        zs.next_out = reinterpret_cast<Bytef*>(&(*output)[0]);
+        zs.avail_out = output->size();
+
+        if (inflate(&zs, Z_FINISH) != Z_STREAM_END) {
+            inflateEnd(&zs);
+            std::cerr << "inflate failed" << std::endl;
+            return;
+        }
+
+        inflateEnd(&zs);
+
+        // Resize the output vector to the actual decompressed data size
+        output->resize(output->size() - zs.avail_out);
     }
 };
 #endif //HALCYONICUS_COMPRESSIONTOOLS_H
