@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 link_directories(./lib ./hsrv ./graphics)
 
-add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c lib/world/block.h)
+add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c lib/world/block.h lib/hdb/hdb.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)

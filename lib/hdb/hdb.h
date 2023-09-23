@@ -33,6 +33,7 @@ public:
     static bool fixDBStructure(COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type) {
         si;
         if (FTOOLS::checkForDirectoryStructure()){
+            checkSchema(regioncoord, type);
             info << "Directory structure found as present, perhaps there is a permission node missing?" << std::endl;
             so;
             return false;
@@ -49,6 +50,124 @@ public:
                 return false;
             }
         }
+
+    }
+
+    //Verifies if the schema of the database matches
+    static bool checkSchema(COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type){
+        sqlite3 *db;
+        std::string sql;
+        sqlite3_stmt *stmt;
+        int rc;
+        si;
+        std::string path = FTOOLS::prependDirectory(FTOOLS::parseRegioncoordToFilename(regioncoord, type), type);
+        rc = sqlite3_open(path.c_str(), &db);
+
+        if (rc){
+            err << "Database schema check fail, ensure that we can access the file: \"" << path << "\" before checking the structure of our database" << nl;
+            so;
+            return false;
+        }
+
+        std::string tstring;
+
+        switch (type) {
+            case FTOOLS::TYPE::ENTITY:
+                tstring = "ENTITIES";
+                break;
+            case FTOOLS::TYPE::TERRAIN:
+                tstring = "TERRAIN, CLIMATE";
+                break;
+            case FTOOLS::TYPE::BLOCK:
+                tstring = "BLOCKS";
+                break;
+            case FTOOLS::TYPE::DATA:
+                tstring = "DATA";
+                break;
+        }
+
+        sql = "SELECT column_name, data_type "
+              "FROM information_schema.columns "
+              "WHERE table_name = '";
+        sql.append(tstring);
+        sql.append("';");
+
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing " << tstring << " database persistence section creation statement for path: "<< path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error executing " << tstring << " database persistence section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        std::map<std::string, std::string> match;
+        int expectation;
+        switch (type) {
+            case FTOOLS::TYPE::ENTITY:
+                match = {{"ID", "bigint"},
+                         {"TYPE", "text"},
+                         {"X", "bigint"} ,
+                         {"Y", "bigint"} ,
+                         {"Z", "int"}    ,
+                         {"DATA", "blob"}  };
+                expectation = 8;
+                break;
+            case FTOOLS::TYPE::TERRAIN:
+                match = {{"INDEX", "int"},
+                         {"OFFSET", "smallint"},
+                         {"LAYER", "smallint"} ,
+                         {"DATA", "blob"}};
+                expectation = 4;
+                break;
+            case FTOOLS::TYPE::BLOCK:
+                match = {{"OFFSET", "smallint"}, {"DATA", "blob"}};
+                expectation = 3;
+                break;
+            case FTOOLS::TYPE::DATA:
+                match = {{"KEY", "text"}, {"VALUE", "text"}};
+                expectation = 2;
+                break;
+        }
+
+        int count = 0;
+        while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+            count++;
+            int bytes = sqlite3_column_bytes(stmt, 0);
+            const auto* tBytes = static_cast<const unsigned char*>(sqlite3_column_blob(stmt, 0));
+            std::string key; key.assign(reinterpret_cast<const char*>(tBytes), bytes);
+
+            bytes = sqlite3_column_bytes(stmt, 1);
+            tBytes = static_cast<const unsigned char*>(sqlite3_column_blob(stmt, 1));
+            std::string value; value.assign(reinterpret_cast<const char*>(tBytes), bytes);
+
+            if (match.contains(key)){
+                auto pair = match.find(key);
+                if (pair->second != value) {
+                    sqlite3_finalize(stmt);
+                    so;
+                    return false;
+                }
+            } else {
+                sqlite3_finalize(stmt);
+                so;
+                return false;
+            }
+        }
+        sqlite3_finalize(stmt);
+        if (count != expectation) {
+            err << "Expectation failed for schema check, likely missing a required column" << nl;
+            so;
+            return false;
+        }
+        so;
+        return true;
 
     }
 
@@ -130,7 +249,6 @@ public:
                 sql = "CREATE TABLE IF NOT EXISTS BLOCKS("
                       "OFFSET INT NOT NULL PRIMARY KEY AUTOINCREMENT, "
                       "DATA BLOB);";
-                //TODO: Find how the fuck im gonna do this
                 break;
             case FTOOLS::TYPE::DATA:
                 goto skip;
@@ -152,11 +270,11 @@ public:
             return(rc);
         }
         info << "Successful database table creation, creating data table.." << nl;
-        sqlite3_finalize(stmt);
+
         skip:
         sql = "CREATE TABLE IF NOT EXISTS HALDATA("
               "KEY STRING NOT NULL, "
-              "VALUE STRING NOT NULL);";
+              "VALUE TEXT NOT NULL);";
 
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
             err << "Error preparing " << t << " database data section creation statement for path: "<< path << ", error code " << rc << "\"" << sqlite3_errmsg(db) << "\"" << nl;
@@ -1001,19 +1119,24 @@ public:
     // Block Section
     /////////////////
 
-    static int saveBlocks(std::vector<BLOCK> * blocks, COORDINATE::REGIONCOORD regionToSaveTo){
+    /**
+     * Its much easier to just save all the blocks at once so that the chunk is easy to work with
+     * @param chunk
+     * @return
+     */
+    static int saveBlocks(CHUNK * chunk){
 
         sqlite3 *db;
         std::string sql;
         sqlite3_stmt *stmt;
         int rc;
 
-        std::string path = FTOOLS::parseFullPathFromRegionCoord(regionToSaveTo, FTOOLS::TYPE::ENTITY);
+        std::string path = FTOOLS::parseFullPathFromRegionCoord(chunk->location.getRegioncoord(), FTOOLS::TYPE::ENTITY);
         rc = sqlite3_open(path.c_str(), &db);
 
         if(rc) {
             info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
-            if (!fixDBStructure(regionToSaveTo, FTOOLS::ENTITY)){
+            if (!fixDBStructure(chunk->location.getRegioncoord(), FTOOLS::ENTITY)){
                 err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
                 so;
                 return(rc);
@@ -1027,6 +1150,18 @@ public:
                 }
             }
         }
+
+        char tmp[9];
+        std::vector<char> rawBlocks;
+
+        for (auto b : chunk->blocks){
+            b.serialize(tmp);
+            rawBlocks.insert(rawBlocks.end(), tmp, tmp + 9);
+        }
+
+        std::vector<char> compressedBlocks;
+        CTOOLS::compress(&rawBlocks, &compressedBlocks);
+
         // TODO: This.
     }
 };

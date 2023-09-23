@@ -55,7 +55,7 @@ public:
             return { this->x << 6, this->y << 6, 0};
         }
 
-        short getOffset() const{
+        [[nodiscard]] short getOffset() const{
             return (((x % 64) * 64) + y % 64);
         }
 
@@ -139,7 +139,7 @@ public:
         return {x1, y1};
     }
 
-    std::string getString(){
+    std::string getString() const{
         std::stringstream ss;
         ss << "X:" << x << ", Y:" << y << ", Z:" << z;
         return ss.str();

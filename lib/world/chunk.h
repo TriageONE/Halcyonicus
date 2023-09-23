@@ -6,6 +6,10 @@
 #define HALCYONICUS_CHUNK_H
 
 #include "coordinate.h"
+#include "../logging/hlogger.h"
+#include "../world/block.h"
+
+using namespace hlogger;
 
 class CHUNK{
 public:
@@ -94,6 +98,8 @@ public:
     bool existsPersistent = true;
 
     LAYER layers[24];
+
+    std::vector<BLOCK> blocks;
 
     CHUNK() = default;
 
