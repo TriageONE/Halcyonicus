@@ -10,146 +10,120 @@
 
 class CTOOLS{
 public:
-    //FIXME: Needs testing
-    static std::vector<char> decompressDataV1(const std::vector<char>& compressedData, std::size_t uncompressedSize) {
-        std::vector<char> decompressedData;
 
+    static void compressV(std::vector<unsigned char>* input, std::vector<unsigned char>* output) {
+
+        // Perform zlib operation (e.g., compression)
         z_stream stream;
-        stream.zalloc = Z_NULL;
-        stream.zfree = Z_NULL;
-        stream.opaque = Z_NULL;
+        memset(&stream, 0, sizeof(stream));
 
-        // Initialize inflate (decompression) parameters
-        if (inflateInit(&stream) != Z_OK) {
-            std::cerr << "Failed to initialize inflate." << std::endl;
-            return decompressedData;
-        }
+        output->clear();
+        output->resize(128);
 
-        // Set input data
-        stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(compressedData.data()));
-        stream.avail_in = static_cast<uInt>(compressedData.size());
+        stream.avail_in = input->size();
+        stream.next_in = input->data();
 
-        // Decompressed output buffer
-        std::vector<char> decompressedBuffer(uncompressedSize);
+        // Initialize output buffer size
+        stream.avail_out = output->size();
+        stream.next_out = output->data();
 
-        // Decompress the input data
-        do {
-            stream.next_out = reinterpret_cast<Bytef*>(decompressedBuffer.data());
-            stream.avail_out = static_cast<uInt>(decompressedBuffer.size());
+        int result = deflateInit(&stream, Z_DEFAULT_COMPRESSION);
 
-            int inflateResult = inflate(&stream, Z_NO_FLUSH);
-
-            if (inflateResult == Z_STREAM_ERROR) {
-                std::cerr << "Error occurred during decompression." << std::endl;
-                inflateEnd(&stream);
-                return decompressedData;
-            }
-
-            std::size_t decompressedSize = decompressedBuffer.size() - stream.avail_out;
-            decompressedData.insert(decompressedData.end(), decompressedBuffer.begin(), decompressedBuffer.begin() + decompressedSize);
-
-        } while (stream.avail_out == 0);
-
-        inflateEnd(&stream);
-
-        return decompressedData;
-    }
-
-    //FIXME: Needs testing
-    static std::vector<char> compressDataV1(const std::vector<char>& input) {
-        std::vector<char> compressedData;
-
-        z_stream stream;
-        stream.zalloc = Z_NULL;
-        stream.zfree = Z_NULL;
-        stream.opaque = Z_NULL;
-
-        // Initialize deflate (compression) parameters
-        if (deflateInit(&stream, Z_DEFAULT_COMPRESSION) != Z_OK) {
-            std::cerr << "Failed to initialize deflate." << std::endl;
-            return compressedData;
-        }
-
-        // Set input data
-        stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(input.data()));
-        stream.avail_in = static_cast<uInt>(input.size());
-
-        // Compressed output buffer
-        std::vector<char> compressedBuffer(1024);
-
-        // Compress the input data
-        do {
-            stream.next_out = reinterpret_cast<Bytef*>(compressedBuffer.data());
-            stream.avail_out = static_cast<uInt>(compressedBuffer.size());
-
-            int deflateResult = deflate(&stream, Z_FINISH);
-
-            if (deflateResult == Z_STREAM_ERROR) {
-                std::cerr << "Error occurred during compression." << std::endl;
-                deflateEnd(&stream);
-                return compressedData;
-            }
-
-            std::size_t compressedSize = compressedBuffer.size() - stream.avail_out;
-            compressedData.insert(compressedData.end(), compressedBuffer.begin(), compressedBuffer.begin() + compressedSize);
-
-        } while (stream.avail_out == 0);
-
-        deflateEnd(&stream);
-
-        return compressedData;
-    }
-
-    static void compress(std::vector<char>* input, std::vector<char>* output) {
-        z_stream zs;
-        memset(&zs, 0, sizeof(zs));
-
-        if (deflateInit(&zs, Z_BEST_COMPRESSION) != Z_OK) {
+        if (result != Z_OK) {
             std::cerr << "deflateInit failed" << std::endl;
             return;
         }
 
-        zs.next_in = reinterpret_cast<Bytef*>(&(*input)[0]);
-        zs.avail_in = input->size();
-        zs.next_out = reinterpret_cast<Bytef*>(&(*output)[0]);
-        zs.avail_out = output->size();
-
-        if (deflate(&zs, Z_FINISH) != Z_STREAM_END) {
-            deflateEnd(&zs);
-            std::cerr << "deflate failed" << std::endl;
-            return;
+        // Perform compression in a loop
+        while (true) {
+            result = deflate(&stream, Z_FINISH);
+            info << "Result of deflate is " << result << nl;
+            if (result == Z_STREAM_END) {
+                // Compression completed
+                break;
+            } else if (result == Z_BUF_ERROR) {
+                // Output buffer too small, resize it and continue
+                size_t newBufferSize = output->size() * 2; // Double the buffer size (adjust as needed)
+                output->resize(newBufferSize);
+                stream.avail_out = newBufferSize - (stream.next_out - reinterpret_cast<Bytef*>(output->data()));
+            } else if (result != Z_OK) {
+                // Handle other compression errors
+                std::cerr << "deflate failed: " << stream.msg << std::endl;
+                break;
+            }
         }
 
-        deflateEnd(&zs);
-
-        // Resize the output vector to the actual compressed data size
-        output->resize(output->size() - zs.avail_out);
+        deflateEnd(&stream);
+// Resize the compressedData vector to the actual compressed size
+        output->resize(stream.total_out);
+        // Print the compressed data (in binary)
+        std::cout << "Compressed Data:\t";
+        for (unsigned char byte : *output) {
+            std::cout << std::hex << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl;
+        std::cout << "Uncompressed Data:\t";
+        for (unsigned char byte : *input) {
+            std::cout << std::hex << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl;
     }
 
-    static void decompress(std::vector<char>* input, std::vector<char>* output) {
-        z_stream zs;
-        memset(&zs, 0, sizeof(zs));
+    static void decompressV(std::vector<unsigned char>* input, std::vector<unsigned char>* output) {
 
-        if (inflateInit(&zs) != Z_OK) {
+        // Perform zlib decompression
+        z_stream stream;
+        memset(&stream, 0, sizeof(stream));
+
+        output->clear();
+        output->resize(1024);
+
+        stream.avail_in = input->size();
+        stream.next_in = reinterpret_cast<Bytef*>(input->data());
+
+        // Initialize output buffer size
+        stream.avail_out = output->size();
+        stream.next_out = reinterpret_cast<Bytef*>(output->data());
+
+        int result = inflateInit(&stream);
+
+        if (result != Z_OK) {
             std::cerr << "inflateInit failed" << std::endl;
             return;
         }
 
-        zs.next_in = reinterpret_cast<Bytef*>(&(*input)[0]);
-        zs.avail_in = input->size();
-        zs.next_out = reinterpret_cast<Bytef*>(&(*output)[0]);
-        zs.avail_out = output->size();
+        // Perform decompression in a loop
+        while (true) {
+            result = inflate(&stream, Z_FINISH);
 
-        if (inflate(&zs, Z_FINISH) != Z_STREAM_END) {
-            inflateEnd(&zs);
-            std::cerr << "inflate failed" << std::endl;
-            return;
+            if (result == Z_STREAM_END) {
+                // Decompression completed
+                break;
+            } else if (result == Z_BUF_ERROR) {
+                // Output buffer too small, resize it and continue
+                size_t newBufferSize = output->size() * 2; // Double the buffer size (adjust as needed)
+                output->resize(newBufferSize);
+                stream.avail_out = newBufferSize - (stream.next_out - reinterpret_cast<Bytef*>(output->data()));
+            } else if (result != Z_OK) {
+                // Handle other decompression errors
+                std::cerr << "inflate failed: " << stream.msg << std::endl;
+                break;
+            }
         }
 
-        inflateEnd(&zs);
-
-        // Resize the output vector to the actual decompressed data size
-        output->resize(output->size() - zs.avail_out);
+        inflateEnd(&stream);
+        output->resize(stream.total_out);
+        // Print the compressed data (in binary)
+        std::cout << "Compressed Data:\t";
+        for (unsigned char byte : *input) {
+            std::cout << std::hex << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl;
+        std::cout << "Uncompressed Data:\t";
+        for (unsigned char byte : *output) {
+            std::cout << std::hex << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl;
     }
 };
 #endif //HALCYONICUS_COMPRESSIONTOOLS_H
