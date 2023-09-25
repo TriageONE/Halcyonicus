@@ -36,7 +36,7 @@ public:
 
         LAYER(unsigned char level) : level{level} {}
 
-        void serializeLayer(std::vector<char> * dst) {
+        void serializeLayer(std::vector<unsigned char> * dst) {
             dst->clear();
             if (dst->max_size() < 20480)
                 dst->resize(20480);
@@ -60,7 +60,7 @@ public:
             }
         }
 
-        void deserializeLayer(std::vector<char> * src){
+        void deserializeLayer(std::vector<unsigned char> * src){
             if (src->max_size() < 20480) {
                 err << "Deserializing terrain data was less than 20480 bytes, got " << src->size() << " instead, skipping this operation. Terrain for level " << level << " was untouched." << nl;
                 return;
@@ -105,7 +105,7 @@ public:
 
     CHUNK(COORDINATE::WORLDCOORD location) : location{location} {}
 
-    void serializeClimate(std::vector<char> * toEmplaceInto) {
+    void serializeClimate(std::vector<unsigned char> * toEmplaceInto) {
         toEmplaceInto->clear();
         if (toEmplaceInto->max_size() < 512)
             toEmplaceInto->resize(512);
@@ -122,7 +122,7 @@ public:
         }
     }
 
-    void deserializeClimate(std::vector<char> * toReadFrom) {
+    void deserializeClimate(std::vector<unsigned char> * toReadFrom) {
         if (toReadFrom->size() < 512){
             err << "Deserializing climate data was less than 512 bytes, got " << toReadFrom->size() << " instead, skipping this operation. Climate for " << location.x << "x, " << location.y << "y was untouched." << nl;
             return;
