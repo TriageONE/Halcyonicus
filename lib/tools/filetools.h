@@ -41,7 +41,7 @@ public:
             std::string absPath = currentPath;
             absPath.append(path);
             if (CreateDirectoryA(absPath.c_str(), nullptr)){
-                std::cout << "Created " << absPath << std::endl;
+                info << "Created " << absPath << std::endl;
             }
         }
         #else
@@ -56,9 +56,9 @@ public:
                 //Create a directory for the world that is readable and writable for us but not others
                 int dErr = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-                std::cout << "Attempted create on " << path << " with code " << dErr << std::endl;
+                info << "Attempted create on " << path << " with code " << dErr << std::endl;
                 if (dErr == 0) {
-                    std::cout << "Created " << path << std::endl;
+                    info << "Created " << path << std::endl;
                     continue;
                 }
                 std::cerr << "DISK_IO ERROR, CLASS WORLD_INIT; " << path << " Directory creation failed, mkdir error returned \'" << dErr << "\' and ERRNO " << errno << ", currently in " << std::filesystem::current_path() << std::endl;
