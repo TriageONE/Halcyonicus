@@ -32,25 +32,18 @@ public:
 
     static bool fixDBStructure(COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type) {
         si;
-        if (FTOOLS::checkForDirectoryStructure()){
-            checkSchema(regioncoord, type);
-            info << "Directory structure found as present, perhaps there is a permission node missing?" << std::endl;
-            so;
-            return false;
-        } else {
-            info << "Partial/missing directory structure, rebuilding.." << nl;
-            if (FTOOLS::createDirectories()){
-                info << "Created directory structure" << nl;
-                createNewDatabase(regioncoord, type);
-                so;
-                return true;
-            } else {
-                err << "Could not create directory structure" << nl;
-                so;
-                return false;
-            }
+        if (!FTOOLS::checkForDirectoryStructure()){
+            //False, the directories do not exist and must be created
+            err << "Directories were not found, creating new folders for persistent storage" << nl;
+            FTOOLS::createDirectories();
         }
-
+        //The directories are now in place, do we have a database present?
+        if (!checkSchema(regioncoord, type)){
+            err << "Schema check failed, trying to recreate the database with the proper tables" << nl;
+            //The database schema doesnt match, we should create a new database
+            createNewDatabase(regioncoord, type);
+        }
+        return true;
     }
 
     //Verifies if the schema of the database matches
@@ -96,7 +89,7 @@ public:
             err << "Error preparing " << tstring << " database persistence section creation statement for path: "<< path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
             sqlite3_close(db);
             so;
-            return(rc);
+            return false;
         }
 
         rc = sqlite3_step(stmt);
@@ -104,7 +97,7 @@ public:
             err << "Error executing " << tstring << " database persistence section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
             sqlite3_close(db);
             so;
-            return(rc);
+            return false;
         }
 
         std::map<std::string, std::string> match;
@@ -200,7 +193,7 @@ public:
                 t = "data";
                 break;
         }
-        info << "Creating new database: " << t << nl;
+        info << "Creating new database file: " << t << nl;
 
         std::string path = FTOOLS::prependDirectory(FTOOLS::parseRegioncoordToFilename(regioncoord, type), type);
         rc = sqlite3_open(path.c_str(), &db);
@@ -227,7 +220,7 @@ public:
         switch (type) {
             case FTOOLS::TYPE::TERRAIN:
                 sql = "CREATE TABLE IF NOT EXISTS TERRAIN("
-                      "INDEX INTEGER PRIMARY KEY AUTOINCREMENT, "
+                      "INDEX INTEGER PRIMARY KEY, "
                       "OFFSET SMALLINT NOT NULL, "
                       "LAYER SMALLINT NOT NULL, "
                       "DATA TINYBLOB NOT NULL);"
@@ -238,7 +231,7 @@ public:
                 break;
             case FTOOLS::TYPE::ENTITY:
                 sql = "CREATE TABLE IF NOT EXISTS ENTITIES("
-                      "ID BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                      "ID BIGINT NOT NULL PRIMARY KEY, "
                       "TYPE TEXT NOT NULL, "
                       "X BIGINT NOT NULL, "
                       "Y BIGINT NOT NULL, "
@@ -247,7 +240,7 @@ public:
                 break;
             case FTOOLS::TYPE::BLOCK:
                 sql = "CREATE TABLE IF NOT EXISTS BLOCKS("
-                      "OFFSET INT NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                      "OFFSET INT NOT NULL PRIMARY KEY, "
                       "DATA BLOB);";
                 break;
             case FTOOLS::TYPE::DATA:
@@ -309,7 +302,6 @@ public:
     //ENTITY SECTION
     ////////////////
 
-    //TODO: Try this out, i have no idea if this works properly or not
     /**
      * Saving entities is a process more involved than just saving them, deduplication and cascade deletion is
      * paramount to ensuring that entities are handled correctly. This method takes all the entities in the group
@@ -398,7 +390,7 @@ public:
               "ON CONFLICT(ID) DO "
               "UPDATE SET "
               //    7   8    9    10      11
-              "TYPE=? X=?, Y=?, Z=?, DATA=?;";
+              "TYPE=? X=?, Y=?, Z=?, DATA=? WHERE ID=?;";
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
             err << "Error preparing: "<< sql << "\", code " << rc << "; Skipping this statement. \n" << sqlite3_errmsg(db) << std::endl;
             sqlite3_finalize(stmt);
@@ -429,6 +421,7 @@ public:
             sqlite3_bind_int64(stmt, 9, e.getLocation().y); //Y
             sqlite3_bind_int(stmt, 10, e.getLocation().z);  //Z
             sqlite3_bind_blob(stmt, 11, data.data(), data.size(), SQLITE_STATIC); //DATA
+            sqlite3_bind_int64(stmt, 12, e.getUUID());   //ID
 
             //Step through after data binds are complete to
             sqlite3_step(stmt);
@@ -841,12 +834,6 @@ public:
     //TERRAIN SECTION
     /////////////////
 
-    /*
-     * Its worth noting i will not be including some sort of terrain deletion tool. The only thing you should be
-     * able to do is add more to the database and recall what is already there. To delete would be non-beneficial and
-     * should instead take place with tools outside the scope of the server instead
-     */
-
     /**
      * Used to overwrite new data to the database for chunks, based on location. When providing a set of chunks,
      * a region coordinate must be used when doing this, since only one database file can be opened at once.
@@ -916,7 +903,7 @@ public:
             sql = "INSERT INTO CLIMATE(OFFSET, DATA) "
                   "VALUES(?, ?) "
                   "ON CONFLICT (OFFSET) DO "
-                  "UPDATE SET DATA=?";
+                  "UPDATE SET DATA=? WHERE OFFSET=?";
             if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
                 err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
                 sqlite3_finalize(stmt);
@@ -925,14 +912,17 @@ public:
                 return(rc);
             }
             for (auto c : *chunks){
-                std::vector<char> data;
-                std::vector<char> compressedData;
+                std::vector<unsigned char> data;
+                std::vector<unsigned char> compressedData;
                 if (c.changed) {
                     c.serializeClimate(&data);
-                    CTOOLS::compress(&data, &compressedData);
-                    sqlite3_bind_int(stmt, 1, c.location.getOffset());
+                    CTOOLS::compressV(&data, &compressedData);
+                    int offset = c.location.getOffset();
+
+                    sqlite3_bind_int(stmt, 1, offset);
                     sqlite3_bind_blob(stmt, 2, compressedData.data(), compressedData.size(), SQLITE_STATIC);
                     sqlite3_bind_blob(stmt, 3, compressedData.data(), compressedData.size(), SQLITE_STATIC);
+                    sqlite3_bind_int(stmt, 4, offset);
                     sqlite3_step(stmt);
                     sqlite3_reset(stmt);
                 }
@@ -945,7 +935,7 @@ public:
             sql = "INSERT INTO TERRAIN "
                   "VALUES(NULL, ?, ?, ?) "
                   "ON CONFLICT(OFFSET, LAYER) "
-                  "DO UPDATE SET DATA=?;";
+                  "DO UPDATE SET DATA=? WHERE OFFSET=? AND LAYER=?;";
             if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
                 err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
                 sqlite3_finalize(stmt);
@@ -954,17 +944,19 @@ public:
                 return(rc);
             }
             for (auto c : *chunks) {
-                std::vector<char> data;
-                std::vector<char> compressedData;
+                std::vector<unsigned char> data;
+                std::vector<unsigned char> compressedData;
                 int currentLocation = c.location.getOffset();
                 for (auto l : c.layers){
                     if (!l.changed) continue;
                     l.serializeLayer(&data);
-                    CTOOLS::compress(&data, &compressedData);
+                    CTOOLS::compressV(&data, &compressedData);
                     sqlite3_bind_int(stmt, 1, currentLocation);
                     sqlite3_bind_int(stmt, 2, l.level);
                     sqlite3_bind_blob(stmt, 3, compressedData.data(), compressedData.size(), SQLITE_STATIC);
                     sqlite3_bind_blob(stmt, 4, compressedData.data(), compressedData.size(), SQLITE_STATIC);
+                    sqlite3_bind_int(stmt, 5, currentLocation);
+                    sqlite3_bind_int(stmt, 6, l.level);
                     sqlite3_step(stmt);
                     sqlite3_reset(stmt);
                     sw.lap();
@@ -1027,12 +1019,12 @@ public:
         int rc;
 
         for (auto r : regions) {
-            std::string path = FTOOLS::parseFullPathFromRegionCoord(r, FTOOLS::TYPE::ENTITY);
+            std::string path = FTOOLS::parseFullPathFromRegionCoord(r, FTOOLS::TYPE::TERRAIN);
             rc = sqlite3_open(path.c_str(), &db);
 
             if(rc) {
                 info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
-                if (!fixDBStructure(r, FTOOLS::ENTITY)){
+                if (!fixDBStructure(r, FTOOLS::TERRAIN)){
                     err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
                     so;
                     return(rc);
@@ -1068,10 +1060,10 @@ public:
                 if ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
                     const void* blob = sqlite3_column_blob(stmt, 0);
                     int blobSize = sqlite3_column_bytes(stmt, 0);
-                    std::vector<char> data;
-                    std::vector<char> uncompressedData;
+                    std::vector<unsigned char> data;
+                    std::vector<unsigned char> uncompressedData;
                     data.assign(static_cast<const char*>(blob), static_cast<const char*>(blob) + blobSize);
-                    CTOOLS::decompress(&data, &uncompressedData);
+                    CTOOLS::decompressV(&data, &uncompressedData);
                     c.deserializeClimate(&uncompressedData);
                 } else {
                     missingAreas->push_back(c.location);
@@ -1097,10 +1089,10 @@ public:
                     const void* blob = sqlite3_column_blob(stmt, 0);
                     int blobSize = sqlite3_column_bytes(stmt, 0);
                     int layer = sqlite3_column_int(stmt, 1);
-                    std::vector<char> data;
-                    std::vector<char> uncompressedData;
+                    std::vector<unsigned char> data;
+                    std::vector<unsigned char> uncompressedData;
                     data.assign(static_cast<const char*>(blob), static_cast<const char*>(blob) + blobSize);
-                    CTOOLS::decompress(&data, &uncompressedData);
+                    CTOOLS::decompressV(&data, &uncompressedData);
                     c.layers[layer].deserializeLayer(&uncompressedData);
                 }
                 sqlite3_reset(stmt);
@@ -1119,24 +1111,20 @@ public:
     // Block Section
     /////////////////
 
-    /**
-     * Its much easier to just save all the blocks at once so that the chunk is easy to work with
-     * @param chunk
-     * @return
-     */
     static int saveBlocks(CHUNK * chunk){
-
+        si;
         sqlite3 *db;
         std::string sql;
         sqlite3_stmt *stmt;
         int rc;
 
-        std::string path = FTOOLS::parseFullPathFromRegionCoord(chunk->location.getRegioncoord(), FTOOLS::TYPE::ENTITY);
+
+        std::string path = FTOOLS::parseFullPathFromRegionCoord(chunk->location.getRegioncoord(), FTOOLS::TYPE::BLOCK);
         rc = sqlite3_open(path.c_str(), &db);
 
         if(rc) {
             info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
-            if (!fixDBStructure(chunk->location.getRegioncoord(), FTOOLS::ENTITY)){
+            if (!fixDBStructure(chunk->location.getRegioncoord(), FTOOLS::BLOCK)){
                 err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
                 so;
                 return(rc);
@@ -1152,17 +1140,144 @@ public:
         }
 
         char tmp[9];
-        std::vector<char> rawBlocks;
-
+        std::vector<unsigned char> rawBlocks;
+        sw sw;
         for (auto b : chunk->blocks){
             b.serialize(tmp);
             rawBlocks.insert(rawBlocks.end(), tmp, tmp + 9);
         }
 
-        std::vector<char> compressedBlocks;
-        CTOOLS::compress(&rawBlocks, &compressedBlocks);
+        std::vector<unsigned char> compressedBlocks;
+        CTOOLS::compressV(&rawBlocks, &compressedBlocks);
 
-        // TODO: This.
+        sql = "INSERT INTO BLOCKS(OFFSET,DATA) VALUES(?, ?) "
+              "ON CONFLICT(OFFSET) DO "
+              "UPDATE SET DATA=? WHERE OFFSET=?;";
+
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made. " << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+        int offset = chunk->location.getOffset();
+        sqlite3_bind_int(stmt, 1, offset);
+        sqlite3_bind_blob(stmt, 2, compressedBlocks.data(), compressedBlocks.size(), SQLITE_STATIC);
+        sqlite3_bind_blob(stmt, 3, compressedBlocks.data(), compressedBlocks.size(), SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 4, offset);
+
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+        rc = sqlite3_finalize(stmt);
+        if (rc){
+            err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made" << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+        sw.laprs();
+        sqlite3_close(db);
+
+        return rc;
+    }
+
+    static int recallBlocks(CHUNK * chunk){
+        si;
+        sqlite3 *db;
+        std::string sql;
+        sqlite3_stmt *stmt;
+        int rc;
+
+
+        std::string path = FTOOLS::parseFullPathFromRegionCoord(chunk->location.getRegioncoord(), FTOOLS::TYPE::BLOCK);
+        rc = sqlite3_open(path.c_str(), &db);
+
+        if(rc) {
+            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+            if (!fixDBStructure(chunk->location.getRegioncoord(), FTOOLS::BLOCK)){
+                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                so;
+                return(rc);
+            } else {
+                info << "Fixed database structure, continuing.." << nl;
+                rc = sqlite3_open(path.c_str(), &db);
+                if(rc) {
+                    err << "Tried opening database but could not open after fix :'(" << nl;
+                    so;
+                    return rc;
+                }
+            }
+        }
+
+        sql = "SELECT DATA FROM BLOCKS WHERE OFFSET = ?;";
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+        int offset = chunk->location.getOffset();
+        sqlite3_bind_int(stmt, 1, offset);
+        rc = sqlite3_step(stmt);
+        if (!rc){
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            so;
+            return(rc);
+        }
+
+        if ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
+            std::vector<unsigned char> compressedBlocks;
+            std::vector<unsigned char> rawBlocks;
+
+            const void* blob = sqlite3_column_blob(stmt, 0);
+            int blobSize = sqlite3_column_bytes(stmt, 0);
+
+            compressedBlocks.assign(static_cast<const char*>(blob), static_cast<const char*>(blob) + blobSize);
+
+            CTOOLS::decompressV(&compressedBlocks, &rawBlocks);
+
+            if (rawBlocks.size() % 9 != 0){
+                warn << "Sizeof rawBlocks was not perfectly divisible by 9, last block datum will be truncated resulting in data loss/corruption!" << nl;
+            }
+            char tmp[9];
+
+            sw sw;
+            int track = 0;
+            chunk->blocks.clear();
+
+            for (auto c : rawBlocks){
+                tmp[track] = c;
+                if (track <= 8){
+                    track++;
+                } else {
+                    BLOCK b;
+                    b.deserialize(tmp);
+                    chunk->blocks.push_back(b);
+                    track = 0;
+                }
+            }
+            sw.laprs();
+            sqlite3_finalize(stmt);
+            so;
+            return 0;
+        } else {
+            sqlite3_finalize(stmt);
+            info << "No data found at record offset for chunk " << chunk->location.x << "x " << chunk->location.y << "y" << nl;
+            so;
+            return -1;
+        }
     }
 };
 #endif //HALCYONICUS_HDB_H
