@@ -5,16 +5,14 @@
 #ifndef HALCYONICUS_HDB_H
 #define HALCYONICUS_HDB_H
 
-
-#include <set>
 #include "../sqlite/sqlite3.h"
 #include "../world/coordinate.h"
 #include "../tools/filetools.h"
 #include "../entity/entity.h"
-#include "../logging/hlogger.h"
 #include "../world/chunk.h"
 #include "../tools/compressionTools.h"
 #include "../world/block.h"
+#include <set>
 
 /**
  * The point of this class is to abstract all of the database functions
@@ -1056,7 +1054,6 @@ public:
             for (auto c : *chunks){
                 if (c.location.getRegioncoord() != r) continue;
                 sqlite3_bind_int(stmt, 1, c.location.getOffset());
-                rc = sqlite3_step(stmt);
                 if ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
                     const void* blob = sqlite3_column_blob(stmt, 0);
                     int blobSize = sqlite3_column_bytes(stmt, 0);
@@ -1139,7 +1136,7 @@ public:
             }
         }
 
-        char tmp[9];
+        unsigned char tmp[9];
         std::vector<unsigned char> rawBlocks;
         sw sw;
         for (auto b : chunk->blocks){
@@ -1197,7 +1194,6 @@ public:
         sqlite3_stmt *stmt;
         int rc;
 
-
         std::string path = FTOOLS::parseFullPathFromRegionCoord(chunk->location.getRegioncoord(), FTOOLS::TYPE::BLOCK);
         rc = sqlite3_open(path.c_str(), &db);
 
@@ -1227,17 +1223,10 @@ public:
             return(rc);
         }
         int offset = chunk->location.getOffset();
+        info << "Selecting from offset " << offset << nl;
         sqlite3_bind_int(stmt, 1, offset);
-        rc = sqlite3_step(stmt);
-        if (!rc){
-            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
-        }
 
-        if ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
+        if ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
             std::vector<unsigned char> compressedBlocks;
             std::vector<unsigned char> rawBlocks;
 
@@ -1251,18 +1240,19 @@ public:
             if (rawBlocks.size() % 9 != 0){
                 warn << "Sizeof rawBlocks was not perfectly divisible by 9, last block datum will be truncated resulting in data loss/corruption!" << nl;
             }
-            char tmp[9];
+            unsigned char tmp[9];
 
             sw sw;
             int track = 0;
             chunk->blocks.clear();
 
             for (auto c : rawBlocks){
-                tmp[track] = c;
-                if (track <= 8){
+                if (track < 8){
+                    tmp[track] = c;
                     track++;
                 } else {
                     BLOCK b;
+                    tmp[track] = c;
                     b.deserialize(tmp);
                     chunk->blocks.push_back(b);
                     track = 0;
@@ -1270,10 +1260,12 @@ public:
             }
             sw.laprs();
             sqlite3_finalize(stmt);
+            sqlite3_close(db);
             so;
             return 0;
         } else {
             sqlite3_finalize(stmt);
+            sqlite3_close(db);
             info << "No data found at record offset for chunk " << chunk->location.x << "x " << chunk->location.y << "y" << nl;
             so;
             return -1;

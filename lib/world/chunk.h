@@ -5,9 +5,8 @@
 #ifndef HALCYONICUS_CHUNK_H
 #define HALCYONICUS_CHUNK_H
 
-#include "coordinate.h"
-#include "../logging/hlogger.h"
-#include "../world/block.h"
+//#include "../logging/hlogger.h"
+//#include "../world/block.h"
 
 using namespace hlogger;
 
@@ -34,7 +33,7 @@ public:
 
         LAYER() = default;
 
-        LAYER(unsigned char level) : level{level} {}
+        explicit LAYER(unsigned char level) : level{level} {}
 
         void serializeLayer(std::vector<unsigned char> * dst) {
             dst->clear();
@@ -62,10 +61,10 @@ public:
 
         void deserializeLayer(std::vector<unsigned char> * src){
             if (src->max_size() < 20480) {
-                err << "Deserializing terrain data was less than 20480 bytes, got " << src->size() << " instead, skipping this operation. Terrain for level " << level << " was untouched." << nl;
+                //err << "Deserializing terrain data was less than 20480 bytes, got " << src->size() << " instead, skipping this operation. Terrain for level " << level << " was untouched." << nl;
                 return;
             }
-            char height[2];
+            unsigned char height[2];
             for (short x = 0; x <= 63; x++){
                 for (short y = 0; y <= 63; y++){
                     height[0] = src->at(((x * 63) + y) * 2);
@@ -73,7 +72,7 @@ public:
                     this->heights[x][y] = *(short*) height;
                 }
             }
-            char desc[4];
+            unsigned char desc[4];
             for (short x = 0; x <= 63; x++){
                 for (short y = 0; y <= 63; y++){
                     desc[0] = src->at((((x * 63) + y) * 4) + 8193);
@@ -90,8 +89,8 @@ public:
     COORDINATE::WORLDCOORD location;
 
     // Maps denoting the general temperature values from the chunk
-    char    temperature[16][16] {0},
-            humidity[16][16] {0};
+    unsigned char   temperature[16][16] {0},
+                    humidity[16][16] {0};
 
     // Defaultly set to false since we should specify when anything has changed to preserve database writes and reads
     bool changed = false;
@@ -101,9 +100,9 @@ public:
 
     std::vector<BLOCK> blocks;
 
-    CHUNK() = default;
+    CHUNK() {};
 
-    CHUNK(COORDINATE::WORLDCOORD location) : location{location} {}
+    explicit CHUNK(COORDINATE::WORLDCOORD location) : location{location} {}
 
     void serializeClimate(std::vector<unsigned char> * toEmplaceInto) {
         toEmplaceInto->clear();
@@ -124,7 +123,7 @@ public:
 
     void deserializeClimate(std::vector<unsigned char> * toReadFrom) {
         if (toReadFrom->size() < 512){
-            err << "Deserializing climate data was less than 512 bytes, got " << toReadFrom->size() << " instead, skipping this operation. Climate for " << location.x << "x, " << location.y << "y was untouched." << nl;
+            //err << "Deserializing climate data was less than 512 bytes, got " << toReadFrom->size() << " instead, skipping this operation. Climate for " << location.x << "x, " << location.y << "y was untouched." << nl;
             return;
         }
         for (short x = 0; x <= 15; x++){

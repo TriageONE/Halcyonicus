@@ -15,5 +15,17 @@
       <jdbc-url>jdbc:sqlite:C:\Users\aronm\CLionProjects\Halcyonicus\cmake-build-release-dynamic\world\entities\rge_0_0.hdb</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="rgb_0_0" uuid="26fa4081-7aba-4e76-8256-abc14cd849a3">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:C:\Users\aronm\CLionProjects\Halcyonicus\cmake-build-release-dynamic\world\blocks\rgb_0_0.hdb</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <libraries>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.43.0/sqlite-jdbc-3.43.0.0.jar</url>
+        </library>
+      </libraries>
+    </data-source>
   </component>
 </project>

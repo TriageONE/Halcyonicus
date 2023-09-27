@@ -12,11 +12,11 @@
 #include <stack>
 #include <chrono>
 #include <thread>
-#include <chrono>
+#include <utility>
 
 #define nl std::endl
 
-#define sc HLOGGER::clearScopes()
+
 #define si HLOGGER::scopeIn(__LINE__, __FUNCTION__)
 #define so HLOGGER::scopeOut()
 
@@ -62,7 +62,7 @@ namespace hlogger{
 
         public:
             void setIsWriting(bool shouldWrite){ isWriting = shouldWrite; };
-            void setOutFile(std::string file){ outFile = file; };
+            void setOutFile(std::string file){ outFile = std::move(file); };
             void setType(LTYPE type){ loggerType = type; };
 
             LSTREAM(LTYPE ltype) : loggerType{ltype}{};
@@ -212,8 +212,8 @@ namespace hlogger{
     }
 
     class sw{
-        std::chrono::steady_clock::time_point start;
-        std::chrono::steady_clock::time_point now;
+        std::chrono::high_resolution_clock::time_point start;
+        std::chrono::high_resolution_clock::time_point now;
     public:
         sw(){
             start = std::chrono::high_resolution_clock::now();

@@ -6,6 +6,7 @@
 #define HALCYONICUS_TIMETOOLS_H
 
 #include <chrono>
+#include <ctime>
 
 class TIMETOOLS{
 

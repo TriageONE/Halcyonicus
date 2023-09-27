@@ -68,7 +68,7 @@ public:
     COORDINATE location{};
     bool changed = false;
 
-    BLOCK(){};
+    BLOCK()= default;
 
     /**
      * Ok, screw this. The complexity scheme of a block SHOULD already be handled by an
@@ -85,14 +85,14 @@ public:
      * so we can just use an int to store this with wasted data.
      * @param dst
      */
-    void serialize(char dst[9]){
+    void serialize(unsigned char dst[9]){
         int offset = this->location.getChunkOffset();
         ::memcpy(dst, &offset, 4);
         ::memcpy(dst+4, &type, 4);
-        dst[8] = (char) orientation;
+        dst[8] = (unsigned char) orientation;
     }
 
-    void deserialize(char src[9]){
+    void deserialize(unsigned char src[9]){
         int temp = 0;
         ::memcpy(&temp, src, 4);
         location.setFromOffset(temp);
@@ -100,7 +100,7 @@ public:
         orientation = (ORIENTATION) src[8];
     }
 
-    void out(){
+    void out() const{
         std::string facing;
         switch (orientation) {
 
