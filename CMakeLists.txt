@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 link_directories(./lib ./hsrv ./graphics)
 
-add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c lib/world/block.h lib/hdb/hdb.h)
+add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c lib/world/block.h lib/hdb/hdb.h lib/hdb/hdb.h lib/tools/compressionTools.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
@@ -75,3 +75,6 @@ target_include_directories(Halcyonicus PRIVATE ${Stb_INCLUDE_DIR})
 
 find_path(TERMCOLOR_INCLUDE_DIRS "termcolor/termcolor.hpp")
 target_include_directories(Halcyonicus PRIVATE ${TERMCOLOR_INCLUDE_DIRS})
+
+find_package(lz4 CONFIG REQUIRED)
+target_link_libraries(Halcyonicus lz4::lz4)

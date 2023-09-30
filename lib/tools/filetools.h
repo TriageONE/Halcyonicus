@@ -21,12 +21,13 @@ class FTOOLS{
 #if(WIN32)
     static constexpr auto dirs = {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data", "\\world\\blocks", "\\world\\data"};
 #else
-    static constexpr auto dirs = {"./world", "./world/entities", "./world/players", "./world/data", "./world/blocks", "./world/data"};
+    static constexpr auto dirs = {"./world", "./world/world", "./world/entities", "./world/players", "./world/data", "./world/blocks", "./world/data"};
 #endif
 
 public:
     enum TYPE {
         TERRAIN,
+        CLIMATE,
         ENTITY,
         BLOCK,
         DATA
@@ -138,6 +139,7 @@ public:
         std::string t;
         switch (type) {
             case TERRAIN:
+            case CLIMATE:
                 t = "world";
                 break;
             case ENTITY:
@@ -149,6 +151,7 @@ public:
             case DATA:
                 t = "data";
                 break;
+
         }
         #if defined(WIN32)
         ss << ".\\world\\" << t << "\\" << in;
@@ -164,6 +167,7 @@ public:
         char modifier;
         switch (type) {
             case TERRAIN:
+            case CLIMATE:
                 modifier = 't';
                 break;
             case ENTITY:

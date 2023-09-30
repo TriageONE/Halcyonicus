@@ -28,6 +28,15 @@ using namespace hlogger;
 class HDB{
 public:
 
+    static bool handlePrepareFail(int code, COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type) {
+        if (code == 101 or code == 1) {
+            //THe database tables dont exist
+            checkSchema(regioncoord, type);
+        } else {
+            return false;
+        }
+    }
+
     static bool fixDBStructure(COORDINATE::REGIONCOORD regioncoord, FTOOLS::TYPE type) {
         si;
         if (!FTOOLS::checkForDirectoryStructure()){
@@ -39,8 +48,8 @@ public:
         if (!checkSchema(regioncoord, type)){
             err << "Schema check failed, trying to recreate the database with the proper tables" << nl;
             //The database schema doesnt match, we should create a new database
-            createNewDatabase(regioncoord, type);
         }
+        so;
         return true;
     }
 
@@ -60,102 +69,113 @@ public:
             return false;
         }
 
-        std::string tstring;
+        //Futureproofing for multitable drifting later
+       std::set<std::string> tstrings;
 
         switch (type) {
             case FTOOLS::TYPE::ENTITY:
-                tstring = "ENTITIES";
+                tstrings.insert("ENTITIES");
                 break;
             case FTOOLS::TYPE::TERRAIN:
-                tstring = "TERRAIN, CLIMATE";
+                tstrings.insert("TERRAIN");
                 break;
             case FTOOLS::TYPE::BLOCK:
-                tstring = "BLOCKS";
+                tstrings.insert("BLOCKS");
                 break;
             case FTOOLS::TYPE::DATA:
-                tstring = "DATA";
+                tstrings.insert("DATA");
+                break;
+            case FTOOLS::CLIMATE:
+                tstrings.insert("CLIMATE");
                 break;
         }
 
-        sql = "SELECT column_name, data_type "
-              "FROM information_schema.columns "
-              "WHERE table_name = '";
-        sql.append(tstring);
-        sql.append("';");
+        for (const auto& tstring : tstrings){
+            sql = "PRAGMA table_info('";
+            sql.append(tstring);
+            sql.append("');");
 
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing " << tstring << " database persistence section creation statement for path: "<< path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
-            sqlite3_close(db);
-            so;
-            return false;
-        }
-
-        rc = sqlite3_step(stmt);
-        if (!rc){
-            err << "Error executing " << tstring << " database persistence section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
-            sqlite3_close(db);
-            so;
-            return false;
-        }
-
-        std::map<std::string, std::string> match;
-        int expectation;
-        switch (type) {
-            case FTOOLS::TYPE::ENTITY:
-                match = {{"ID", "bigint"},
-                         {"TYPE", "text"},
-                         {"X", "bigint"} ,
-                         {"Y", "bigint"} ,
-                         {"Z", "int"}    ,
-                         {"DATA", "blob"}  };
-                expectation = 8;
-                break;
-            case FTOOLS::TYPE::TERRAIN:
-                match = {{"INDEX", "int"},
-                         {"OFFSET", "smallint"},
-                         {"LAYER", "smallint"} ,
-                         {"DATA", "blob"}};
-                expectation = 4;
-                break;
-            case FTOOLS::TYPE::BLOCK:
-                match = {{"OFFSET", "smallint"}, {"DATA", "blob"}};
-                expectation = 3;
-                break;
-            case FTOOLS::TYPE::DATA:
-                match = {{"KEY", "text"}, {"VALUE", "text"}};
-                expectation = 2;
-                break;
-        }
-
-        int count = 0;
-        while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-            count++;
-            int bytes = sqlite3_column_bytes(stmt, 0);
-            const auto* tBytes = static_cast<const unsigned char*>(sqlite3_column_blob(stmt, 0));
-            std::string key; key.assign(reinterpret_cast<const char*>(tBytes), bytes);
-
-            bytes = sqlite3_column_bytes(stmt, 1);
-            tBytes = static_cast<const unsigned char*>(sqlite3_column_blob(stmt, 1));
-            std::string value; value.assign(reinterpret_cast<const char*>(tBytes), bytes);
-
-            if (match.contains(key)){
-                auto pair = match.find(key);
-                if (pair->second != value) {
-                    sqlite3_finalize(stmt);
-                    so;
-                    return false;
-                }
-            } else {
+            rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+            if (rc){
+                err << "Error preparing " << sql << " database persistence section creation statement for path: "<< path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
                 sqlite3_finalize(stmt);
+                sqlite3_close(db);
                 so;
                 return false;
             }
-        }
-        sqlite3_finalize(stmt);
-        if (count != expectation) {
-            err << "Expectation failed for schema check, likely missing a required column" << nl;
-            so;
-            return false;
+
+
+            rc = sqlite3_step(stmt);
+            if (!rc){
+                err << "Error executing " << tstring << " database persistence section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return false;
+            }
+
+            std::map<std::string, std::string> match;
+            int expectation;
+            switch (type) {
+                case FTOOLS::TYPE::CLIMATE:
+                    match = {{"OFFSET", "SMALLINT"},
+                             {"DATA", "TINYBLOB"}  };
+                    break;
+                case FTOOLS::TYPE::ENTITY:
+                    match = {{"ID", "BIGINT"},
+                             {"TYPE", "TEXT"},
+                             {"X", "BIGINT"} ,
+                             {"Y", "BIGINT"} ,
+                             {"Z", "INT"}    ,
+                             {"DATA", "BLOB"}  };
+                    break;
+                case FTOOLS::TYPE::TERRAIN:
+                    match = {{"OFFSET", "SMALLINT"},
+                             {"DATA", "TINYBLOB"}};
+                    break;
+                case FTOOLS::TYPE::BLOCK:
+                    match = {{"OFFSET", "SMALLINT"},
+                             {"DATA", "BLOB"}};
+                    break;
+                case FTOOLS::TYPE::DATA:
+                    match = {{"KEY", "TEXT"},
+                             {"VALUE", "TEXT"}};
+                    break;
+            }
+            expectation = match.size();
+
+            int count = 0;
+            while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+                count++;
+                int bytes = sqlite3_column_bytes(stmt, 1);
+                const auto* tBytes = static_cast<const unsigned char*>(sqlite3_column_blob(stmt, 1));
+                std::string key; key.assign(reinterpret_cast<const char*>(tBytes), bytes);
+
+                bytes = sqlite3_column_bytes(stmt, 2);
+                tBytes = static_cast<const unsigned char*>(sqlite3_column_blob(stmt, 2));
+                std::string value; value.assign(reinterpret_cast<const char*>(tBytes), bytes);
+                info << "Schema inspector found NAME: " << key << ", VALUE: " << value << nl;
+                if (match.contains(key)){
+                    auto pair = match.find(key);
+                    if (pair->second != value) {
+                        sqlite3_finalize(stmt);
+                        warn << "Type mismatch, expected " << pair->second << " rather than " << value << nl;
+                        so;
+                        return createNewDatabase(regioncoord, type);
+                    }
+                } else {
+                    sqlite3_finalize(stmt);
+                    warn << "Key not found, tried for \"" << key << "\"" << nl;
+                    so;
+                    return createNewDatabase(regioncoord, type);
+                }
+            }
+            sqlite3_finalize(stmt);
+            if (count != expectation) {
+                err << "Expectation failed for schema check, likely missing a required column" << nl;
+                so;
+                return createNewDatabase(regioncoord, type);
+            }
         }
         so;
         return true;
@@ -179,15 +199,23 @@ public:
 
         switch (type) {
             case FTOOLS::TYPE::TERRAIN:
+                info << "Preparing TERRAIN DB.." << nl;
+                t = "world";
+                break;
+            case FTOOLS::TYPE::CLIMATE:
+                info << "Preparing CLIMATE DB.." << nl;
                 t = "world";
                 break;
             case FTOOLS::TYPE::ENTITY:
+                info << "Preparing ENTITIES DB.." << nl;
                 t = "entities";
                 break;
             case FTOOLS::TYPE::BLOCK:
+                info << "Preparing BLOCK DB.." << nl;
                 t = "blocks";
                 break;
             case FTOOLS::TYPE::DATA:
+                info << "Preparing DATA DB.." << nl;
                 t = "data";
                 break;
         }
@@ -197,33 +225,20 @@ public:
         rc = sqlite3_open(path.c_str(), &db);
 
         if(rc) {
-            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
-            if (!fixDBStructure(regioncoord, type)){
-                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
-                so;
-                return(rc);
-            } else {
-                info << "Fixed database structure, continuing.." << nl;
-                rc = sqlite3_open(path.c_str(), &db);
-                if(rc) {
-                    err << "Tried opening database but could not open after fix :'(" << nl;
-                    so;
-                    return rc;
-                }
-            }
+            info << "Cannot open database files: " << path << std::endl;
+            return rc;
         }
 
-        info << "Database " << t << " created, trying database construction.." << nl;
+        info << "Database \"" << t << "\" created, trying database construction.." << nl;
 
         switch (type) {
             case FTOOLS::TYPE::TERRAIN:
                 sql = "CREATE TABLE IF NOT EXISTS TERRAIN("
-                      "INDEX INTEGER PRIMARY KEY, "
-                      "OFFSET SMALLINT NOT NULL, "
-                      "LAYER SMALLINT NOT NULL, "
-                      "DATA TINYBLOB NOT NULL);"
-                      ""
-                      "CREATE TABLE IF NOT EXISTS CLIMATE("
+                      "OFFSET INT NOT NULL UNIQUE, "
+                      "DATA TINYBLOB NOT NULL);";
+                break;
+            case FTOOLS::TYPE::CLIMATE:
+                sql = "CREATE TABLE IF NOT EXISTS CLIMATE("
                       "OFFSET SMALLINT NOT NULL UNIQUE, "
                       "DATA TINYBLOB NOT NULL);";
                 break;
@@ -245,8 +260,10 @@ public:
                 goto skip;
         }
 
+        info << "Executing \"" << sql << "\" onto database " << path << nl;
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
             err << "Error preparing " << t << " database persistence section creation statement for path: "<< path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -256,6 +273,7 @@ public:
         rc = sqlite3_step(stmt);
         if (!rc){
             err << "Error executing " << t << " database persistence section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << " \"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -269,6 +287,7 @@ public:
 
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
             err << "Error preparing " << t << " database data section creation statement for path: "<< path << ", error code " << rc << "\"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -277,6 +296,7 @@ public:
         rc = sqlite3_step(stmt);
         if (!rc){
             err << "Error executing " << t << " database data section creation sql statement, but passed preparation for path: " << path << ", error code " << rc << "\"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -285,6 +305,7 @@ public:
 
         if (rc){
             err << "Error finalizing " << t << " database data section creation sql statement, but passed stepping for path: " << path << ", error code " << rc << "\"" << sqlite3_errmsg(db) << "\"" << nl;
+            sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
             return(rc);
@@ -362,17 +383,31 @@ public:
 
         sql = "BEGIN TRANSACTION;";
 
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, regionToSaveTo, FTOOLS::TYPE::ENTITY)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
 
         rc = sqlite3_step(stmt);
         if (!rc){
-            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
             sqlite3_finalize(stmt);
             sqlite3_close(db);
             so;
@@ -389,12 +424,26 @@ public:
               "UPDATE SET "
               //    7   8    9    10      11
               "TYPE=? X=?, Y=?, Z=?, DATA=? WHERE ID=?;";
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; Skipping this statement. \n" << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, regionToSaveTo, FTOOLS::TYPE::ENTITY)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
 
         sw sw;
@@ -431,12 +480,26 @@ public:
         info << "Transacting entities.." << nl;
 
         sql = "END TRANSACTION;";
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made.\n" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, regionToSaveTo, FTOOLS::TYPE::ENTITY)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
 
         rc = sqlite3_step(stmt);
@@ -456,6 +519,7 @@ public:
             so;
             return(rc);
         }
+        sqlite3_finalize(stmt);
         sqlite3_close(db);
         sw.lap();
         info << "Finished transaction" << nl;
@@ -507,14 +571,26 @@ public:
             }
             sql = "BEGIN TRANSACTION;";
 
-            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)) {
-                err << "Error preparing: " << sql << "\", code " << rc
-                          << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db)
-                          << std::endl;
-                sqlite3_finalize(stmt);
-                sqlite3_close(db);
-                so;
-                return (rc);
+            rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+            if (rc){
+                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+                if (handlePrepareFail(rc, regionToSaveTo, FTOOLS::TYPE::ENTITY)){
+                    err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                } else {
+                    rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                    if (rc){
+                        err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                        sqlite3_finalize(stmt);
+                        sqlite3_close(db);
+                        so;
+                        return(rc);
+                    }
+                };
+
             }
 
             rc = sqlite3_step(stmt);
@@ -530,13 +606,26 @@ public:
 
             sql = "DELETE FROM ENTITIES WHERE UUID=?;";
 
-            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)) {
-                err << "Error preparing: " << sql << "\", code " << rc << ";\n" << sqlite3_errmsg(db)
-                          << std::endl;
-                sqlite3_finalize(stmt);
-                sqlite3_close(db);
-                so;
-                return (rc);
+            rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+            if (rc){
+                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+                if (handlePrepareFail(rc, regionToSaveTo, FTOOLS::TYPE::ENTITY)){
+                    err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                } else {
+                    rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                    if (rc){
+                        err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                        sqlite3_finalize(stmt);
+                        sqlite3_close(db);
+                        so;
+                        return(rc);
+                    }
+                };
+
             }
 
             for (auto i: toDelete) {
@@ -549,6 +638,7 @@ public:
             if (!rc) {
                 err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made"
                           << std::endl << sqlite3_errmsg(db) << std::endl;
+                sqlite3_finalize(stmt);
                 sqlite3_close(db);
                 so;
                 return (rc);
@@ -623,12 +713,26 @@ public:
 
         sql = "BEGIN TRANSACTION;";
 
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, regionToDeleteFrom, FTOOLS::TYPE::ENTITY)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
 
         rc = sqlite3_step(stmt);
@@ -664,12 +768,26 @@ public:
 
 
         sql = "END TRANSACTION;";
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made.\n" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, regionToDeleteFrom, FTOOLS::TYPE::ENTITY)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
 
         rc = sqlite3_step(stmt);
@@ -744,12 +862,26 @@ public:
 
         sql = "BEGIN TRANSACTION;";
 
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, chunk.getRegioncoord(), FTOOLS::TYPE::ENTITY)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
 
         rc = sqlite3_step(stmt);
@@ -773,12 +905,26 @@ public:
 
         sql = "SELECT (ID, TYPE, X, Y, Z, DATA) FROM ENTITIES WHERE X BETWEEN ? AND ? AND WHERE Y BETWEEN ? AND ?";
 
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, chunk.getRegioncoord(), FTOOLS::TYPE::ENTITY)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
 
         sqlite3_bind_int64(stmt, 1, xl);
@@ -842,162 +988,170 @@ public:
      * @param chunks
      * @return
      */
-    static int saveTerrain(std::vector<CHUNK> * chunks, COORDINATE::REGIONCOORD regionToSaveTo) {
+    static int saveTerrain(std::vector<CHUNK*> * chunks) {
         sqlite3 *db;
         std::string sql;
         sqlite3_stmt *stmt;
         int rc;
         si;
 
-        std::string path = FTOOLS::parseFullPathFromRegionCoord(regionToSaveTo, FTOOLS::TYPE::TERRAIN);
-        rc = sqlite3_open(path.c_str(), &db);
+        std::set<COORDINATE::REGIONCOORD> regions;
+        for (auto c : * chunks) {
+            if (regions.contains(c->location.getRegioncoord())) continue;
+            regions.insert(c->location.getRegioncoord());
+        }
 
-        if(rc) {
-            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
-            if (!fixDBStructure(regionToSaveTo, FTOOLS::TERRAIN)){
-                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
-                so;
-                return(rc);
-            } else {
-                info << "Fixed database structure, continuing.." << nl;
-                rc = sqlite3_open(path.c_str(), &db);
-                if(rc) {
-                    err << "Tried opening database but could not open after fix :'(" << nl;
+        for (auto r : regions) {
+            std::string path = FTOOLS::parseFullPathFromRegionCoord(r, FTOOLS::TYPE::TERRAIN);
+            rc = sqlite3_open(path.c_str(), &db);
+
+            if (rc) {
+                info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+                if (!fixDBStructure(r, FTOOLS::TERRAIN)) {
+                    err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
                     so;
-                    return rc;
+                    return (rc);
+                } else {
+                    info << "Fixed database structure, continuing.." << nl;
+                    rc = sqlite3_open(path.c_str(), &db);
+                    if (rc) {
+                        err << "Tried opening database but could not open after fix :'(" << nl;
+                        so;
+                        return rc;
+                    }
                 }
             }
-        }
 
-        sql = "BEGIN TRANSACTION;";
 
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
-        }
-
-        rc = sqlite3_step(stmt);
-        if (!rc){
-            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
-        }
-
-        // If updating temperature and humidity:
-        bool climate = false;
-        for (auto c : *chunks){
-            if (c.changed){
-                climate = true;
-                break;
-            }
-        }
-
-        if (climate){
-            sql = "INSERT INTO CLIMATE(OFFSET, DATA) "
-                  "VALUES(?, ?) "
-                  "ON CONFLICT (OFFSET) DO "
-                  "UPDATE SET DATA=? WHERE OFFSET=?";
-            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-                sqlite3_finalize(stmt);
-                sqlite3_close(db);
-                so;
-                return(rc);
-            }
+            // If updating temperature and humidity:
+            bool climate = false;
             for (auto c : *chunks){
-                std::vector<unsigned char> data;
-                std::vector<unsigned char> compressedData;
-                if (c.changed) {
-                    c.serializeClimate(&data);
-                    CTOOLS::compressV(&data, &compressedData);
-                    int offset = c.location.getOffset();
-
-                    sqlite3_bind_int(stmt, 1, offset);
-                    sqlite3_bind_blob(stmt, 2, compressedData.data(), compressedData.size(), SQLITE_STATIC);
-                    sqlite3_bind_blob(stmt, 3, compressedData.data(), compressedData.size(), SQLITE_STATIC);
-                    sqlite3_bind_int(stmt, 4, offset);
-                    sqlite3_step(stmt);
-                    sqlite3_reset(stmt);
+                if (c->changed){
+                    climate = true;
+                    break;
                 }
             }
-        }
 
-        sqlite3_finalize(stmt);
-        sw sw;
-        if (!chunks->empty()){
-            sql = "INSERT INTO TERRAIN "
-                  "VALUES(NULL, ?, ?, ?) "
-                  "ON CONFLICT(OFFSET, LAYER) "
-                  "DO UPDATE SET DATA=? WHERE OFFSET=? AND LAYER=?;";
-            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
+            if (climate){
+                sql = "INSERT INTO CLIMATE(OFFSET, DATA) "
+                      "VALUES(?, ?) "
+                      "ON CONFLICT (OFFSET) DO "
+                      "UPDATE SET DATA=? WHERE OFFSET=?";
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+                    if (handlePrepareFail(rc, r, FTOOLS::TYPE::CLIMATE)){
+                        err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                        sqlite3_finalize(stmt);
+                        sqlite3_close(db);
+                        so;
+                        return(rc);
+                    } else {
+                        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                        if (rc){
+                            err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                            sqlite3_finalize(stmt);
+                            sqlite3_close(db);
+                            so;
+                            return(rc);
+                        }
+                    };
+
+                }
+
+                for (auto c : *chunks){
+                    if (c->location.getRegioncoord() != r) continue;
+                    std::vector<unsigned char> data;
+                    std::vector<unsigned char> compressedData;
+                    if (c->changed) {
+                        c->serializeClimate(&data);
+                        CTOOLS::zcomp(reinterpret_cast<std::vector<char> *>(&data),
+                                      reinterpret_cast<std::vector<char> *>(&compressedData));
+                        int offset = c->location.getOffset();
+
+                        sqlite3_bind_int(stmt, 1, offset);
+                        sqlite3_bind_blob(stmt, 2, compressedData.data(), (unsigned long) compressedData.size(), SQLITE_STATIC);
+                        sqlite3_bind_blob(stmt, 3, compressedData.data(), (unsigned long) compressedData.size(), SQLITE_STATIC);
+                        sqlite3_bind_int(stmt, 4, offset);
+                        sqlite3_step(stmt);
+                        sqlite3_reset(stmt);
+                    }
+                }
+            }
+
+            sqlite3_finalize(stmt);
+            sw sw;
+            if (!chunks->empty()){
+                sql = "INSERT INTO TERRAIN "
+                      "VALUES(?, ?) "
+                      "ON CONFLICT(OFFSET) "
+                      "DO UPDATE SET DATA=? WHERE OFFSET=?;";
+
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+                    if (handlePrepareFail(rc, r, FTOOLS::TYPE::TERRAIN)){
+                        err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                        sqlite3_finalize(stmt);
+                        sqlite3_close(db);
+                        so;
+                        return(rc);
+                    } else {
+                        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                        if (rc){
+                            err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                            sqlite3_finalize(stmt);
+                            sqlite3_close(db);
+                            so;
+                            return(rc);
+                        }
+                    };
+
+                }
+                for (auto c : *chunks) {
+                    if (c->location.getRegioncoord() != r) continue;
+                    std::vector<unsigned char> data;
+                    std::vector<unsigned char> compressedData;
+                    int currentLocation = c->location.getOffset();
+                    for (auto l : c->layers){
+                        if (!l.changed) continue;
+                        l.serializeLayer(&data);
+                        CTOOLS::zcomp(reinterpret_cast<std::vector<char> *>(&data),
+                                      reinterpret_cast<std::vector<char> *>(&compressedData));
+                        int offset = l.getOffset(currentLocation);
+
+                        info << "Saving offset " << offset << nl;
+
+                        sqlite3_bind_int(stmt, 1, offset);
+                        sqlite3_bind_blob(stmt, 2, compressedData.data(), (unsigned long) compressedData.size(), SQLITE_STATIC);
+                        sqlite3_bind_blob(stmt, 3, compressedData.data(), (unsigned long) compressedData.size(), SQLITE_STATIC);
+                        sqlite3_bind_int(stmt, 4, offset);
+                        sqlite3_step(stmt);
+                        sqlite3_reset(stmt);
+                        sw.lap();
+                    }
+                }
+                sw.laprs();
+
+            }
+
+            rc = sqlite3_finalize(stmt);
+            if (rc){
+                err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made" << sqlite3_errmsg(db) << std::endl;
                 sqlite3_finalize(stmt);
                 sqlite3_close(db);
                 so;
                 return(rc);
             }
-            for (auto c : *chunks) {
-                std::vector<unsigned char> data;
-                std::vector<unsigned char> compressedData;
-                int currentLocation = c.location.getOffset();
-                for (auto l : c.layers){
-                    if (!l.changed) continue;
-                    l.serializeLayer(&data);
-                    CTOOLS::compressV(&data, &compressedData);
-                    sqlite3_bind_int(stmt, 1, currentLocation);
-                    sqlite3_bind_int(stmt, 2, l.level);
-                    sqlite3_bind_blob(stmt, 3, compressedData.data(), compressedData.size(), SQLITE_STATIC);
-                    sqlite3_bind_blob(stmt, 4, compressedData.data(), compressedData.size(), SQLITE_STATIC);
-                    sqlite3_bind_int(stmt, 5, currentLocation);
-                    sqlite3_bind_int(stmt, 6, l.level);
-                    sqlite3_step(stmt);
-                    sqlite3_reset(stmt);
-                    sw.lap();
-                }
-            }
-            sqlite3_finalize(stmt);
-            sw.laprs();
-
-        }
-
-        info << "Transacting entities.." << nl;
-
-        sql = "END TRANSACTION;";
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made.\n" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
             sqlite3_close(db);
-            so;
-            return(rc);
         }
 
-        rc = sqlite3_step(stmt);
-        if (!rc){
-            err << "Error stepping: \"" << sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
-        }
 
-        rc = sqlite3_finalize(stmt);
-        if (rc){
-            err << "Error finalizing call, code " << rc << "; SQL was not transacted, no changes made" << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
-        }
-        sqlite3_close(db);
+        so;
         return rc;
     };
 
-    static int recallTerrain(std::vector<CHUNK> * chunks, std::vector<COORDINATE::WORLDCOORD> * missingAreas){
+    static int recallTerrain(std::vector<CHUNK*> * chunks, std::vector<COORDINATE::WORLDCOORD> * missingAreas){
         si;
 
         std::set<COORDINATE::REGIONCOORD> regions;
@@ -1005,8 +1159,8 @@ public:
         info << "Preparing for chunk recall, " << chunks->size() << " to save.." << nl;
 
         for (auto c : * chunks) {
-            if (regions.contains(c.location.getRegioncoord())) continue;
-            regions.insert(c.location.getRegioncoord());
+            if (regions.contains(c->location.getRegioncoord())) continue;
+            regions.insert(c->location.getRegioncoord());
         }
 
         info << "Recalling " << chunks->size() << " chunks from " << regions.size() << " distinct regions" << nl;
@@ -1042,55 +1196,94 @@ public:
              * this happens, we should mark the occurrence and also skip this operation. We dont need to save exactly when we generate it,
              * only when we ask to save it.
              */
-            sql = "SELECT (DATA) FROM CLIMATE WHERE OFFSET=?;";
-            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-                sqlite3_finalize(stmt);
-                sqlite3_close(db);
-                so;
-                return(rc);
+            sql = "SELECT DATA FROM CLIMATE WHERE OFFSET=?;";
+            rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+            if (rc){
+                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+                if (handlePrepareFail(rc, r, FTOOLS::TYPE::CLIMATE)){
+                    err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                } else {
+                    rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                    if (rc){
+                        err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                        sqlite3_finalize(stmt);
+                        sqlite3_close(db);
+                        so;
+                        return(rc);
+                    }
+                };
+
             }
 
             for (auto c : *chunks){
-                if (c.location.getRegioncoord() != r) continue;
-                sqlite3_bind_int(stmt, 1, c.location.getOffset());
+                if (c->location.getRegioncoord() != r) continue;
+                sqlite3_bind_int(stmt, 0, c->location.getOffset());
                 if ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
                     const void* blob = sqlite3_column_blob(stmt, 0);
                     int blobSize = sqlite3_column_bytes(stmt, 0);
                     std::vector<unsigned char> data;
                     std::vector<unsigned char> uncompressedData;
                     data.assign(static_cast<const char*>(blob), static_cast<const char*>(blob) + blobSize);
-                    CTOOLS::decompressV(&data, &uncompressedData);
-                    c.deserializeClimate(&uncompressedData);
+
+                    CTOOLS::zuncomp(reinterpret_cast<std::vector<char> *>(&data),
+                                    reinterpret_cast<std::vector<char> *>(&uncompressedData));
+                    c->deserializeClimate(&uncompressedData);
                 } else {
-                    missingAreas->push_back(c.location);
+                    missingAreas->push_back(c->location);
                 }
                 sqlite3_reset(stmt);
             }
-            sqlite3_finalize(stmt);
 
-            sql = "SELECT (DATA, LAYER) FROM TERRAIN WHERE OFFSET=?;";
-            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-                sqlite3_finalize(stmt);
-                sqlite3_close(db);
-                so;
-                return(rc);
+            sql = "SELECT DATA, OFFSET FROM TERRAIN WHERE OFFSET BETWEEN ? AND ?;";
+            rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+            if (rc){
+                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+                if (handlePrepareFail(rc, r, FTOOLS::TYPE::TERRAIN)){
+                    err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                } else {
+                    rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                    if (rc){
+                        err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                        sqlite3_finalize(stmt);
+                        sqlite3_close(db);
+                        so;
+                        return(rc);
+                    }
+                };
+
             }
 
+
+
             for (auto c : *chunks){
-                if (c.location.getRegioncoord() != r) continue;
-                sqlite3_bind_int(stmt, 1, c.location.getOffset());
-                rc = sqlite3_step(stmt);
+                if (c->location.getRegioncoord() != r) continue;
+                int offset = c->location.getOffset() * 24;
+                info << "Pulling from offset " << offset << " to " << offset + 24 << nl;
+                sqlite3_bind_int(stmt, 1, offset);
+                sqlite3_bind_int(stmt, 2, offset + 24);
+
                 while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
                     const void* blob = sqlite3_column_blob(stmt, 0);
                     int blobSize = sqlite3_column_bytes(stmt, 0);
                     int layer = sqlite3_column_int(stmt, 1);
+                    info << "Handling layer " << offset - layer << nl;
                     std::vector<unsigned char> data;
                     std::vector<unsigned char> uncompressedData;
                     data.assign(static_cast<const char*>(blob), static_cast<const char*>(blob) + blobSize);
-                    CTOOLS::decompressV(&data, &uncompressedData);
-                    c.layers[layer].deserializeLayer(&uncompressedData);
+
+                    CTOOLS::zuncomp(reinterpret_cast<std::vector<char> *>(&data),
+                                    reinterpret_cast<std::vector<char> *>(&uncompressedData));
+                    info << "Data: " << data.size() << ", Uncompressed: " << uncompressedData.size() << nl;
+
+                    c->layers[offset - layer].deserializeLayer(&uncompressedData);
                 }
                 sqlite3_reset(stmt);
             }
@@ -1099,7 +1292,6 @@ public:
         }
 
         info << "Finished recalling " << chunks->size() << " chunks;" << nl;
-        sqlite3_finalize(stmt);
         so;
         return rc;
     }
@@ -1145,7 +1337,8 @@ public:
         }
 
         std::vector<unsigned char> compressedBlocks;
-        CTOOLS::compressV(&rawBlocks, &compressedBlocks);
+        CTOOLS::zcomp(reinterpret_cast<std::vector<char> *>(&rawBlocks),
+                      reinterpret_cast<std::vector<char> *>(&compressedBlocks));
 
         sql = "INSERT INTO BLOCKS(OFFSET,DATA) VALUES(?, ?) "
               "ON CONFLICT(OFFSET) DO "
@@ -1153,11 +1346,24 @@ public:
 
         rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
         if (rc){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made. " << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, chunk->location.getRegioncoord(), FTOOLS::TYPE::BLOCK)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
         int offset = chunk->location.getOffset();
         sqlite3_bind_int(stmt, 1, offset);
@@ -1183,7 +1389,7 @@ public:
         }
         sw.laprs();
         sqlite3_close(db);
-
+        so;
         return rc;
     }
 
@@ -1215,13 +1421,28 @@ public:
         }
 
         sql = "SELECT DATA FROM BLOCKS WHERE OFFSET = ?;";
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)){
-            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made" << std::endl << sqlite3_errmsg(db) << std::endl;
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            so;
-            return(rc);
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, chunk->location.getRegioncoord(), FTOOLS::TYPE::BLOCK)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            };
+
         }
+
         int offset = chunk->location.getOffset();
         info << "Selecting from offset " << offset << nl;
         sqlite3_bind_int(stmt, 1, offset);
@@ -1235,7 +1456,8 @@ public:
 
             compressedBlocks.assign(static_cast<const char*>(blob), static_cast<const char*>(blob) + blobSize);
 
-            CTOOLS::decompressV(&compressedBlocks, &rawBlocks);
+            CTOOLS::zuncomp(reinterpret_cast<std::vector<char> *>(&compressedBlocks),
+                            reinterpret_cast<std::vector<char> *>(&rawBlocks));
 
             if (rawBlocks.size() % 9 != 0){
                 warn << "Sizeof rawBlocks was not perfectly divisible by 9, last block datum will be truncated resulting in data loss/corruption!" << nl;

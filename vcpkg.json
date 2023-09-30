@@ -45,5 +45,9 @@
     "name" : "glad",
     "version>=" : "0.1.36",
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(glad CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE glad::glad)\n"
+  }, {
+    "name" : "lz4",
+    "version>=" : "1.9.4#1",
+    "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(lz4 CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE lz4::lz4)\n"
   } ]
 }

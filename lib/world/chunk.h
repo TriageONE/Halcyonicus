@@ -5,8 +5,8 @@
 #ifndef HALCYONICUS_CHUNK_H
 #define HALCYONICUS_CHUNK_H
 
-//#include "../logging/hlogger.h"
-//#include "../world/block.h"
+#include "../logging/hlogger.h"
+#include "../world/block.h"
 
 using namespace hlogger;
 
@@ -34,6 +34,10 @@ public:
         LAYER() = default;
 
         explicit LAYER(unsigned char level) : level{level} {}
+
+        int getOffset(int chunkOffset) {
+            return (chunkOffset * 24) + level;
+        }
 
         void serializeLayer(std::vector<unsigned char> * dst) {
             dst->clear();
@@ -67,8 +71,8 @@ public:
             unsigned char height[2];
             for (short x = 0; x <= 63; x++){
                 for (short y = 0; y <= 63; y++){
-                    height[0] = src->at(((x * 63) + y) * 2);
-                    height[1] = src->at((((x * 63) + y) * 2) + 1);
+                    height[0] = src->at(((x * 64) + y) * 2);
+                    height[1] = src->at((((x * 64) + y) * 2) + 1);
                     this->heights[x][y] = *(short*) height;
                 }
             }
@@ -96,7 +100,7 @@ public:
     bool changed = false;
     bool existsPersistent = true;
 
-    LAYER layers[24];
+    LAYER layers[24]{};
 
     std::vector<BLOCK> blocks;
 
