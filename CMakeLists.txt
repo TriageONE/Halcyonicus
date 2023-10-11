@@ -10,7 +10,15 @@ set(CMAKE_CXX_STANDARD 23)
 
 link_directories(./lib ./hsrv ./graphics)
 
-add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c lib/world/block.h lib/hdb/hdb.h lib/hdb/hdb.h lib/tools/compressionTools.h)
+add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c lib/world/block.h lib/hdb/hdb.h lib/hdb/hdb.h lib/tools/compressionTools.h
+        lib/world/generator.h
+        lib/world/manipulator.h
+        lib/noise/worley.h
+        graphics/Mesh.h
+        graphics/Shader.h
+        graphics/chunk/chunk3d.h
+        lib/world/chunk.h
+        lib/entity/playerController.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
@@ -69,6 +77,9 @@ target_link_libraries(Halcyonicus  glfw)
 
 find_package(glad CONFIG REQUIRED)
 target_link_libraries(Halcyonicus glad::glad)
+
+find_package(GLEW REQUIRED)
+target_link_libraries(Halcyonicus GLEW::GLEW)
 
 find_package(Stb REQUIRED)
 target_include_directories(Halcyonicus PRIVATE ${Stb_INCLUDE_DIR})

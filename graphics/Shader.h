@@ -4,7 +4,7 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-//#include "../halcyonicus.h"
+#include "../halcyonicus.h"
 
 #include <string>
 #include <fstream>

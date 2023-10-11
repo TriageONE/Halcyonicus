@@ -54,4 +54,7 @@
 #include <ctime>
 #include <sys/stat.h>
 
+//Logging
+#include "lib/logging/hlogger.h"
+
 #endif //HALCYONICUS_HALCYONICUS_H

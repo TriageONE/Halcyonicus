@@ -19,7 +19,7 @@ using namespace hlogger;
 class FTOOLS{
 
 #if(WIN32)
-    static constexpr auto dirs = {"\\world", "\\world\\entities", "\\world\\players", "\\world\\data", "\\world\\blocks", "\\world\\data"};
+    static constexpr auto dirs = {"\\world", "\\world\\world", "\\world\\entities", "\\world\\players", "\\world\\data", "\\world\\blocks"};
 #else
     static constexpr auto dirs = {"./world", "./world/world", "./world/entities", "./world/players", "./world/data", "./world/blocks", "./world/data"};
 #endif

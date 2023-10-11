@@ -1493,5 +1493,144 @@ public:
             return -1;
         }
     }
+
+    //Create a function to perform a soft database pull to check if a chunk exists or not
+    /*
+     * This should work as fast as possible. We can keep record of our existence cache within the data section of our heightmap database, which allows us to
+     */
+    static bool chunkExists(CHUNK * chunk) {
+        sqlite3 *db;
+        std::string sql;
+        sqlite3_stmt *stmt;
+        int rc;
+
+        auto r = chunk->location.getRegioncoord();
+        std::string path = FTOOLS::parseFullPathFromRegionCoord(r, FTOOLS::TYPE::TERRAIN);
+        rc = sqlite3_open(path.c_str(), &db);
+
+        if(rc) {
+            info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+            if (!fixDBStructure(r, FTOOLS::TERRAIN)){
+                err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                so;
+                return(rc);
+            } else {
+                info << "Fixed database structure, continuing.." << nl;
+                rc = sqlite3_open(path.c_str(), &db);
+                if(rc) {
+                    err << "Tried opening database but could not open after fix :'(" << nl;
+                    so;
+                    return rc;
+                }
+            }
+        }
+
+        sql = "SELECT (EXISTS (SELECT OFFSET FROM TERRAIN WHERE OFFSET = ?))";
+        rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc){
+            err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+            if (handlePrepareFail(rc, r, FTOOLS::TYPE::CLIMATE)){
+                err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                sqlite3_finalize(stmt);
+                sqlite3_close(db);
+                so;
+                return(rc);
+            } else {
+                rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                if (rc){
+                    err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                }
+            }
+        }
+
+        if ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
+            bool exists = sqlite3_column_int(stmt,0);
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+            return exists;
+        }
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return false;
+
+    }
+
+    static int chunksExist(std::map<CHUNK*, bool> * map){
+        std::set<COORDINATE::REGIONCOORD> regions;
+
+        for (auto p : *map) {
+            if (regions.contains(p.first->location.getRegioncoord())) continue;
+            regions.insert(p.first->location.getRegioncoord());
+        }
+
+        sqlite3 *db;
+        std::string sql;
+        sqlite3_stmt *stmt;
+        int rc;
+
+        for (auto r : regions) {
+            std::string path = FTOOLS::parseFullPathFromRegionCoord(r, FTOOLS::TYPE::TERRAIN);
+            rc = sqlite3_open(path.c_str(), &db);
+
+            if(rc) {
+                info << "Cannot open database files: " << path << ", trying to find directory structure.." << std::endl;
+                if (!fixDBStructure(r, FTOOLS::TERRAIN)){
+                    err << "Cannot open entity database, error: " << sqlite3_errmsg(db) << nl;
+                    so;
+                    return(rc);
+                } else {
+                    info << "Fixed database structure, continuing.." << nl;
+                    rc = sqlite3_open(path.c_str(), &db);
+                    if(rc) {
+                        err << "Tried opening database but could not open after fix :'(" << nl;
+                        so;
+                        return rc;
+                    }
+                }
+            }
+
+            sql = "SELECT (EXISTS (SELECT OFFSET FROM TERRAIN WHERE OFFSET = ?))";
+            rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+            if (rc){
+                err << "Error preparing: "<< sql << "\", code " << rc << "; SQL was not transacted, no changes made; \"" << sqlite3_errmsg(db) << "\"" << nl;
+                if (handlePrepareFail(rc, r, FTOOLS::TYPE::CLIMATE)){
+                    err << "Could not fix database, SQL was not transacted, no changes made;" << nl;
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+                    so;
+                    return(rc);
+                } else {
+                    rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+                    if (rc){
+                        err << "Error preparing: "<< sql << "\", code " << rc << "; Prepare failed twice, with code " << sqlite3_errmsg(db) << "\"" << nl;
+                        sqlite3_finalize(stmt);
+                        sqlite3_close(db);
+                        so;
+                        return(rc);
+                    }
+                }
+            }
+
+            for (auto p : *map){
+                if (p.first->location.getRegioncoord() != r) continue;
+                sqlite3_bind_int(stmt, 0, p.first->location.getOffset());
+                if ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
+                    bool exists = sqlite3_column_int(stmt,0);
+                    p.second = exists;
+                    sqlite3_reset(stmt);
+                    continue;
+                }
+                p.second = false;
+                sqlite3_reset(stmt);
+            }
+            sqlite3_finalize(stmt);
+            sqlite3_close(db);
+        }
+        return rc;
+    }
 };
 #endif //HALCYONICUS_HDB_H

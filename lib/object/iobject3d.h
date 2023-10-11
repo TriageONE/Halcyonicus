@@ -32,9 +32,8 @@ public:
     float x, y, z;
     float yaw, pitch, roll;
 
-    IOBJECT3D(Model *model){
-        this->model = model;
-    }
+    IOBJECT3D(Model *model) : model(*model){}
+
 
 
 };

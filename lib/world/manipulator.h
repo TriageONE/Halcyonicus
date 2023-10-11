@@ -1,0 +1,8 @@
+//
+// Created by Triage on 9/30/2023.
+//
+
+#ifndef HALCYONICUS_MANIPULATOR_H
+#define HALCYONICUS_MANIPULATOR_H
+
+#endif //HALCYONICUS_MANIPULATOR_H

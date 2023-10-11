@@ -1,22 +1,32 @@
+/////////////////////////////////////////////////////////////////////////////////////////////
+/*
+ * LAST UPDATED 10/7/23, WORKS FINE AS LONG AS CAMERA.H, SHADER.H AND MODEL.H ARENT TOUCHED
+ * HALCYONICUS.H IS EXTREMELY IMPORTANT. DO NOT MODIFY. LOAD ORDER IS SENSITIVE TO OPENGL
+ */
+/////////////////////////////////////////////////////////////////////////////////////////////
+
 #define SDL_MAIN_HANDLED
 #define NOMINMAX
+
+#include <glm/gtx/quaternion.hpp>
 
 #include "graphics/Camera.h"
 #include "graphics/Shader.h"
 #include "graphics/Model.h"
 
-#include <glm/gtx/quaternion.hpp>
+#include "lib/logging/hlogger.h"
 
+#include <cmath>
+#include "lib/noise/perlin.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
-
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1600;
+const unsigned int SCR_HEIGHT = 1200;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -32,11 +42,10 @@ Model ourModel("assets/ahe.fbx");
 
 float rx = 0, ry = 0, rz = 0;
 
-
+using namespace hlogger;
 int main(int argc, char* argv[])
 {
 
-    getchar();
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -47,7 +56,6 @@ int main(int argc, char* argv[])
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #endif
-
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
 
@@ -92,21 +100,23 @@ int main(int argc, char* argv[])
 
 
     std::vector<glm::mat4> modelMatricies;
-    std::vector<glm::vec3> greenishness;
-    for(int a = 0; a<100; a++)
+    std::vector<unsigned long> seeds;
+
+    for(int a = 0; a<200; a++)
     {
-        modelMatricies.push_back(glm::translate(glm::vec3(rand() % 100,rand() % 100,rand() % 100)));
-        float greenish = rand() % 100;
-        greenish /= 100.0;
-        greenishness.push_back(glm::vec3(0.5,greenish,0.5));
+        modelMatricies.push_back(glm::translate(glm::vec3(rand() % 100 - 50,rand() % 100- 50,rand() % 100 - 50)));
+        seeds.push_back(::rand());
     }
 
 
     // draw in wireframe
-   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     float rotation = 0;
     // render loop
     // -----------
+
+    siv::PerlinNoise perlin {81508};
+
     while (!glfwWindowShouldClose(window))
     {
         // per-frame time logic
@@ -121,7 +131,7 @@ int main(int argc, char* argv[])
 
         // render
         // ------
-        glClearColor(0.3f, 0.5f, 0.5f, 1.0f);
+        glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
@@ -133,29 +143,19 @@ int main(int argc, char* argv[])
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        // render the loaded model
-
-        glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-        model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model;
-        model = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)) * model; // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-
-        ourModel.Draw(ourShader);
-
-
-
-        model = glm::translate(glm::vec3(0.0f, 5.0f, 0.0F)) * model; // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-
-        ourModel.Draw(ourShader);
-
-        for(int a = 0; a<modelMatricies.size(); a++)
-        {
-            ourShader.setVec3("greenish",greenishness[a]);
-            ourShader.setMat4("model",modelMatricies[a]);
+        for(int a = 0; a<modelMatricies.size(); a++){
+            siv::PerlinNoise noise0 {seeds[a]+6};
+            ourShader.setFloat("lightness",(float) noise0.noise1D_01(lastFrame));
+            glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// scale it
+            model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model; // Rotate it
+            //IDK if i need to do that above but  i dee kay!!! :DD
+            siv::PerlinNoise noise {seeds[a]};
+            siv::PerlinNoise noise2 {seeds[a]+2};
+            siv::PerlinNoise noise3 {seeds[a]+4};
+            model = glm::translate(glm::vec3(noise.noise1D(lastFrame), noise2.noise1D(lastFrame), noise3.noise1D(lastFrame))) * model; // Move it
+            ourShader.setMat4("model",modelMatricies[a] * model);
             ourModel.Draw(ourShader);
         }
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

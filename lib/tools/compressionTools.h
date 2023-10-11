@@ -36,8 +36,12 @@ public:
         output->resize(compressedSize);
 
         // Output the original and compressed data sizes
-        std::cout << "Original Data Size: " << input->size() << " bytes" << std::endl;
-        std::cout << "Compressed Data Size: " << compressedSize << " bytes" << std::endl;
+        int savedBytes = input->size() - compressedSize + 8;
+        if (savedBytes < 0){
+            info << "Compression used " << savedBytes << " more bytes than what was compressed" << nl;
+        } else {
+            info << "Saved " << savedBytes << " bytes" << nl;
+        }
 
         unsigned long uncompressedSize = input->size();
         unsigned char uncom[8];
@@ -83,13 +87,6 @@ public:
 
         // Resize the decompressed vector to the actual decompressed size
         output->resize(decompressedSize);
-
-        // Output the decompressed data
-        std::cout << "Decompressed Data: ";
-        for (char c : *output) {
-            std::cout << c;
-        }
-        std::cout << std::endl;
 
         so;
     }

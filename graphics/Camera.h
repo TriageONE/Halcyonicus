@@ -1,13 +1,8 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-//#include "../halcyonicus.h"
+#include "../halcyonicus.h"
 
-#include "glm/vec3.hpp"
-#include "glad/glad.h"
-#include "glm/trigonometric.hpp"
-#include "glm/geometric.hpp"
-#include "glm/ext/matrix_transform.hpp"
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -88,7 +83,7 @@ public:
             speedup = true;
 
         int modifier = 1;
-        if (speedup) modifier = 4;
+        if (speedup) modifier = 16;
 
         float velocity = MovementSpeed * deltaTime * modifier;
 
