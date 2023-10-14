@@ -1,3 +1,5 @@
 /cmake-build-debug/
 /scratch.dSYM/
 /scratch
+/cmake-build-release-dynamic/
+/.idea/encodings.xml
