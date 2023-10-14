@@ -40,7 +40,7 @@ public:
     vector<unsigned int> indices;
     vector<Texture>      textures;
     unsigned int VAO;
-
+    bool isSetup = false;
     //World data
 
     // constructor
@@ -53,9 +53,14 @@ public:
         setupMesh();
     }
 
+    ~Mesh(){
+        destroyMesh();
+    }
+
     // render the mesh
-    void Draw(Shader &shader)
+    void Draw(Shader &shader, glm::mat4 model)
     {
+        shader.setMat4("model", model);
         // bind appropriate textures
         unsigned int diffuseNr  = 1;
         unsigned int specularNr = 1;
@@ -96,6 +101,12 @@ private:
     // render data 
     unsigned int VBO, EBO;
 
+    void destroyMesh(){
+        glDeleteBuffers(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+        isSetup = false;
+    }
 
     // initializes all the buffer objects/arrays
     void setupMesh()
@@ -142,6 +153,7 @@ private:
 
 
         glBindVertexArray(0);
+        isSetup = true;
     }
 };
 #endif

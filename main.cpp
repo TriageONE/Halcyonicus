@@ -167,7 +167,6 @@ int main(int argc, char* argv[])
         std::cout << nl;
     }
 
-
     info << "Setting up meshes.." << nl;
     std::vector<CHUNK3D*> renders;
     renders.reserve(chunks.size());
@@ -280,7 +279,6 @@ int main(int argc, char* argv[])
 */
 
         //for(int a = 0; a<modelMatricies.size(); a++){
-
 
             /*
             siv::PerlinNoise noise0 {seeds[a]+6};

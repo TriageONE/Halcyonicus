@@ -11,8 +11,9 @@
 
 class CHUNK3D {
     GLuint vao;
-    GLuint vbo, heightVbo, wetVbo;
+    GLuint vbo, heightVbo;
     GLuint ebo;
+    bool isSetup = false;
     std::vector<GLfloat> cubeVertices = {
             // Front face
             -0.5f, -0.5f,  0.5f, // Vertex 0
@@ -52,6 +53,7 @@ class CHUNK3D {
 public:
     CHUNK * chunk;
     explicit CHUNK3D(CHUNK * c) : chunk{c} {};
+
     void setup(){
 
         glGenVertexArrays(1, &vao);
@@ -86,21 +88,22 @@ public:
         glVertexAttribIPointer(1, 1, GL_SHORT, 0, nullptr);
         glEnableVertexAttribArray(1);
 
-        // Now we can make another buffer that holds some data about how wet the area is:
-        glGenBuffers(1, &wetVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, wetVbo);
-        glVertexAttribDivisor(1,1);
-        unsigned char* humidity = &chunk->humidity[0][0];
-        glBufferData(GL_ARRAY_BUFFER, sizeof(chunk->humidity), humidity, GL_STATIC_DRAW);
-        glVertexAttribIPointer(2, 1, GL_BYTE, 0, nullptr);
-        glEnableVertexAttribArray(2);
-
         // Unbind VAO, VBO, and EBO
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
+        isSetup = true;
+    }
+
+    void destroy(){
+        glDeleteBuffers(1, &vao);
+        glDeleteBuffers(1, &vbo);
+        glDeleteBuffers(1, &ebo);
+        glDeleteBuffers(1, &heightVbo);
+        isSetup = false;
     }
 
     void draw(glm::mat4 view, glm::mat4 projection, Shader* shader){
+        if (!isSetup) return;
         glBindVertexArray(vao);
         glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));
         shader->use();

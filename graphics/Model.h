@@ -43,12 +43,18 @@ public:
        }
     }
 
+    void Unload(){
+        if (!loaded) return;
+        unloadModel();
+        loaded = false;
+    }
+
     // draws the model, and thus all its meshes
-    void Draw(Shader &shader)
+    void Draw(Shader &shader, glm::mat4 model)
     {
         for(unsigned int i = 0; i < meshes.size(); i++){
             //meshes[i].Move(this->locationOffset);
-            meshes[i].Draw(shader);
+            meshes[i].Draw(shader, model);
         }
 
     }
@@ -71,6 +77,13 @@ private:
 
         // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
+    }
+
+    //Unloads whatever was here so we can save memory. Might need this later
+    void unloadModel(){
+        for (auto mesh : meshes){
+            mesh.
+        }
     }
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).

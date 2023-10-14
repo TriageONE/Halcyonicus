@@ -6,7 +6,12 @@
 #define HALCYONICUS_PLAYERCONTROLLER_H
 
 /**
- * The player controller should accept input from a control handler, likely in main i suppose
- * when 
+ * When controlling the player, we should have a class object we can call upon to modify values. these values
+ * should be readable by a display class that can display our guy, and move the camera in sync with our guy.
+ *
  */
+
+class PLAYER_CONTROLLER {
+    //
+};
 #endif //HALCYONICUS_PLAYERCONTROLLER_H
