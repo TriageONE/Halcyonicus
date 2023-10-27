@@ -82,8 +82,9 @@ private:
     //Unloads whatever was here so we can save memory. Might need this later
     void unloadModel(){
         for (auto mesh : meshes){
-            mesh.
+            mesh.destroyMesh();
         }
+        loaded = false;
     }
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).

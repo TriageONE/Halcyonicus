@@ -12,6 +12,8 @@
 /**
  * The generator class is responsible for applying the initial worldgen behavior to an entire chunk at a time
  */
+
+using namespace siv;
 class GENERATOR{
 
     template <typename T>
@@ -35,7 +37,7 @@ public:
      * Generates the entire chunkwide climate for the chunk
      * @param chunk The chunk to modify
      */
-    static void genClimate(CHUNK * chunk, unsigned long seed){
+    static void genClimate(CHUNK * chunk, auto seed){
         //The climate should adhere to a regional bound where at levels near the equator (near y 0) it is hotter, wile arctic regions are fundamentally colder based on distance from the equator
         /*
          * the distance from the north pole on earth is about 14K miles or 22,530,816 meters.
@@ -46,6 +48,7 @@ public:
          * The constant shall be 50,000 blocks from the equator to the north, that will be from one zenith to another. The full rotation from one hot or cold zenith shall be 100,000 blocks, or 220x smaller than earthscale.
          * the average temperature in the arctic regions is about -7C. For the desert, it would be about 40C. Average aberration would be about 8C. Day night influence would be about 6C
          */
+
         const siv::PerlinNoise perlin{rotateLeft(seed, 1)};
 
         auto loc = chunk->location;
@@ -83,7 +86,8 @@ public:
      * @param chunk
      * @param layer
      */
-    static void genHeight(CHUNK * chunk, unsigned char layer, unsigned long seed){
+
+    static void genHeight(CHUNK * chunk, unsigned char layer, unsigned int seed, float scalar){
         if (layer < 0 || layer > 24) return;
         /*
          * Height is a tricky subject. We would have about 3 layers of noise for three different purposes.
@@ -94,22 +98,24 @@ public:
         const siv::PerlinNoise roughness{rotateRight(seed, 1)};
         const siv::PerlinNoise metaRoughness{rotateRight(seed, 3)};
 
-        const siv::PerlinNoise height{seed};
+        const siv::PerlinNoise height{(seed)};
         const siv::PerlinNoise metaHeight{rotateRight(seed, 2)};
+        const siv::PerlinNoise metaMetaHeight{rotateRight(seed, 3)};
 
         auto loc = chunk->location;
-        double rNoise, rmNoise, hNoise, mhNoise;
+        double rNoise, rmNoise, hNoise, mhNoise, mh2Noise;
 
         for (short x = 0; x < 64; x++){
             for (short y = 0; y < 64; y++){
                 rNoise = roughness.noise2D_01(((double)(loc.x * 64 + x))/ 8, ((double)(loc.y * 64 + y))/ 8);
                 rmNoise = metaRoughness.noise2D_01(((double)(loc.x * 64 + x))/ 8, ((double)(loc.y * 64 + y))/ 8);
-                hNoise = height.octave2D_01(((double)(loc.x * 64 + x))/ 32, ((double)(loc.y * 64 + y))/ 32, 4);
-                mhNoise = metaHeight.octave2D_01(((double)(loc.x * 64 + x))/ 256, ((double)(loc.y * 64 + y))/ 256, 2);
+                hNoise = height.octave2D_01(((double)(loc.x * 64 + x))/ 24, ((double)(loc.y * 64 + y))/ 24, 4);
+                mhNoise = metaHeight.octave2D_01(((double)(loc.x * 64 + x))/ 128, ((double)(loc.y * 64 + y))/ 128, 2);
+                mh2Noise = metaHeight.octave2D_01(((double)(loc.x * 64 + x))/ 512, ((double)(loc.y * 64 + y))/ 512, 3);
 
                 //Apply scalar effects to each noise value
 
-                rNoise = rNoise * 2 * (rmNoise * 0.8 + 0.1);
+                rNoise = rNoise * 4 * (rmNoise * 0.8) ;
                 /*
                  * Height should be limited to 0-1024, but in reality, we should have more margins for actual height
                  * First, the height should never naturally exceed lower than 32, as our oceans should only go so far down
@@ -118,7 +124,7 @@ public:
                  *
                  *
                  */
-                hNoise = (hNoise * 24) + (mhNoise * 384) + 544;
+                hNoise = (hNoise * 32) + (mhNoise * 256) + (mh2Noise * 512) + 256;
 
                 chunk->layers[layer].heights[x][y] = (short) (hNoise + rNoise);
             }
@@ -129,7 +135,7 @@ public:
     /**
      * Step 2 in the process of chunk generation process, can only accurately occur when height and temperature have been set
      */
-    static void genHumidity(CHUNK * chunk, unsigned long seed){
+    static void genHumidity(CHUNK * chunk, unsigned int seed){
 
         auto loc = chunk->location;
         //Rather than apply the climate sine each time you calculate the temperature, you can speed this up by a few times by calculating a lower resolution value based on the chunk itself instead
@@ -197,9 +203,9 @@ public:
      * @param chunk the chunk to modify
      * @param layer the layer to modify
      */
-    static void genTerrainDetail(CHUNK * chunk, unsigned char layer, unsigned long seed){
+    static void genTerrainDetail(CHUNK * chunk, unsigned char layer, unsigned int seed){
 
-        unsigned long invert = seed ^ UINT_MAX;
+        auto invert = seed ^ UINT_MAX;
         const siv::PerlinNoise perlin{invert};
 
         for (short x = 0; x < 64; x++) {

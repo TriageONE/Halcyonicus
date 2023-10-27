@@ -19,7 +19,7 @@ add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c l
         graphics/chunk/chunk3d.h
         lib/world/chunk.h
         lib/entity/playerController.h
-        graphics/entity/entity3d.h)
+        lib/controller/player.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
@@ -54,6 +54,7 @@ add_custom_target(copy_graphics ALL
 # Add the custom target as a dependency for your executable or library
 add_dependencies(Halcyonicus copy_assets)
 add_dependencies(Halcyonicus copy_graphics)
+
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(Halcyonicus ZLIB::ZLIB)

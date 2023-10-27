@@ -79,9 +79,9 @@ public:
     class ENTITYCOORD{
     public:
         long long x=0, y=0;
-        int z=0;
+        float z=0;
 
-        ENTITYCOORD(long long x, long long y, int z) : x{x}, y{y}, z{z} {}
+        ENTITYCOORD(long long x, long long y, float z) : x{x}, y{y}, z{z} {}
 
         ENTITYCOORD() = default;
 
@@ -101,6 +101,14 @@ public:
 
         friend bool operator==(const ENTITYCOORD& lhs, const ENTITYCOORD& rhs) {
             return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z);
+        }
+
+
+
+        void manipulate(long long x, long long y, float z){
+            this->x += x;
+            this->y += y;
+            this->z += z;
         }
     };
 

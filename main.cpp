@@ -13,6 +13,7 @@
 #include "lib/noise/perlin.h"
 #include "lib/world/chunk.h"
 #include "lib/world/generator.h"
+#include "lib/controller/player.h"
 #include "graphics/chunk/chunk3d.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -25,7 +26,7 @@ const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 100.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -35,6 +36,9 @@ bool maOneshot = false;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+// Static entities
+PLAYER p;
 
 Model ourModel("assets/ahe.fbx");
 
@@ -139,7 +143,7 @@ int main(int argc, char* argv[])
     // build and compile shaders
     // -------------------------
     Shader ourShader("graphics/shaders/1.model_loading.vs", "graphics/shaders/1.model_loading.fs");
-
+    Shader entityShader("graphics/shaders/entityVertex.vs", "graphics/shaders/entityFragment.fs");
     // load models
     // -----------
     //ourModel.Load();
@@ -149,14 +153,14 @@ int main(int argc, char* argv[])
 
     std::vector<CHUNK*> chunks;
 
-    for (short x = -2; x < 2; x++) {
-        for (short y = -2; y < 2; y++) {
+    for (short x = -8; x < 8; x++) {
+        for (short y = -8; y < 8; y++) {
             chunks.push_back(new CHUNK({x, y}));
         }
     }
 
     for (auto c : chunks){
-        GENERATOR::genHeight(c, 0, 8008);
+        GENERATOR::genHeight(c, 0, 8008, 2);
         GENERATOR::genHumidity(c, 8008);
     }
 
@@ -228,6 +232,7 @@ int main(int argc, char* argv[])
     float counter = 0;
     int frames = 0;
 
+
     while (!glfwWindowShouldClose(window))
     {
         // per-frame time logic
@@ -257,43 +262,8 @@ int main(int argc, char* argv[])
         for (auto c : renders) {
             c->draw(view, projection, &ourShader);
         }
-        /*glBindVertexArray(vao);
-        // don't forget to enable shader before setting uniforms
-        ourShader.use();
 
-        // view/projection transformations
-
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-        glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// scale it
-        model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model; // Rotate it
-        model = glm::translate(glm::vec3(0.0, 0.0, 0.0)) * model; // Move it
-        ourShader.setMat4("model", model);
-
-        // Render the cube using glDrawElements
-        glDrawElementsInstanced(GL_TRIANGLES, cubeIndices.size(), GL_UNSIGNED_INT, nullptr, 4096);
-
-
-        // Unbind VAO
-        glBindVertexArray(0);
-*/
-
-        //for(int a = 0; a<modelMatricies.size(); a++){
-
-            /*
-            siv::PerlinNoise noise0 {seeds[a]+6};
-            ourShader.setFloat("lightness",(float) noise0.noise1D_01(lastFrame));
-            glm::mat4 model = glm::scale(glm::vec3(1.0f, 1.0f, 1.0f));	// scale it
-            model = glm::toMat4(glm::quat(1.0,0.0,0.0,0.0)) * model; // Rotate it
-            //IDK if i need to do that above but  i dee kay!!! :DD
-            siv::PerlinNoise noise {seeds[a]};
-            siv::PerlinNoise noise2 {seeds[a]+2};
-            siv::PerlinNoise noise3 {seeds[a]+4};
-            model = glm::translate(glm::vec3(noise.noise1D(lastFrame), noise2.noise1D(lastFrame), noise3.noise1D(lastFrame))) * model; // Move it
-            ourShader.setMat4("model",modelMatricies[a] * model);
-            ourModel.Draw(ourShader);
-             */
-        //}
+        p.pe->draw(&entityShader, &ourModel);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -331,6 +301,33 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(SHIFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         camera.ProcessKeyboard(SPACE, deltaTime);
+
+
+    float xBias = 0, yBias = 0;
+    bool moving = false;
+
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS){
+        xBias += 1;
+        moving = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS){
+        yBias -= 1;
+        moving = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS){
+        xBias -= 1;
+        moving = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
+        yBias += 1;
+        moving = true;
+    }
+
+    if (moving) p.move(xBias, yBias, deltaTime);
+
 
     if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS){
         if (maOneshot) return;

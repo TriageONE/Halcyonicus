@@ -6,9 +6,13 @@
 #define HALCYONICUS_ENTITY_H
 
 #include <map>
+#include <random>
 #include "../world/coordinate.h"
 #include "../types/dynablob.h"
 #include "../tools/timetools.h"
+#include "../../graphics/Shader.h"
+#include "../../graphics/Model.h"
+#include "glm/gtx/quaternion.hpp"
 
 
 /**
@@ -133,8 +137,8 @@ public:
     COORDINATE::ENTITYCOORD getLocation();
     COORDINATE::ENTITYCOORD getLastSavedLocation();
     std::string getType();
-    unsigned long long getUUID();
-    float getFacing();
+    unsigned long long getUUID() const;
+    float getFacing() const;
     std::string getAttribute(const std::string& attribute);
     std::map<std::string, std::string> getAllAttributes();
     [[nodiscard]] bool isErrored() const;
@@ -168,6 +172,9 @@ public:
     //Debuggers
     void out();
 
+    ////////////////
+    //Display
+    void draw(Shader *shader, Model* model);
 
 
 };

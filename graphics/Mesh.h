@@ -97,16 +97,16 @@ public:
     }
 
 
-private:
-    // render data 
-    unsigned int VBO, EBO;
-
     void destroyMesh(){
         glDeleteBuffers(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
         isSetup = false;
     }
+
+private:
+    // render data 
+    unsigned int VBO, EBO;
 
     // initializes all the buffer objects/arrays
     void setupMesh()
