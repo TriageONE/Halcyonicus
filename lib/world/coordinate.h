@@ -103,12 +103,10 @@ public:
             return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z);
         }
 
-
-
-        void manipulate(long long x, long long y, float z){
-            this->x += x;
-            this->y += y;
-            this->z += z;
+        void manipulate(long long xn, long long yn, float zn){
+            this->x += xn;
+            this->y += yn;
+            this->z += zn;
         }
     };
 

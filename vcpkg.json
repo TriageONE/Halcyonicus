@@ -47,6 +47,7 @@
     "$comment" : "    # this is heuristically generated, and may not be correct\n\n    find_package(lz4 CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE lz4::lz4)\n"
   }, {
     "name" : "assimp",
-    "version>=" : "5.3.1#2"
+    "version>=" : "5.2.5",
+    "$comment" : "    # This package is to be treated as a stable release and should NOT be updated\n\n   use this with caution! Further versions have been found extremely unstable and do not compile on ARM64_OSX\n"
   } ]
 }

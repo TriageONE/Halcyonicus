@@ -6,14 +6,11 @@
 #define HALCYONICUS_ENTITY_H
 
 #include <map>
-#include <random>
+
 #include "../world/coordinate.h"
 #include "../types/dynablob.h"
 #include "../tools/timetools.h"
-#include "../../graphics/Shader.h"
-#include "../../graphics/Model.h"
-#include "glm/gtx/quaternion.hpp"
-
+#include <random>
 
 /**
  * 3:2, And so god said the world would then be filled with more than earth, finally branching out and calling itself something more than a boring structure of static life.
@@ -174,8 +171,19 @@ public:
 
     ////////////////
     //Display
-    void draw(Shader *shader, Model* model);
+    /*void draw(Shader *shader, Model* model){
+        if (!model->loaded) model->Load();
+        glm::mat4 m = glm::scale(glm::vec3(1, 1, 1));	// scale it
+        m = glm::toMat4(glm::quat(1.0,0.0,this->facing,0.0)) * m; // Rotate it
+        auto el = this->getLocation();
+        m = glm::translate(glm::vec3(el.x / 1000, el.y / 1000, el.z / 100)) * m; // Move it
+        model->Draw(*shader, m);
+    }
 
+     Embedding the display routine to this header made my entire program fail to link and everything shit the bed faster than
+     a 80 year old convolescent patient rufee'd with dulcalax professional grade chocolate laxatives
+     Link errors and something dumb about duplicate symbols for STBI image stuff again
+     */
 
 };
 #endif //HALCYONICUS_ENTITY_H

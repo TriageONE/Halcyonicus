@@ -19,7 +19,7 @@ add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c l
         graphics/chunk/chunk3d.h
         lib/world/chunk.h
         lib/entity/playerController.h
-        lib/controller/player.h)
+        lib/controller/player.h graphics/entity/entity3d.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
@@ -55,6 +55,8 @@ add_custom_target(copy_graphics ALL
 add_dependencies(Halcyonicus copy_assets)
 add_dependencies(Halcyonicus copy_graphics)
 
+find_package(assimp CONFIG REQUIRED)
+target_link_libraries(Halcyonicus assimp::assimp)
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(Halcyonicus ZLIB::ZLIB)
@@ -70,9 +72,6 @@ target_link_libraries(Halcyonicus unofficial::enet::enet)
 
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(Halcyonicus glm::glm)
-
-find_package(assimp CONFIG REQUIRED)
-target_link_libraries(Halcyonicus assimp::assimp)
 
 find_package(glfw3 CONFIG REQUIRED)
 target_link_libraries(Halcyonicus  glfw)

@@ -5,6 +5,7 @@
 
 #include "entity.h"
 
+
 COORDINATE::ENTITYCOORD ENTITY::getLocation() {
     return this->location;
 }
@@ -243,12 +244,3 @@ float ENTITY::getFacing() const {
     return this->facing;
 }
 
-void ENTITY::draw(Shader *shader, Model* model){
-    if (!model->loaded) model->Load();
-    glm::mat4 m = glm::scale(glm::vec3(1, 1, 1));	// scale it
-    m = glm::toMat4(glm::quat(1.0,0.0,this->facing,0.0)) * m; // Rotate it
-    auto el = this->getLocation();
-    m = glm::translate(glm::vec3(el.x / 1000, el.y / 1000, el.z / 100)) * m; // Move it
-    model->Draw(*shader, m);
-
-}

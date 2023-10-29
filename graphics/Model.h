@@ -52,9 +52,8 @@ public:
     // draws the model, and thus all its meshes
     void Draw(Shader &shader, glm::mat4 model)
     {
-        for(unsigned int i = 0; i < meshes.size(); i++){
-            //meshes[i].Move(this->locationOffset);
-            meshes[i].Draw(shader, model);
+        for(auto & meshe : meshes){
+            meshe.Draw(shader, model);
         }
 
     }

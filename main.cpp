@@ -15,6 +15,7 @@
 #include "lib/world/generator.h"
 #include "lib/controller/player.h"
 #include "graphics/chunk/chunk3d.h"
+#include "graphics/entity/entity3d.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -38,7 +39,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // Static entities
-PLAYER p;
+PLAYER p {0,0,256, "triageone"};
 
 Model ourModel("assets/ahe.fbx");
 
@@ -232,6 +233,7 @@ int main(int argc, char* argv[])
     float counter = 0;
     int frames = 0;
 
+    p.pe->setLocation({0, 0, 0});
 
     while (!glfwWindowShouldClose(window))
     {
@@ -260,10 +262,10 @@ int main(int argc, char* argv[])
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         for (auto c : renders) {
-            c->draw(view, projection, &ourShader);
+            //c->draw(view, projection, &ourShader);
         }
 
-        p.pe->draw(&entityShader, &ourModel);
+        ENTITY3D::draw(p.pe, &entityShader, &ourModel);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -326,7 +328,16 @@ void processInput(GLFWwindow *window)
         moving = true;
     }
 
-    if (moving) p.move(xBias, yBias, deltaTime);
+    if (moving) {
+        xBias = (xBias * 1000) * deltaTime * 4;
+        yBias = (yBias * 1000) * deltaTime * 4;
+
+        auto t = p.pe->getLocation();
+        t.manipulate(xBias, yBias, 0);
+        p.pe->setLocation(t);
+        info << "MOVING BY X:" << xBias << " and Y:" << yBias << " DELTA:" << deltaTime << " NEW LOC: " << p.pe->getLocation().x <<", " << p.pe->getLocation().y << ", " << p.pe->getLocation().z << nl;
+
+    }
 
 
     if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS){

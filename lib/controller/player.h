@@ -16,20 +16,11 @@ public:
 
     float moveSpeedLimit = 4;
 
-    PLAYER() = default;
+    PLAYER(long long x, long long y, float z, std::string name){
+        pe = new ENTITY({x, y, z}, "player");
+        pe->setAttribute({name}, "name");
+    };
 
-    /**
-     * Takes in a number between -1 and 1 for either mX or mY to affect the position of the entity
-     * @param mX
-     * @param mY
-     * @param deltaTime
-     */
-    void move(float mX, float mY, float deltaTime){
-        long long   x = mX * 1000 * moveSpeedLimit * (deltaTime /1000),
-                    y = mY * 1000 * moveSpeedLimit * (deltaTime /1000);
-        pe->getLocation().manipulate(x, y, 0);
-        info << "New location is " << pe->getLocation().x << ", " << pe->getLocation().y << nl;
-    }
 
 };
 #endif //HALCYONICUS_PLAYER_H
