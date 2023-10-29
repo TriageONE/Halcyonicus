@@ -50,10 +50,10 @@ public:
     }
 
     // draws the model, and thus all its meshes
-    void Draw(Shader &shader, glm::mat4 model)
+    void Draw(Shader &shader)
     {
         for(auto & meshe : meshes){
-            meshe.Draw(shader, model);
+            meshe.Draw(shader);
         }
 
     }

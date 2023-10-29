@@ -58,9 +58,9 @@ public:
     }
 
     // render the mesh
-    void Draw(Shader &shader, glm::mat4 model)
+    void Draw(Shader &shader)
     {
-        shader.setMat4("model", model);
+
         // bind appropriate textures
         unsigned int diffuseNr  = 1;
         unsigned int specularNr = 1;
