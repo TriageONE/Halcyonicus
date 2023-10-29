@@ -265,7 +265,7 @@ int main(int argc, char* argv[])
             //c->draw(view, projection, &ourShader);
         }
 
-        ENTITY3D::draw(p.pe, &entityShader, &ourModel);
+        ENTITY3D::draw(p.pe, &entityShader, &ourModel, &view, &projection);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -329,14 +329,15 @@ void processInput(GLFWwindow *window)
     }
 
     if (moving) {
-        xBias = (xBias * 1000) * deltaTime * 4;
-        yBias = (yBias * 1000) * deltaTime * 4;
-
+        xBias = (xBias * 1000) * deltaTime * 40;
+        yBias = (yBias * 1000) * deltaTime * 40;
+        if (xBias != 0 && yBias != 0 ){
+            xBias *= 0.666;
+            yBias *= 0.666;
+        }
         auto t = p.pe->getLocation();
         t.manipulate(xBias, yBias, 0);
         p.pe->setLocation(t);
-        info << "MOVING BY X:" << xBias << " and Y:" << yBias << " DELTA:" << deltaTime << " NEW LOC: " << p.pe->getLocation().x <<", " << p.pe->getLocation().y << ", " << p.pe->getLocation().z << nl;
-
     }
 
 
