@@ -19,7 +19,8 @@ add_executable(Halcyonicus main.cpp lib/entity/entity.cpp lib/sqlite/sqlite3.c l
         graphics/chunk/chunk3d.h
         lib/world/chunk.h
         lib/entity/playerController.h
-        lib/controller/player.h graphics/entity/entity3d.h)
+        lib/controller/player.h graphics/entity/entity3d.h
+        lib/entity/physics.h)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O2)
