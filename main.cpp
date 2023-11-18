@@ -16,6 +16,7 @@
 #include "lib/controller/player.h"
 #include "graphics/chunk/chunk3d.h"
 #include "graphics/entity/entity3d.h"
+#include "lib/entity/physics.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -27,7 +28,7 @@ const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 
 // camera
-Camera camera(glm::vec3(0.0f, 100.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 200.0f, 0.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -153,23 +154,19 @@ int main(int argc, char* argv[])
     // ---------------
 
     std::vector<CHUNK*> chunks;
-
-    for (short x = -8; x < 8; x++) {
-        for (short y = -8; y < 8; y++) {
-            chunks.push_back(new CHUNK({x, y}));
+/*
+    for (short x = -1; x < 1; x++) {
+        for (short y = -1; y < 1; y++) {
+            //chunks.push_back(new CHUNK({x, y}));
         }
-    }
+    }*/
+
+    chunks.push_back(new CHUNK({-1, -1}));
+    chunks.push_back(new CHUNK({0, 0}));
 
     for (auto c : chunks){
         GENERATOR::genHeight(c, 0, 8008, 2);
         GENERATOR::genHumidity(c, 8008);
-    }
-
-    for (auto & x : chunks.at(0)->humidity) {
-        for (unsigned char y : x) {
-            std::cout << (int)y << " ";
-        }
-        std::cout << nl;
     }
 
     info << "Setting up meshes.." << nl;
@@ -233,7 +230,7 @@ int main(int argc, char* argv[])
     float counter = 0;
     int frames = 0;
 
-    p.pe->setLocation({0, 0, 0});
+    p.pe->setLocation({0, 0, 140});
 
     while (!glfwWindowShouldClose(window))
     {
@@ -243,14 +240,7 @@ int main(int argc, char* argv[])
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        if (counter < 1) {
-            counter += deltaTime;
-            frames++;
-        } else {
-            std::cout << frames << nl;
-            frames = 0;
-            counter = 0.0;
-        }
+
         // input
         // -----
         processInput(window);
@@ -261,12 +251,22 @@ int main(int argc, char* argv[])
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
         glm::mat4 view = camera.GetViewMatrix();
+        auto locOfPe = p.pe->getLocation();
+        auto pos = glm::vec2(locOfPe.x, locOfPe.y);
         for (auto c : renders) {
-            //c->draw(view, projection, &ourShader);
+            c->draw(view, projection, &ourShader);
         }
 
+        auto floor = PHYSICS::tick(&chunks, p.pe, {});
         ENTITY3D::draw(p.pe, &entityShader, &ourModel, &view, &projection);
-
+        if (counter < 1) {
+            counter += deltaTime;
+            frames++;
+        } else {
+            std::cout << frames << ", " << floor << nl;
+            frames = 0;
+            counter = 0.0;
+        }
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -309,28 +309,28 @@ void processInput(GLFWwindow *window)
     bool moving = false;
 
     if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS){
-        xBias += 1;
-        moving = true;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS){
-        yBias -= 1;
-        moving = true;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS){
-        xBias -= 1;
-        moving = true;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
         yBias += 1;
         moving = true;
     }
 
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS){
+        xBias += 1;
+        moving = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS){
+        yBias -= 1;
+        moving = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
+        xBias -= 1;
+        moving = true;
+    }
+
     if (moving) {
-        xBias = (xBias * 1000) * deltaTime * 40;
-        yBias = (yBias * 1000) * deltaTime * 40;
+        xBias = xBias * deltaTime * 5;
+        yBias = yBias * deltaTime * 5;
         if (xBias != 0 && yBias != 0 ){
             xBias *= 0.666;
             yBias *= 0.666;

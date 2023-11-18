@@ -16,7 +16,7 @@ public:
 
     float moveSpeedLimit = 4;
 
-    PLAYER(long long x, long long y, float z, std::string name){
+    PLAYER(double x, double y, float z, std::string name){
         pe = new ENTITY({x, y, z}, "player");
         pe->setAttribute({name}, "name");
     };

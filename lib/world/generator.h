@@ -217,13 +217,27 @@ public:
                 //Since the descriptor is a number denoting the tallness of our stone column where everything above that is dirt, we can take the height and subtract this number from it
                 chunk->layers[layer].descriptor[x][y] = chunk->layers[layer].heights[x][y] - (int) noise;
 
-
                 //Now we can decide the type of block
                 //for now we leave it all 0 because that's dirt
             }
-43;      }
+        }
     }
 
+    static void genHeightTest(CHUNK * chunk, unsigned char layer, unsigned int seed, float scalar){
+        if (layer < 0 || layer > 24) return;
+        /*
+         * Height is a tricky subject. We would have about 3 layers of noise for three different purposes.
+         * Noise that contributes to small abberations to the ground is called roughness, and this should be a further octave onto roughness amount.
+         * there will be a primary height control wherein it is a single octave function that outputs the general scheme of the land.
+         * The final step is to apply what is known as the metascalar, where we define a larger additive pattern that creates entire continents. without this, we ultimately rely on the main scalar which is too predictable
+         */
 
+        for (short x = 0; x < 64; x++){
+            for (short y = 0; y < 64; y++){
+                chunk->layers[layer].heights[x][y] = x + 256;
+            }
+        }
+
+    }
 };
 #endif //HALCYONICUS_GENERATOR_H

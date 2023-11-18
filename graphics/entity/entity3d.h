@@ -11,10 +11,10 @@ class ENTITY3D{
 public:
     static void draw(ENTITY* entity, Shader* shader, Model* model, glm::mat4* view, glm::mat4* projection){
         if (!model->loaded) model->Load();
-        glm::mat4 m = glm::scale(glm::vec3(1, 1, 1));	// scale it
+        glm::mat4 m = glm::scale(glm::vec3(0.5, 0.5, 0.5));	// scale it
         m = glm::toMat4(glm::quat(1.0,0.0,entity->getFacing(),0.0)) * m; // Rotate it
         auto el = entity->getLocation();
-        m = glm::translate(glm::vec3(el.x / 1000.0,el.z, el.y / 1000.0)) * m; // Move it
+        m = glm::translate(glm::vec3(el.x,el.z/2.0, el.y)) * m; // Move it
         //Enable the shader
         shader->use();
 

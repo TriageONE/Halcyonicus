@@ -31,6 +31,7 @@ class ENTITY {
     */
     COORDINATE::ENTITYCOORD location;
     COORDINATE::ENTITYCOORD lastSavedLocation;
+    char layer = 0;
     unsigned long long timeLastSaved;
     float facing;
     /**
@@ -131,7 +132,7 @@ public:
 
     ///////////
     //Getters
-    COORDINATE::ENTITYCOORD getLocation();
+    COORDINATE::ENTITYCOORD getLocation() const;
     COORDINATE::ENTITYCOORD getLastSavedLocation();
     std::string getType();
     unsigned long long getUUID() const;
@@ -141,6 +142,7 @@ public:
     [[nodiscard]] bool isErrored() const;
     [[nodiscard]] bool isUntyped() const;
     [[nodiscard]] bool hasUUID() const;
+    [[nodiscard]] char getLayer() const;
 
     //////////
     //Setters
@@ -151,6 +153,7 @@ public:
     void setFacing(float);
     void setAttribute(const std::string& dblob, const std::string& attribute);
     void setAttributes(std::map<std::string, std::string> * attributes);
+    void setLayer(char newLayer);
 
     ////////////
     //Modifiers

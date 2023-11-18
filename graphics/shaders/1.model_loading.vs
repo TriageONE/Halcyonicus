@@ -19,9 +19,11 @@ void main()
     if (((int(gl_InstanceID % 64) + int(gl_InstanceID / 64) % 2 ) % 2) == 1){
         coffset = 0.2;
     }
+    vec3 instancePos = vec3((gl_InstanceID % 64) + worldOffset.y*64, aHeight/2.0, (gl_InstanceID / 64) + worldOffset.x*64);
 
     ColorMap = vec3(color + coffset, color + coffset, color + coffset);
-    gl_Position = projection * view * model * vec4(aPos * vec3(1.0,aHeight/4.0,1.0) + vec3((gl_InstanceID % 64) + worldOffset.y*64, float(aHeight)/8.0, (gl_InstanceID / 64) + worldOffset.x*64), 1.0);
+
+    gl_Position = projection * view * model * vec4(aPos * vec3(1.0,1.0,1.0) + instancePos, 1.0);
 }
 
 

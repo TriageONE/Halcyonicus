@@ -13,27 +13,44 @@
  * Defines a method for imparting physics calculations onto objects based on a floor, or obstacles.
  * Given a limited scope of information, can completely handle the movement and placement of objects around the world.
  */
- class PHYSICS{
-     struct energyVector{
-        float xImpulse, yImpulse, zImpulse;
-        bool isGrounded;
-     };
-
- public:
-     static void tick(std::vector<CHUNK*>* chunks, ENTITY* entity, energyVector* eVec){
-         float h1,h2,h3,h4;
-
-         //Get all the possible chunk coordinates that you may need to pull from
-         std::set<COORDINATE::REGIONCOORD> locs{};
-         auto temp = entity->getLocation();
-         locs.insert(temp.getRegioncoord()); //0,0 offset
-         temp.x += 1;
-         locs.insert(temp.getRegioncoord()); //1,0 offset
-         temp.y += 1;
-         locs.insert(temp.getRegioncoord()); //1,1 offset
-         temp.x -= 1;
-         locs.insert(temp.getRegioncoord()); //0,1 offset
-
-     }
+class PHYSICS{
+ struct energyVector{
+    float xImpulse, yImpulse, zImpulse;
+    bool isGrounded;
  };
+
+public:
+
+    static float tick(std::vector<CHUNK*>* chunks, ENTITY* entity, energyVector* eVec) {
+
+        COORDINATE::ENTITYCOORD ts[4] = {entity->getLocation(),entity->getLocation(),entity->getLocation(),entity->getLocation()};
+        ts[1].manipulate(1,1,0);
+        ts[2].manipulate(1,0,0);
+        ts[3].manipulate(0,1,0);
+
+        float floor = 0.0;
+        char count = 0;
+
+        for (auto ec : ts){
+
+            //info << "EC" << (int)count << ": x" <<ec.x<<" y" << ec.y<<nl;
+            //count++;
+            for (auto c: *chunks) {
+                if (ec.getWorldcoord() != c->location) continue;
+                //Derive the point in which we are standing over from this
+                int     x = ((int) ec.y) & 0x3f,
+                        y = ((int) ec.x) & 0x3f;
+                //You dont need this for negative coordinates apparently, its all good. Tried with -1 -1 chunk
+                //y = abs(y - 63);
+                int cfloor = c->layers[entity->getLayer()].heights[x][y];
+                if (cfloor > floor ) floor = cfloor;
+
+            }
+        }
+
+        ts[0].z = floor + 2;
+        entity->setLocation(ts[0]);
+        return floor;
+    }
+};
 #endif //HALCYONICUS_PHYSICS_H

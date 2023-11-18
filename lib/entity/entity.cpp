@@ -6,7 +6,7 @@
 #include "entity.h"
 
 
-COORDINATE::ENTITYCOORD ENTITY::getLocation() {
+COORDINATE::ENTITYCOORD ENTITY::getLocation() const{
     return this->location;
 }
 
@@ -244,3 +244,10 @@ float ENTITY::getFacing() const {
     return this->facing;
 }
 
+char ENTITY::getLayer() const {
+    return this->layer;
+}
+
+void ENTITY::setLayer(char newLayer) {
+    this->layer = newLayer;
+}

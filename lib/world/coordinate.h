@@ -78,17 +78,17 @@ public:
      */
     class ENTITYCOORD{
     public:
-        long long x=0, y=0;
+        double x=0, y=0;
         float z=0;
 
-        ENTITYCOORD(long long x, long long y, float z) : x{x}, y{y}, z{z} {}
+        ENTITYCOORD(double x, double y, float z) : x{x}, y{y}, z{z} {}
 
         ENTITYCOORD() = default;
 
         [[nodiscard]] WORLDCOORD getWorldcoord() const{
-            long long x1 = ( this->x/1000 ) >> 6;
-            long long y1 = ( this->y/1000 ) >> 6;
-            return {(int) x1, (int) y1};
+            auto x1 = (int)this->x >> 6;
+            auto y1 = (int)this->y >> 6;
+            return { x1, y1};
         }
 
         [[nodiscard]] REGIONCOORD getRegioncoord() const{
@@ -103,7 +103,7 @@ public:
             return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z);
         }
 
-        void manipulate(long long xn, long long yn, float zn){
+        void manipulate(double xn, double yn, float zn){
             this->x += xn;
             this->y += yn;
             this->z += zn;
@@ -126,9 +126,7 @@ public:
     COORDINATE()= default;
 
     int getChunkOffset() {
-        // Ensure X and Y are within the range 0-63
-        x = std::max(0, std::min(63, x));
-        y = std::max(0, std::min(63, y));
+
         // Combine X, Y, and Z into a single integer
         return ((x % 64) << 22) | ((y % 64) << 16) | z;
     }

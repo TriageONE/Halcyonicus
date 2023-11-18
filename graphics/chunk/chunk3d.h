@@ -111,6 +111,7 @@ public:
         shader->setMat4("view", view);
         shader->setMat4("model", model);
         shader->setVec2("worldOffset", {chunk->location.x, chunk->location.y});
+
         glDrawElementsInstanced(GL_TRIANGLES, cubeIndices.size(), GL_UNSIGNED_INT, nullptr, 4096);
         glBindVertexArray(0);
     }
